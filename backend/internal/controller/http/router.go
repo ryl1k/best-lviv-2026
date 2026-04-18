@@ -26,22 +26,25 @@ import (
 type Router struct {
 	e *echo.Echo
 
-	middleware     *middleware.Middleware
-	authController *v1.AuthController
-	validator      *httprequest.CustomValidator
+	middleware      *middleware.Middleware
+	authController  *v1.AuthController
+	auditController *v1.AuditController
+	validator       *httprequest.CustomValidator
 }
 
 func NewRouter(
 	e *echo.Echo,
 	middleware *middleware.Middleware,
 	authController *v1.AuthController,
+	auditController *v1.AuditController,
 	validator *httprequest.CustomValidator,
 ) *Router {
 	return &Router{
-		e:              e,
-		middleware:     middleware,
-		authController: authController,
-		validator:      validator,
+		e:               e,
+		middleware:      middleware,
+		authController:  authController,
+		auditController: auditController,
+		validator:       validator,
 	}
 }
 
@@ -66,5 +69,20 @@ func (r *Router) RegisterRoutes() {
 		auth := v1.Group("/auth")
 		auth.POST("/login", r.authController.Login)
 		auth.GET("/me", r.authController.GetMe, withJWT)
+	}
+
+	// Audits
+	{
+		v1.POST("/audits/upload", r.auditController.Upload)
+	}
+
+	// Tasks
+	{
+		tasks := v1.Group("/tasks")
+		tasks.GET("/:id", r.auditController.GetTask)
+		tasks.GET("/:id/results", r.auditController.GetResults)
+		tasks.GET("/:id/results/summary", r.auditController.GetSummary)
+		tasks.GET("/:id/discrepancies/:disc_id", r.auditController.GetDiscrepancy)
+		tasks.PATCH("/:id/discrepancies/:disc_id", r.auditController.UpdateResolutionStatus)
 	}
 }

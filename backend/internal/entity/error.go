@@ -15,4 +15,8 @@ var (
 	ErrForbidden                = errors.New("forbidden")
 	ErrInvalidStatusTransition  = errors.New("invalid status transition")
 	ErrInsufficientStock        = errors.New("insufficient stock to fully satisfy request")
+	ErrTaskNotFound             = errors.New("task not found")
+	ErrDiscrepancyNotFound      = errors.New("discrepancy not found")
+	ErrInvalidResolutionStatus  = errors.New("invalid resolution status")
+	ErrUnsupportedFileFormat    = errors.New("unsupported file format, use xlsx or csv")
 )
