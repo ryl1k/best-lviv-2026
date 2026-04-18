@@ -1,0 +1,11 @@
+{
+  "getStarted": "Почати",
+  "editAndSave": "Відредагуйте <code>src/App.tsx</code> та збережіть, щоб перевірити <code>HMR</code>",
+  "countIs": "Лічильник: {{count}}",
+  "documentation": "Документація",
+  "questionsAnswered": "Відповіді на ваші запитання",
+  "exploreVite": "Дослідити Vite",
+  "learnMore": "Дізнатися більше",
+  "connectWithUs": "Зв'яжіться з нами",
+  "joinCommunity": "Приєднуйтесь до спільноти Vite"
+}
