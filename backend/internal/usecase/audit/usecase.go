@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
 	"github.com/ryl1k/best-lviv-2026/internal/repo"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/ai"
 )
 
 type UseCase struct {
@@ -16,6 +17,7 @@ type UseCase struct {
 	landRepo        repo.LandRecordRepo
 	estateRepo      repo.EstateRecordRepo
 	discrepancyRepo repo.DiscrepancyRepo
+	explainer       *ai.Explainer
 	logger          *slog.Logger
 }
 
@@ -24,6 +26,7 @@ func New(
 	landRepo repo.LandRecordRepo,
 	estateRepo repo.EstateRecordRepo,
 	discrepancyRepo repo.DiscrepancyRepo,
+	explainer *ai.Explainer,
 	logger *slog.Logger,
 ) *UseCase {
 	return &UseCase{
@@ -31,6 +34,7 @@ func New(
 		landRepo:        landRepo,
 		estateRepo:      estateRepo,
 		discrepancyRepo: discrepancyRepo,
+		explainer:       explainer,
 		logger:          logger,
 	}
 }
@@ -262,6 +266,17 @@ func (u *UseCase) Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discre
 		PageSize: 100_000,
 	})
 	return items, err
+}
+
+func (u *UseCase) ExplainDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (string, error) {
+	d, err := u.discrepancyRepo.GetByID(ctx, taskID, discID)
+	if err != nil {
+		return "", err
+	}
+	if u.explainer == nil {
+		return "", entity.ErrNotConfigured
+	}
+	return u.explainer.ExplainDiscrepancy(ctx, d)
 }
 
 func (u *UseCase) GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error) {
