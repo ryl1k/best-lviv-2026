@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -12,19 +13,27 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	"github.com/ryl1k/best-lviv-2026/internal/dto"
+	"github.com/ryl1k/best-lviv-2026/internal/dto/httprequest"
 	"github.com/ryl1k/best-lviv-2026/internal/dto/httpresponse"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
 	"github.com/ryl1k/best-lviv-2026/internal/repo"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase"
 )
 
-type AuditController struct {
-	logger  *slog.Logger
-	useCase usecase.AuditUseCase
+type auditSubscriptionUseCase interface {
+	GetUserSubscription(ctx context.Context, userID int) (entity.UserSubscription, error)
+	IncrementCSVTries(ctx context.Context, userSubID int64) error
 }
 
-func NewAuditController(logger *slog.Logger, useCase usecase.AuditUseCase) *AuditController {
-	return &AuditController{logger: logger, useCase: useCase}
+type AuditController struct {
+	logger     *slog.Logger
+	useCase    usecase.AuditUseCase
+	subUseCase auditSubscriptionUseCase
+}
+
+func NewAuditController(logger *slog.Logger, useCase usecase.AuditUseCase, subUseCase auditSubscriptionUseCase) *AuditController {
+	return &AuditController{logger: logger, useCase: useCase, subUseCase: subUseCase}
 }
 
 // Upload godoc
@@ -34,11 +43,22 @@ func NewAuditController(logger *slog.Logger, useCase usecase.AuditUseCase) *Audi
 // @Produce      json
 // @Param        land_file   formData  file  true  "Land registry file (.xlsx or .csv)"
 // @Param        estate_file formData  file  true  "Estate registry file (.xlsx or .csv)"
+// @Security     BearerAuth
 // @Success      202  {object}  httpresponse.Response{data=httpresponse.UploadTaskResponse}
 // @Failure      400  {object}  httpresponse.Response
 // @Failure      500  {object}  httpresponse.Response
 // @Router       /v1/audits/upload [post]
 func (c *AuditController) Upload(ctx *echo.Context) error {
+	userClaims := ctx.Get(entity.UserKey).(dto.UserClaims)
+
+	userSub, err := c.subUseCase.GetUserSubscription(ctx.Request().Context(), userClaims.UserID)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrNoActiveSubscription, "active subscription required")
+	}
+	if !userSub.HasTriesRemaining(entity.ResourceCSV) {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrNoTriesRemaining, "no CSV tries remaining")
+	}
+
 	landFile, err := ctx.FormFile("land_file")
 	if err != nil {
 		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "land_file is required")
@@ -66,6 +86,94 @@ func (c *AuditController) Upload(ctx *echo.Context) error {
 		return httpresponse.NewErrorResponse(ctx, err)
 	}
 
+	if err := c.subUseCase.IncrementCSVTries(ctx.Request().Context(), userSub.ID); err != nil {
+		c.logger.Error("failed to increment csv tries", "error", err, "user_sub_id", userSub.ID)
+	}
+
+	return ctx.JSON(http.StatusAccepted, &httpresponse.Response{
+		Data: httpresponse.UploadTaskResponse{TaskID: taskID},
+		Metadata: httpresponse.ResponseMetadata{
+			StatusCode: http.StatusAccepted,
+		},
+	})
+}
+
+// UploadJSON godoc
+// @Summary      Upload audit data as JSON
+// @Tags         audits
+// @Accept       json
+// @Produce      json
+// @Param        request  body      httprequest.UploadJSON  true  "Land and estate records"
+// @Security     BearerAuth
+// @Success      202  {object}  httpresponse.Response{data=httpresponse.UploadTaskResponse}
+// @Failure      400  {object}  httpresponse.Response
+// @Failure      500  {object}  httpresponse.Response
+// @Router       /v1/audits/upload/json [post]
+func (c *AuditController) UploadJSON(ctx *echo.Context) error {
+	userClaims := ctx.Get(entity.UserKey).(dto.UserClaims)
+
+	userSub, err := c.subUseCase.GetUserSubscription(ctx.Request().Context(), userClaims.UserID)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrNoActiveSubscription, "active subscription required")
+	}
+	if !userSub.HasTriesRemaining(entity.ResourceCSV) {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrNoTriesRemaining, "no CSV tries remaining")
+	}
+
+	var req httprequest.UploadJSON
+	if err := ctx.Bind(&req); err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid request body")
+	}
+	if err := ctx.Validate(req); err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, err.Error())
+	}
+
+	landRecords := make([]entity.LandRecord, len(req.LandRecords))
+	for i, r := range req.LandRecords {
+		landRecords[i] = entity.LandRecord{
+			CadastralNum:   r.CadastralNum,
+			Koatuu:         r.Koatuu,
+			OwnershipForm:  r.OwnershipForm,
+			PurposeCode:    r.PurposeCode,
+			PurposeText:    r.PurposeText,
+			Location:       r.Location,
+			LandUseType:    r.LandUseType,
+			AreaHa:         r.AreaHa,
+			NormativeValue: r.NormativeValue,
+			TaxID:          r.TaxID,
+			OwnerName:      r.OwnerName,
+			Share:          r.Share,
+			RegisteredAt:   r.RegisteredAt,
+			Raw:            r.Raw,
+		}
+	}
+
+	estateRecords := make([]entity.EstateRecord, len(req.EstateRecords))
+	for i, r := range req.EstateRecords {
+		estateRecords[i] = entity.EstateRecord{
+			TaxID:        r.TaxID,
+			OwnerName:    r.OwnerName,
+			ObjectType:   r.ObjectType,
+			Address:      r.Address,
+			RegisteredAt: r.RegisteredAt,
+			TerminatedAt: r.TerminatedAt,
+			AreaM2:       r.AreaM2,
+			CoOwnership:  r.CoOwnership,
+			Share:        r.Share,
+			Raw:          r.Raw,
+		}
+	}
+
+	taskID, err := c.useCase.UploadFromRecords(ctx.Request().Context(), landRecords, estateRecords)
+	if err != nil {
+		c.logger.Error("upload json failed", "error", err)
+		return httpresponse.NewErrorResponse(ctx, err)
+	}
+
+	if err := c.subUseCase.IncrementCSVTries(ctx.Request().Context(), userSub.ID); err != nil {
+		c.logger.Error("failed to increment csv tries", "error", err, "user_sub_id", userSub.ID)
+	}
+
 	return ctx.JSON(http.StatusAccepted, &httpresponse.Response{
 		Data: httpresponse.UploadTaskResponse{TaskID: taskID},
 		Metadata: httpresponse.ResponseMetadata{
@@ -79,6 +187,7 @@ func (c *AuditController) Upload(ctx *echo.Context) error {
 // @Tags         tasks
 // @Produce      json
 // @Param        id  path  string  true  "Task UUID"
+// @Security     BearerAuth
 // @Success      200  {object}  httpresponse.Response{data=httpresponse.TaskResponse}
 // @Failure      404  {object}  httpresponse.Response
 // @Router       /v1/tasks/{id} [get]
@@ -105,6 +214,7 @@ func (c *AuditController) GetTask(ctx *echo.Context) error {
 // @Param        rule_code         query  string  false  "Filter by rule code"
 // @Param        resolution_status query  string  false  "Filter by resolution status"
 // @Param        tax_id            query  string  false  "Filter by tax ID"
+// @Security     BearerAuth
 // @Param        search            query  string  false  "Search in owner name or description"
 // @Param        page              query  int     false  "Page number (default 1)"
 // @Param        page_size         query  int     false  "Page size (default 50)"
@@ -158,6 +268,7 @@ func (c *AuditController) GetResults(ctx *echo.Context) error {
 // @Summary      Get discrepancy summary for a task
 // @Tags         tasks
 // @Produce      json
+// @Security     BearerAuth
 // @Param        id  path  string  true  "Task UUID"
 // @Success      200  {object}  httpresponse.Response{data=httpresponse.SummaryResponse}
 // @Failure      404  {object}  httpresponse.Response

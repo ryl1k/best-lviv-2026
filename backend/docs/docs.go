@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/v1/audits/upload": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -77,9 +82,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/audits/upload/json": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audits"
+                ],
+                "summary": "Upload audit data as JSON",
+                "parameters": [
+                    {
+                        "description": "Land and estate records",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httprequest.UploadJSON"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpresponse.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.UploadTaskResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/login": {
             "post": {
-                "description": "Authenticates a user using username and password, returning a JWT token for further requests.",
+                "description": "Authenticates a user using email and password, returning a JWT token for further requests.",
                 "consumes": [
                     "application/json"
                 ],
@@ -174,6 +241,58 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/signup": {
+            "post": {
+                "description": "Creates a new user account with the provided username, email, and password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Registration credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httprequest.CreateUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Username already exists",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
@@ -343,6 +462,11 @@ const docTemplate = `{
         },
         "/v1/tasks/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -502,8 +626,105 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/tasks/{id}/export": {
+            "get": {
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Export all discrepancies for a task as CSV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/tasks/{id}/persons": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get persons ranked by cumulative risk score",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 50)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpresponse.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.PaginatedPersonsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/tasks/{id}/results": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -592,6 +813,11 @@ const docTemplate = `{
         },
         "/v1/tasks/{id}/results/summary": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -686,6 +912,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "email": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -729,18 +958,151 @@ const docTemplate = `{
                 }
             }
         },
-        "httprequest.Login": {
+        "httprequest.CreateUser": {
             "type": "object",
             "required": [
+                "email",
                 "password",
                 "username"
             ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "httprequest.EstateRecord": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "area_m2": {
+                    "type": "number"
+                },
+                "co_ownership": {
+                    "type": "string"
+                },
+                "object_type": {
+                    "type": "string"
+                },
+                "owner_name": {
+                    "type": "string"
+                },
+                "raw": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "registered_at": {
+                    "type": "string"
+                },
+                "share": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "terminated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "httprequest.LandRecord": {
+            "type": "object",
+            "required": [
+                "cadastral_num"
+            ],
+            "properties": {
+                "area_ha": {
+                    "type": "number"
+                },
+                "cadastral_num": {
+                    "type": "string"
+                },
+                "koatuu": {
+                    "type": "string"
+                },
+                "land_use_type": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "normative_value": {
+                    "type": "number"
+                },
+                "owner_name": {
+                    "type": "string"
+                },
+                "ownership_form": {
+                    "type": "string"
+                },
+                "purpose_code": {
+                    "type": "string"
+                },
+                "purpose_text": {
+                    "type": "string"
+                },
+                "raw": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "registered_at": {
+                    "type": "string"
+                },
+                "share": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "httprequest.Login": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "httprequest.UploadJSON": {
+            "type": "object",
+            "required": [
+                "estate_records",
+                "land_records"
+            ],
+            "properties": {
+                "estate_records": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/httprequest.EstateRecord"
+                    }
+                },
+                "land_records": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/httprequest.LandRecord"
+                    }
                 }
             }
         },
@@ -796,6 +1158,52 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httpresponse.PaginatedPersonsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpresponse.PersonRiskResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httpresponse.PersonRiskResponse": {
+            "type": "object",
+            "properties": {
+                "discrepancy_count": {
+                    "type": "integer"
+                },
+                "max_severity": {
+                    "type": "string"
+                },
+                "owner_name": {
+                    "type": "string"
+                },
+                "rule_codes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "total_risk_score": {
                     "type": "integer"
                 }
             }
