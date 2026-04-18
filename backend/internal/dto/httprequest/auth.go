@@ -1,11 +1,12 @@
 package httprequest
 
 type Login struct {
-	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
 }
 
 type CreateUser struct {
 	Username string `json:"username" validate:"required"`
-	Password string `json:"required" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }

@@ -70,6 +70,7 @@ func (r *Router) RegisterRoutes() {
 	// Auth
 	{
 		auth := v1.Group("/auth")
+		auth.POST("/signup", r.authController.SignUp)
 		auth.POST("/login", r.authController.Login)
 		auth.GET("/me", r.authController.GetMe, withJWT)
 	}
@@ -84,7 +85,8 @@ func (r *Router) RegisterRoutes() {
 
 	// Audits
 	{
-		v1.POST("/audits/upload", r.auditController.Upload)
+		v1.POST("/audits/upload", r.auditController.Upload, withJWT)
+		v1.POST("/audits/upload/json", r.auditController.UploadJSON, withJWT)
 	}
 
 	// Tasks

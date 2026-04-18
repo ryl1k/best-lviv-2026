@@ -13,8 +13,8 @@ import (
 )
 
 type authUseCase interface {
-	Login(ctx context.Context, username, password string) (string, error)
-	Create(ctx context.Context, username, password string) error
+	Login(ctx context.Context, email, password string) (string, error)
+	Create(ctx context.Context, username, email, password string) error
 	GetById(ctx context.Context, id int) (entity.User, error)
 }
 type AuthController struct {
@@ -32,7 +32,7 @@ func NewAuthController(logger *slog.Logger, authUseCase authUseCase) *AuthContro
 
 // Login godoc
 // @Summary      User login
-// @Description  Authenticates a user using username and password, returning a JWT token for further requests.
+// @Description  Authenticates a user using email and password, returning a JWT token for further requests.
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -44,7 +44,7 @@ func NewAuthController(logger *slog.Logger, authUseCase authUseCase) *AuthContro
 func (c *AuthController) Login(ctx *echo.Context) error {
 	var req httprequest.Login
 
-	l := c.logger.With("method", "login", "username", req.Username)
+	l := c.logger.With("method", "login")
 	err := ctx.Bind(&req)
 	if err != nil {
 		l.Warn("failed to parse request", "error", err)
@@ -57,13 +57,47 @@ func (c *AuthController) Login(ctx *echo.Context) error {
 		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, err.Error())
 	}
 
-	token, err := c.authUseCase.Login(ctx.Request().Context(), req.Username, req.Password)
+	token, err := c.authUseCase.Login(ctx.Request().Context(), req.Email, req.Password)
 	if err != nil {
 		l.Error("failed to login", "error", err)
 		return httpresponse.NewErrorResponse(ctx, err, "failed to login")
 	}
 
 	return httpresponse.NewSuccessResponse(ctx, token, http.StatusOK)
+}
+
+// SignUp godoc
+// @Summary      Register a new user
+// @Description  Creates a new user account with the provided username, email, and password.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      httprequest.CreateUser  true  "Registration credentials"
+// @Success      201      {object}  httpresponse.Response{} "User created successfully"
+// @Failure      400      {object}  httpresponse.Response{} "Bad Request - Validation error"
+// @Failure      409      {object}  httpresponse.Response{} "Conflict - Username already exists"
+// @Failure      500      {object}  httpresponse.Response{} "Internal Server Error"
+// @Router       /v1/auth/signup [post]
+func (c *AuthController) SignUp(ctx *echo.Context) error {
+	var req httprequest.CreateUser
+
+	l := c.logger.With("method", "signup")
+	if err := ctx.Bind(&req); err != nil {
+		l.Warn("failed to parse request", "error", err)
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, err.Error())
+	}
+
+	if err := ctx.Validate(req); err != nil {
+		l.Warn("failed to validate request", "error", err)
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, err.Error())
+	}
+
+	if err := c.authUseCase.Create(ctx.Request().Context(), req.Username, req.Email, req.Password); err != nil {
+		l.Error("failed to create user", "error", err)
+		return httpresponse.NewErrorResponse(ctx, err, "failed to create user")
+	}
+
+	return httpresponse.NewSuccessResponse(ctx, nil, http.StatusCreated)
 }
 
 // GetMe godoc

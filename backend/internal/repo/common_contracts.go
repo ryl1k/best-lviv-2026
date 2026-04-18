@@ -8,7 +8,7 @@ import (
 )
 
 type UserRepo interface {
-	GetByUsername(ctx context.Context, username string) (entity.User, error)
+	GetByEmail(ctx context.Context, email string) (entity.User, error)
 }
 
 type TaskRepo interface {

@@ -87,7 +87,7 @@ func newApp(ctx context.Context) (*app, error) {
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)
-	auditController := v1.NewAuditController(logger, auditUseCase)
+	auditController := v1.NewAuditController(logger, auditUseCase, subscriptionUseCase)
 	subscriptionController := v1.NewSubscriptionController(logger, subscriptionUseCase)
 
 	mw := middleware.NewMiddleware(logger, authUseCase, subscriptionUseCase)
