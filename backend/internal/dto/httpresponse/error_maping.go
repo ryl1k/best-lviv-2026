@@ -24,6 +24,11 @@ var errorToMetadata = map[error]ResponseMetadata{
 	entity.ErrDiscrepancyNotFound:     NewResponseMetadata(http.StatusNotFound, entity.ErrDiscrepancyNotFound.Error()),
 	entity.ErrInvalidResolutionStatus: NewResponseMetadata(http.StatusBadRequest, entity.ErrInvalidResolutionStatus.Error()),
 	entity.ErrUnsupportedFileFormat:   NewResponseMetadata(http.StatusBadRequest, entity.ErrUnsupportedFileFormat.Error()),
+	entity.ErrSubscriptionNotFound:    NewResponseMetadata(http.StatusNotFound, entity.ErrSubscriptionNotFound.Error()),
+	entity.ErrAlreadySubscribed:       NewResponseMetadata(http.StatusConflict, entity.ErrAlreadySubscribed.Error()),
+	entity.ErrInsufficientTier:        NewResponseMetadata(http.StatusForbidden, entity.ErrInsufficientTier.Error()),
+	entity.ErrNoTriesRemaining:        NewResponseMetadata(http.StatusForbidden, entity.ErrNoTriesRemaining.Error()),
+	entity.ErrNoActiveSubscription:    NewResponseMetadata(http.StatusForbidden, entity.ErrNoActiveSubscription.Error()),
 }
 
 func MapErrorToMetadata(err error) ResponseMetadata {

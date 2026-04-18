@@ -10,6 +10,12 @@ import (
 
 type AuthUseCase interface{}
 
+type SubscriptionUseCase interface {
+	List(ctx context.Context) ([]entity.Subscription, error)
+	Purchase(ctx context.Context, userID int, subscriptionID int64) (entity.UserSubscription, error)
+	GetUserSubscription(ctx context.Context, userID int) (entity.UserSubscription, error)
+}
+
 type AuditUseCase interface {
 	Upload(ctx context.Context, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error)
 	GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, error)

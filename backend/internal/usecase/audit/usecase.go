@@ -12,11 +12,11 @@ import (
 )
 
 type UseCase struct {
-	taskRepo       repo.TaskRepo
-	landRepo       repo.LandRecordRepo
-	estateRepo     repo.EstateRecordRepo
+	taskRepo        repo.TaskRepo
+	landRepo        repo.LandRecordRepo
+	estateRepo      repo.EstateRecordRepo
 	discrepancyRepo repo.DiscrepancyRepo
-	logger         *slog.Logger
+	logger          *slog.Logger
 }
 
 func New(
@@ -48,7 +48,8 @@ func (u *UseCase) Upload(ctx context.Context, landData []byte, estateData []byte
 	}
 
 	// Process asynchronously; use Background so it outlives the request context.
-	go u.process(context.Background(), taskID, landData, estateData, landExt, estateExt)
+	iCtx := context.WithoutCancel(ctx)
+	go u.process(iCtx, taskID, landData, estateData, landExt, estateExt)
 
 	return taskID, nil
 }
