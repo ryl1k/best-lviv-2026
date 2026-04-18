@@ -14,8 +14,11 @@ export const apiEndpoints = {
     purchase: (id: number) => `/v1/subscriptions/${id}/purchase`,
   },
   tasks: {
+    list: '/v1/tasks',
     byId: (taskId: string) => `/v1/tasks/${taskId}`,
     discrepancyById: (taskId: string, discrepancyId: number) => `/v1/tasks/${taskId}/discrepancies/${discrepancyId}`,
+    discrepancyExplain: (taskId: string, discrepancyId: number) =>
+      `/v1/tasks/${taskId}/discrepancies/${discrepancyId}/explain`,
     exportCsv: (taskId: string) => `/v1/tasks/${taskId}/export`,
     persons: (taskId: string) => `/v1/tasks/${taskId}/persons`,
     results: (taskId: string) => `/v1/tasks/${taskId}/results`,
