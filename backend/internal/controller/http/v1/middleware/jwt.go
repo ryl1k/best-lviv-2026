@@ -14,6 +14,9 @@ const HeaderAuthorization = "Authorization"
 func (m *Middleware) WithJWT() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
+			if c.Request().Method == "OPTIONS" {
+				return next(c)
+			}
 			l := m.logger.With("method", "with_jwt")
 			authHeader := c.Request().Header.Get(HeaderAuthorization)
 			if authHeader == "" {

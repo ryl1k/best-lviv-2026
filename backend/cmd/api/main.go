@@ -82,14 +82,14 @@ func newApp(ctx context.Context) (*app, error) {
 	subscriptionTxRepo := persistent.NewSubscriptionTransactionRepo(pool)
 
 	// Use cases
-	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
+	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
+	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo, subscriptionUseCase)
 
 	var explainer *ai.Explainer
 	if c.OpenAIAPIKey != "" {
 		explainer = ai.NewExplainer(c.OpenAIAPIKey)
 	}
 	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, explainer, logger)
-	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)

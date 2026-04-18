@@ -6,15 +6,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// TaskStatus represents the processing lifecycle of an audit task.
 type TaskStatus string
 
 const (
-	TaskStatusPending    TaskStatus = "PENDING"
-	TaskStatusProcessing TaskStatus = "PROCESSING"
-	TaskStatusCompleted  TaskStatus = "COMPLETED"
-	TaskStatusFailed     TaskStatus = "FAILED"
+	TaskStatusPending    TaskStatus = "PENDING"    // created, not yet picked up
+	TaskStatusProcessing TaskStatus = "PROCESSING" // goroutine is running the pipeline
+	TaskStatusCompleted  TaskStatus = "COMPLETED"  // pipeline finished successfully
+	TaskStatusFailed     TaskStatus = "FAILED"     // pipeline encountered a fatal error
 )
 
+// TaskStats holds aggregate counts produced when a task completes.
 type TaskStats struct {
 	TotalLand          int `json:"total_land"`
 	TotalEstate        int `json:"total_estate"`
