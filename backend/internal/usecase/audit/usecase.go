@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/ml"
 )
 
 type taskRepo interface {
@@ -47,6 +48,7 @@ type UseCase struct {
 	estateRepo      estateRecordRepo
 	discrepancyRepo discrepancyRepo
 	explainer       discrepancyExplainer
+	mlClient        *ml.Client
 	logger          *slog.Logger
 }
 
@@ -56,6 +58,7 @@ func New(
 	estateRepo estateRecordRepo,
 	discrepancyRepo discrepancyRepo,
 	explainer discrepancyExplainer,
+	mlClient *ml.Client,
 	logger *slog.Logger,
 ) *UseCase {
 	return &UseCase{
@@ -64,6 +67,7 @@ func New(
 		estateRepo:      estateRepo,
 		discrepancyRepo: discrepancyRepo,
 		explainer:       explainer,
+		mlClient:        mlClient,
 		logger:          logger,
 	}
 }
@@ -166,6 +170,8 @@ func (u *UseCase) process(ctx context.Context, taskID uuid.UUID, landData, estat
 		return
 	}
 
+	u.scoreWithML(ctx, log, taskID, landRecords, estateRecords)
+
 	log.Info("task completed", "stats", stats)
 }
 
@@ -261,6 +267,8 @@ func (u *UseCase) processRecords(ctx context.Context, taskID uuid.UUID, landReco
 		return
 	}
 
+	u.scoreWithML(ctx, log, taskID, landRecords, estateRecords)
+
 	log.Info("task completed", "stats", stats)
 }
 
@@ -322,4 +330,16 @@ func (u *UseCase) UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, 
 		return entity.ErrInvalidResolutionStatus
 	}
 	return u.discrepancyRepo.UpdateResolutionStatus(ctx, taskID, discID, status)
+}
+
+func (u *UseCase) scoreWithML(ctx context.Context, log *slog.Logger, taskID uuid.UUID, land []entity.LandRecord, estate []entity.EstateRecord) {
+	if u.mlClient == nil {
+		return
+	}
+	scores, err := u.mlClient.ScoreRecords(ctx, land, estate)
+	if err != nil {
+		log.Warn("ml scoring failed", "error", err)
+		return
+	}
+	log.Info("ml scoring complete", "scored_tax_ids", len(scores))
 }
