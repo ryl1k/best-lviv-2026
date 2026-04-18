@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.4.0...v1.5.0) (2026-04-18)
+
+
+### Features
+
+* added ai explanations ([5e68402](https://github.com/ryl1k/best-lviv-2026/commit/5e6840201f1f2650c7c70353419a98c6d86e8bf1))
+
 ## [1.4.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.3.0...v1.4.0) (2026-04-18)
 
 
