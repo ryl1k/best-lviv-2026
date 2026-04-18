@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Mail, Clock, ChevronDown, Send, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router';
 
 const brown = '#7C5C3E';
 const brownSubtle = '#F5EDE4';
