@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.0...v1.5.1) (2026-04-18)
+
+
+### Bug Fixes
+
+* **docs:** update swaggo import path to v2 ([6a89f89](https://github.com/ryl1k/best-lviv-2026/commit/6a89f89b612c52e220bc3ac8907941345a599c4e))
+* **docs:** update swaggo import path to v2 ([ca34a92](https://github.com/ryl1k/best-lviv-2026/commit/ca34a92407c05893ff1017bcb34a50ec2f67e8b6))
+
 ## [1.5.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.4.0...v1.5.0) (2026-04-18)
 
 
