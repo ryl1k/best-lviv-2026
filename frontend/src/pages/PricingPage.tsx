@@ -73,7 +73,10 @@ export default function PricingPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    void loadPricing();
+    const timerId = window.setTimeout(() => {
+      void loadPricing();
+    }, 0);
+    return () => window.clearTimeout(timerId);
   }, [loadPricing]);
 
   const sortedPlans = useMemo(

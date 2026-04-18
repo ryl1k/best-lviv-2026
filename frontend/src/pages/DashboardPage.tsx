@@ -237,8 +237,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!taskId) return;
-    void loadTask(true);
-    void loadSummary();
+    const timerId = window.setTimeout(() => {
+      void loadTask(true);
+      void loadSummary();
+    }, 0);
+    return () => window.clearTimeout(timerId);
   }, [loadSummary, loadTask, taskId]);
 
   const taskState = useMemo(() => parseTaskState(task?.status), [task?.status]);
@@ -255,7 +258,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!taskId) return;
-    void loadResults();
+    const timerId = window.setTimeout(() => {
+      void loadResults();
+    }, 0);
+    return () => window.clearTimeout(timerId);
   }, [loadResults, taskId]);
 
   const ruleOptions = useMemo(() => {

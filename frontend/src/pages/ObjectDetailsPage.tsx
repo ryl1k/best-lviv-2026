@@ -75,6 +75,7 @@ export default function ObjectDetailsPage() {
   const taskId = taskIdParam ?? '';
   const discrepancyId = Number(discIdParam);
   const isDiscIdValid = Number.isInteger(discrepancyId) && discrepancyId > 0;
+  const hasValidRouteParams = Boolean(taskId) && isDiscIdValid;
 
   const [discrepancy, setDiscrepancy] = useState<DiscrepancyResponse | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
@@ -117,14 +118,13 @@ export default function ObjectDetailsPage() {
   }, [discrepancyId, isDiscIdValid, taskId]);
 
   useEffect(() => {
-    if (!taskId || !isDiscIdValid) {
-      setLoading(false);
-      setError('Некоректне посилання: id задачі або id кейсу відсутній.');
-      return;
-    }
+    if (!hasValidRouteParams) return;
 
-    void loadDiscrepancy();
-  }, [isDiscIdValid, loadDiscrepancy, taskId]);
+    const timerId = window.setTimeout(() => {
+      void loadDiscrepancy();
+    }, 0);
+    return () => window.clearTimeout(timerId);
+  }, [hasValidRouteParams, loadDiscrepancy]);
 
   const detailsEntries = useMemo(() => {
     const details = discrepancy?.details;
@@ -149,6 +149,23 @@ export default function ObjectDetailsPage() {
     },
     [discrepancyId, isDiscIdValid, loadDiscrepancy, taskId],
   );
+
+  if (!hasValidRouteParams) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-6 py-10 md:px-10">
+        <button
+          type="button"
+          onClick={() => navigate('/upload')}
+          className="mb-4 inline-flex items-center gap-1 text-sm text-landing-ink-soft transition-colors hover:text-landing-ink"
+        >
+          <ArrowLeft size={14} /> Назад
+        </button>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Некоректне посилання: id задачі або id кейсу відсутній.
+        </div>
+      </main>
+    );
+  }
 
   if (loading) {
     return (

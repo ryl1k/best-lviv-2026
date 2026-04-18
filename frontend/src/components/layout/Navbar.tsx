@@ -44,7 +44,10 @@ export function Navbar() {
 
   // Close mobile menu on route change
   useEffect(() => {
-    setMobileOpen(false);
+    const timerId = window.setTimeout(() => {
+      setMobileOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timerId);
   }, [location.pathname]);
 
   useEffect(() => {
