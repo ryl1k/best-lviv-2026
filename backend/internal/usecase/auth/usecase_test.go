@@ -42,7 +42,7 @@ func TestLoginAndValidate(t *testing.T) {
 	t.Parallel()
 
 	repo := &stubUserRepo{}
-	uc := New("secret-key", time.Hour, repo)
+	uc := New("secret-key", time.Hour, repo, nil)
 
 	hash, err := uc.HashPassword("correct-password")
 	if err != nil {
@@ -86,7 +86,7 @@ func TestLoginReturnsInvalidCredentialsForUnknownUserOrWrongPassword(t *testing.
 		t.Parallel()
 
 		repo := &stubUserRepo{getByUsernameErr: entity.ErrUserNotFound}
-		uc := New("secret-key", time.Hour, repo)
+		uc := New("secret-key", time.Hour, repo, nil)
 
 		_, err := uc.Login(context.Background(), "alice", "secret")
 		if !errors.Is(err, entity.ErrInvalidCredentials) {
@@ -98,7 +98,7 @@ func TestLoginReturnsInvalidCredentialsForUnknownUserOrWrongPassword(t *testing.
 		t.Parallel()
 
 		repo := &stubUserRepo{}
-		uc := New("secret-key", time.Hour, repo)
+		uc := New("secret-key", time.Hour, repo, nil)
 
 		hash, err := uc.HashPassword("correct-password")
 		if err != nil {
@@ -121,7 +121,7 @@ func TestValidateRejectsTamperedToken(t *testing.T) {
 	t.Parallel()
 
 	repo := &stubUserRepo{}
-	uc := New("secret-key", time.Hour, repo)
+	uc := New("secret-key", time.Hour, repo, nil)
 
 	hash, err := uc.HashPassword("correct-password")
 	if err != nil {
