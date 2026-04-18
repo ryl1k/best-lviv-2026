@@ -1,27 +1,35 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import {
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
   Download,
   Filter,
   Info,
+  Loader2,
+  RefreshCw,
   Search,
   Upload,
 } from 'lucide-react';
 
 import {
+  getApiErrorMessage,
+  tasksApi,
+  type DiscrepancyResponse,
+  type SummaryResponse,
+  type TaskResponse,
+} from '@/api';
+import {
   RULES,
-  STATS,
-  formatCurrencyCompact,
   formatNumber,
   type ResolutionStatus,
   type Severity,
 } from '@/data/demo';
 
-interface GeneratedRow {
+interface DashboardRow {
   id: number;
   severity: Severity;
   ownerName: string;
@@ -32,33 +40,56 @@ interface GeneratedRow {
   status: ResolutionStatus;
 }
 
-function seededRand(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
+type StatusFilter = 'ALL' | 'NEW' | 'IN_REVIEW' | 'CONFIRMED' | 'DISMISSED';
+
+interface FilterState {
+  severities: Set<Severity>;
+  rules: Set<string>;
+  statusFilter: StatusFilter;
+  search: string;
 }
 
-const FIRST_NAMES = [
-  'Іван', 'Петро', 'Микола', 'Сергій', 'Андрій', 'Василь', 'Олег', 'Ярослав',
-  'Оксана', 'Марія', 'Наталія', 'Тетяна', 'Ольга', 'Людмила', 'Ірина', 'Галина',
-];
-const LAST_NAMES = [
-  'Грицина', 'Ковальчук', 'Бондаренко', 'Мельник', 'Шевченко', 'Лисенко',
-  'Олійник', 'Ткачук', 'Савченко', 'Павленко', 'Іваненко', 'Коваленко',
-  'Бойко', 'Гриценко', 'Руденко', 'Кравченко', 'Мороз', 'Клименко',
-];
-const PATRONYMICS = [
-  'Іванович', 'Петрович', 'Миколайович', 'Васильович', 'Олегович', 'Андрійович',
-  'Іванівна', 'Петрівна', 'Василівна', 'Олегівна', 'Андріївна', 'Миколаївна',
-];
+interface FilterRailProps {
+  filters: FilterState;
+  activeFilterCount: number;
+  severityCounts: Record<Severity, number>;
+  ruleOptions: Array<{ code: string; count: number }>;
+  onToggleSev: (severity: Severity) => void;
+  onToggleRule: (code: string) => void;
+  onStatus: (status: StatusFilter) => void;
+  onSearch: (value: string) => void;
+  onReset: () => void;
+}
 
-const STATUSES: ResolutionStatus[] = ['NEW', 'NEW', 'NEW', 'IN_REVIEW', 'CONFIRMED', 'DISMISSED'];
-const TOTAL_CASES = 4_027;
+interface TableProps {
+  rows: DashboardRow[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  taskId: string;
+  rowsLoading: boolean;
+  rowsError: string | null;
+  isExporting: boolean;
+  onPageChange: (page: number) => void;
+  onExport: () => void;
+}
+
+interface SummaryMetricsProps {
+  processed: number;
+  totalLand: number;
+  totalEstate: number;
+  matched: number;
+  discrepancies: number;
+  high: number;
+  medium: number;
+  low: number;
+  summaryError: string | null;
+}
+
 const PAGE_SIZE = 50;
-const TASK_ID = 'A4F2';
+const FETCH_PAGE_SIZE = 500;
 const DESKTOP_TABLE_GRID = '112px minmax(220px,1.15fr) minmax(220px,0.95fr) minmax(320px,1.45fr) 120px';
+
 const SEVERITY_TONES: Record<Severity, { dot: string; text: string; bar: string }> = {
   HIGH: {
     dot: 'oklch(0.58 0.10 26)',
@@ -76,6 +107,7 @@ const SEVERITY_TONES: Record<Severity, { dot: string; text: string; bar: string 
     bar: 'oklch(0.74 0.035 155)',
   },
 };
+
 const STATUS_TONES: Record<ResolutionStatus, { dot: string; text: string }> = {
   NEW: { dot: 'oklch(0.56 0.07 240)', text: 'oklch(0.30 0.02 240)' },
   IN_REVIEW: { dot: 'oklch(0.66 0.08 78)', text: 'oklch(0.38 0.025 78)' },
@@ -83,42 +115,12 @@ const STATUS_TONES: Record<ResolutionStatus, { dot: string; text: string }> = {
   DISMISSED: { dot: 'oklch(0.62 0.01 250)', text: 'oklch(0.40 0.01 250)' },
 };
 
-type StatusFilter = 'ALL' | 'NEW' | 'IN_REVIEW' | 'CONFIRMED' | 'DISMISSED';
-
-interface FilterState {
-  severities: Set<Severity>;
-  rules: Set<string>;
-  statusFilter: StatusFilter;
-  search: string;
-}
-
-interface FilterRailProps {
-  filters: FilterState;
-  activeFilterCount: number;
-  onToggleSev: (severity: Severity) => void;
-  onToggleRule: (code: string) => void;
-  onStatus: (status: StatusFilter) => void;
-  onSearch: (value: string) => void;
-  onReset: () => void;
-}
-
-interface TableProps {
-  rows: GeneratedRow[];
-  totalCount: number;
-  page: number;
-  onPageChange: (page: number) => void;
-}
-
 function getLocale(language: string) {
   return language === 'en' ? 'en-US' : 'uk-UA';
 }
 
 function getRuleName(t: TFunction, code: string) {
   return t(`tasks.rules.${code}.name`);
-}
-
-function getRuleDescriptionTemplates(t: TFunction, code: string) {
-  return t(`tasks.ruleDescriptions.${code}`, { returnObjects: true }) as string[];
 }
 
 function getSeverityLabel(t: TFunction, severity: Severity) {
@@ -134,80 +136,95 @@ function getStatusLabel(t: TFunction, status: ResolutionStatus) {
   return t('tasks.status.dismissed');
 }
 
-function generateRows(t: TFunction): GeneratedRow[] {
-  const rand = seededRand(42);
-  const rows: GeneratedRow[] = [];
+function mapSeverity(value: string | undefined): Severity {
+  const normalized = (value ?? '').toUpperCase();
+  if (normalized === 'HIGH') return 'HIGH';
+  if (normalized === 'MEDIUM') return 'MEDIUM';
+  return 'LOW';
+}
 
-  rows.push({
-    id: 1847,
-    severity: 'HIGH',
-    ownerName: 'Грицина Іван Іванович',
-    taxId: '3556083731',
-    ruleCode: 'R01',
-    ruleName: getRuleName(t, 'R01'),
-    description: t('tasks.seedCase.description'),
-    status: 'NEW',
-  });
+function mapStatus(value: string | undefined): ResolutionStatus {
+  const normalized = (value ?? '').toUpperCase();
+  if (normalized === 'IN_REVIEW') return 'IN_REVIEW';
+  if (normalized === 'CONFIRMED') return 'CONFIRMED';
+  if (normalized === 'DISMISSED') return 'DISMISSED';
+  return 'NEW';
+}
 
-  const ruleWeights = [
-    { code: 'R01', weight: 3708, severity: 'HIGH' as Severity },
-    { code: 'R02', weight: 177, severity: 'HIGH' as Severity },
-    { code: 'R03', weight: 470, severity: 'MEDIUM' as Severity },
-    { code: 'R04', weight: 2673, severity: 'LOW' as Severity },
-    { code: 'R05', weight: 1, severity: 'MEDIUM' as Severity },
-    { code: 'R06', weight: 16, severity: 'MEDIUM' as Severity },
-    { code: 'R07', weight: 44, severity: 'LOW' as Severity },
-  ];
-  const totalWeight = ruleWeights.reduce((sum, rule) => sum + rule.weight, 0);
+function parseTaskState(status: string | undefined): 'pending' | 'done' | 'failed' {
+  const normalized = (status ?? '').trim().toLowerCase();
 
-  for (let index = 1; index < 50; index += 1) {
-    const r = rand();
-    let acc = 0;
-    let selectedRule = ruleWeights[0];
-
-    for (const rule of ruleWeights) {
-      acc += rule.weight / totalWeight;
-      if (r <= acc) {
-        selectedRule = rule;
-        break;
-      }
-    }
-
-    const firstName = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
-    const lastName = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
-    const patronymic = PATRONYMICS[Math.floor(rand() * PATRONYMICS.length)];
-    const ownerName = `${lastName} ${firstName} ${patronymic}`;
-    const taxIdRaw = Math.floor(rand() * 9_000_000_000 + 1_000_000_000);
-    const taxId = selectedRule.code === 'R04' && rand() < 0.3 ? '' : String(taxIdRaw);
-
-    const templates = getRuleDescriptionTemplates(t, selectedRule.code);
-    let description = templates[Math.floor(rand() * templates.length)];
-    const year = 2012 + Math.floor(rand() * 10);
-    const month = String(1 + Math.floor(rand() * 12)).padStart(2, '0');
-    const day = String(1 + Math.floor(rand() * 28)).padStart(2, '0');
-
-    description = description
-      .replace('{date}', `${day}.${month}.${year}`)
-      .replace('{n}', String(1 + Math.floor(rand() * 4)))
-      .replace(
-        '{cn}',
-        `4624884200:0${Math.floor(rand() * 9)}:000:${String(Math.floor(rand() * 9000) + 1000).padStart(4, '0')}`,
-      )
-      .replace('{short}', `${lastName} ${firstName[0]}.${patronymic[0]}.`);
-
-    rows.push({
-      id: 1848 + index,
-      severity: selectedRule.severity,
-      ownerName,
-      taxId,
-      ruleCode: selectedRule.code,
-      ruleName: getRuleName(t, selectedRule.code),
-      description,
-      status: STATUSES[Math.floor(rand() * STATUSES.length)],
-    });
+  if (
+    normalized.includes('fail') ||
+    normalized.includes('error') ||
+    normalized.includes('cancel')
+  ) {
+    return 'failed';
   }
 
-  return rows;
+  if (
+    normalized.includes('done') ||
+    normalized.includes('complete') ||
+    normalized.includes('finish') ||
+    normalized.includes('success')
+  ) {
+    return 'done';
+  }
+
+  return 'pending';
+}
+
+function formatDateTime(value: string | undefined, locale: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function countFromMap(
+  map: Record<string, number> | undefined,
+  keys: string[],
+  fallbackRows: DashboardRow[],
+  severity: Severity,
+): number {
+  if (map) {
+    for (const key of keys) {
+      if (typeof map[key] === 'number') return map[key];
+    }
+  }
+
+  return fallbackRows.filter((row) => row.severity === severity).length;
+}
+
+async function fetchAllResults(taskId: string): Promise<DiscrepancyResponse[]> {
+  const items: DiscrepancyResponse[] = [];
+  let page = 1;
+  let total = Number.POSITIVE_INFINITY;
+
+  while (items.length < total) {
+    const response = await tasksApi.getResults(taskId, {
+      page,
+      page_size: FETCH_PAGE_SIZE,
+    });
+    const batch = response.data.items ?? [];
+    total = response.data.total ?? batch.length;
+    items.push(...batch);
+
+    if (batch.length === 0 || batch.length < FETCH_PAGE_SIZE) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return items;
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -220,15 +237,21 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 function QuietButton({
   children,
+  onClick,
+  disabled = false,
   strong = false,
 }: {
   children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
   strong?: boolean;
 }) {
   return (
     <button
       type="button"
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         strong
           ? 'border-landing-ink bg-landing-ink text-landing-paper hover:bg-landing-ink-soft'
           : 'border-landing-border-strong bg-transparent text-landing-ink hover:bg-landing-surface'
@@ -314,7 +337,27 @@ function ReportMeta({
   );
 }
 
-function TaskHeader() {
+function TaskHeader({
+  taskId,
+  task,
+  taskState,
+  taskLoading,
+  taskError,
+  isExporting,
+  onExport,
+  onRefresh,
+  onNewAnalysis,
+}: {
+  taskId: string;
+  task: TaskResponse | null;
+  taskState: 'pending' | 'done' | 'failed';
+  taskLoading: boolean;
+  taskError: string | null;
+  isExporting: boolean;
+  onExport: () => void;
+  onRefresh: () => void;
+  onNewAnalysis: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const locale = getLocale(i18n.resolvedLanguage ?? 'uk');
   const files = [t('tasks.files.land'), t('tasks.files.estate')];
@@ -323,7 +366,7 @@ function TaskHeader() {
     <section className="overflow-hidden border border-landing-border bg-landing-paper">
       <div className="grid gap-px bg-landing-border xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="bg-landing-paper p-6 md:p-8">
-          <SectionLabel>{t('tasks.header.sessionLabel', { id: TASK_ID })}</SectionLabel>
+          <SectionLabel>{t('tasks.header.sessionLabel', { id: taskId })}</SectionLabel>
           <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-landing-ink md:text-4xl">
             {t('tasks.header.title')}
           </h1>
@@ -332,13 +375,20 @@ function TaskHeader() {
           </p>
 
           <dl className="mt-8 grid gap-5 sm:grid-cols-2">
-            <ReportMeta label={t('tasks.header.completed')} value={t('tasks.header.completedValue')} />
+            <ReportMeta
+              label={t('tasks.header.completed')}
+              value={formatDateTime(task?.completed_at, locale)}
+            />
             <ReportMeta
               label={t('tasks.header.session')}
-              value={t('tasks.header.sessionValue', {
-                id: TASK_ID,
-                count: formatNumber(STATS.totalRecords, locale),
-              })}
+              value={(
+                <div className="space-y-1">
+                  <div>{taskId}</div>
+                  <div className="text-landing-ink-soft">
+                    {taskState === 'done' ? 'Завершено' : taskState === 'failed' ? 'Помилка' : 'В обробці'}
+                  </div>
+                </div>
+              )}
             />
             <ReportMeta
               label={t('tasks.header.inputFiles')}
@@ -352,21 +402,41 @@ function TaskHeader() {
                 </div>
               )}
             />
-            <ReportMeta label={t('tasks.header.reviewFocus')} value={t('tasks.header.reviewFocusValue')} />
+            <ReportMeta
+              label={t('tasks.header.reviewFocus')}
+              value={formatDateTime(task?.created_at, locale)}
+            />
           </dl>
+
+          {taskLoading && (
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-landing-border bg-landing-surface px-3 py-1.5 text-sm text-landing-ink-soft">
+              <Loader2 size={14} className="animate-spin" />
+              Оновлюю статус аналізу
+            </div>
+          )}
+
+          {taskError && (
+            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {taskError}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col justify-between gap-6 bg-landing-surface p-6 md:p-8">
           <div>
             <SectionLabel>{t('tasks.actions.sectionLabel')}</SectionLabel>
             <div className="mt-5 flex flex-col gap-2.5">
-              <QuietButton strong>
-                <Download size={15} />
+              <QuietButton strong onClick={onExport} disabled={isExporting}>
+                {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
                 {t('tasks.actions.downloadReport')}
               </QuietButton>
-              <QuietButton>
+              <QuietButton onClick={onNewAnalysis}>
                 <Upload size={15} />
                 {t('tasks.actions.newAnalysis')}
+              </QuietButton>
+              <QuietButton onClick={onRefresh}>
+                <RefreshCw size={15} />
+                Оновити дані
               </QuietButton>
             </div>
           </div>
@@ -374,7 +444,11 @@ function TaskHeader() {
           <div className="border-t border-landing-border pt-5">
             <SectionLabel>{t('tasks.overview.label')}</SectionLabel>
             <p className="mt-3 text-sm leading-relaxed text-landing-ink-soft">
-              {t('tasks.overview.description')}
+              {task?.error_message
+                ? `Помилка бекенду: ${task.error_message}`
+                : taskState === 'pending'
+                  ? 'Аналіз ще виконується. Дані оновлюються автоматично.'
+                  : t('tasks.overview.description')}
             </p>
           </div>
         </div>
@@ -383,38 +457,47 @@ function TaskHeader() {
   );
 }
 
-function SummaryMetrics() {
+function SummaryMetrics({
+  processed,
+  totalLand,
+  totalEstate,
+  matched,
+  discrepancies,
+  high,
+  medium,
+  low,
+  summaryError,
+}: SummaryMetricsProps) {
   const { t, i18n } = useTranslation();
   const locale = getLocale(i18n.resolvedLanguage ?? 'uk');
-  const estimatedLoss = formatCurrencyCompact(STATS.estimatedLoss, locale);
 
   const metrics = [
     {
       label: t('tasks.summary.processed.label'),
-      value: formatNumber(STATS.totalRecords, locale),
+      value: formatNumber(processed, locale),
       note: t('tasks.summary.processed.note', {
-        land: formatNumber(STATS.totalLand, locale),
-        estate: formatNumber(STATS.totalEstate, locale),
+        land: formatNumber(totalLand, locale),
+        estate: formatNumber(totalEstate, locale),
       }),
     },
     {
       label: t('tasks.summary.matched.label'),
-      value: formatNumber(STATS.matchedOwners, locale),
+      value: formatNumber(matched, locale),
       note: t('tasks.summary.matched.note'),
     },
     {
       label: t('tasks.summary.discrepancies.label'),
-      value: formatNumber(STATS.totalDiscrepancies, locale),
+      value: formatNumber(discrepancies, locale),
       note: t('tasks.summary.discrepancies.note', {
-        count: formatNumber(STATS.highSeverity, locale),
+        count: formatNumber(high, locale),
       }),
       accent: true,
     },
     {
       label: t('tasks.summary.losses.label'),
-      value: estimatedLoss,
-      note: t('tasks.summary.losses.note'),
-      extra: <InfoTooltip text={t('tasks.summary.losses.tooltip')} />,
+      value: `${formatNumber(medium, locale)} / ${formatNumber(low, locale)}`,
+      note: 'MEDIUM / LOW',
+      extra: <InfoTooltip text={summaryError ?? 'Підсумок побудовано на даних поточного завдання.'} />,
     },
   ];
 
@@ -438,16 +521,14 @@ function SummaryMetrics() {
   );
 }
 
-function RuleBreakdown() {
+function RuleBreakdown({
+  rules,
+}: {
+  rules: Array<{ code: string; name: string; count: number; severity: Severity }>;
+}) {
   const { t, i18n } = useTranslation();
   const locale = getLocale(i18n.resolvedLanguage ?? 'uk');
-  const ruleBreakdown = useMemo(
-    () =>
-      RULES.map((rule) => ({ ...rule, name: getRuleName(t, rule.code) }))
-        .sort((a, b) => b.count - a.count),
-    [t],
-  );
-  const maxRuleCount = ruleBreakdown[0]?.count ?? 1;
+  const maxRuleCount = rules[0]?.count ?? 1;
 
   return (
     <section className="overflow-hidden border border-landing-border bg-landing-paper">
@@ -464,7 +545,7 @@ function RuleBreakdown() {
       </div>
 
       <div className="divide-y divide-landing-border">
-        {ruleBreakdown.map((rule) => {
+        {rules.map((rule) => {
           const width = (rule.count / maxRuleCount) * 100;
 
           return (
@@ -568,6 +649,8 @@ function FilterOption({
 function FilterRail({
   filters,
   activeFilterCount,
+  severityCounts,
+  ruleOptions,
   onToggleSev,
   onToggleRule,
   onStatus,
@@ -577,9 +660,9 @@ function FilterRail({
   const { t, i18n } = useTranslation();
   const locale = getLocale(i18n.resolvedLanguage ?? 'uk');
   const severityFilters = [
-    { key: 'HIGH' as const, label: t('tasks.severity.high'), count: STATS.highSeverity },
-    { key: 'MEDIUM' as const, label: t('tasks.severity.medium'), count: STATS.mediumSeverity },
-    { key: 'LOW' as const, label: t('tasks.severity.low'), count: STATS.lowSeverity },
+    { key: 'HIGH' as const, label: t('tasks.severity.high'), count: severityCounts.HIGH },
+    { key: 'MEDIUM' as const, label: t('tasks.severity.medium'), count: severityCounts.MEDIUM },
+    { key: 'LOW' as const, label: t('tasks.severity.low'), count: severityCounts.LOW },
   ];
   const statusOptions = [
     { value: 'ALL' as const, label: t('tasks.filters.statusAll') },
@@ -588,10 +671,6 @@ function FilterRail({
     { value: 'CONFIRMED' as const, label: t('tasks.status.confirmed') },
     { value: 'DISMISSED' as const, label: t('tasks.status.dismissed') },
   ];
-  const localizedRules = useMemo(
-    () => RULES.map((rule) => ({ ...rule, name: getRuleName(t, rule.code) })),
-    [t],
-  );
 
   return (
     <aside className="w-full xl:sticky xl:top-24 xl:w-[240px] xl:self-start" aria-label={t('tasks.filters.panelAria')}>
@@ -642,7 +721,7 @@ function FilterRail({
 
           <FilterSection title={t('tasks.filters.ruleType')} className="md:col-span-2 xl:col-span-1">
             <div className="space-y-0.5">
-              {localizedRules.map((rule) => (
+              {ruleOptions.map((rule) => (
                 <FilterOption
                   key={rule.code}
                   active={filters.rules.has(rule.code)}
@@ -650,7 +729,7 @@ function FilterRail({
                   label={(
                     <span className="flex min-w-0 items-start gap-2.5">
                       <span className="pt-0.5 font-mono text-[11px] text-[var(--accent)]">{rule.code}</span>
-                      <span className="min-w-0 text-sm leading-5 text-landing-ink">{rule.name}</span>
+                      <span className="min-w-0 text-sm leading-5 text-landing-ink">{getRuleName(t, rule.code)}</span>
                     </span>
                   )}
                   suffix={formatNumber(rule.count, locale)}
@@ -685,13 +764,24 @@ function FilterRail({
   );
 }
 
-function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps) {
+function DiscrepanciesTable({
+  rows,
+  totalCount,
+  page,
+  pageSize,
+  taskId,
+  rowsLoading,
+  rowsError,
+  isExporting,
+  onPageChange,
+  onExport,
+}: TableProps) {
   const { t, i18n } = useTranslation();
   const locale = getLocale(i18n.resolvedLanguage ?? 'uk');
   const navigate = useNavigate();
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const start = (page - 1) * PAGE_SIZE + 1;
-  const end = Math.min(page * PAGE_SIZE, totalCount);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const start = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalCount);
 
   const pageButtons = useMemo<(number | '...')[]>(() => {
     if (totalPages <= 5) {
@@ -702,8 +792,8 @@ function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps
   }, [totalPages]);
 
   const handleRow = useCallback(
-    (id: number) => navigate(`/tasks/a4f2/discrepancies/${id}`),
-    [navigate],
+    (id: number) => navigate(`/tasks/${taskId}/discrepancies/${id}`),
+    [navigate, taskId],
   );
 
   const handleRowKeyDown = useCallback(
@@ -740,61 +830,76 @@ function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <QuietButton>
-              <Download size={14} />
+            <QuietButton onClick={onExport} disabled={isExporting}>
+              {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               {t('tasks.actions.exportCsv')}
             </QuietButton>
-            <QuietButton>
-              <Download size={14} />
-              {t('tasks.actions.exportPdf')}
-            </QuietButton>
           </div>
         </div>
       </div>
 
-      <div className="md:hidden">
-        {rows.map((row) => (
-          <MobileCaseCard key={row.id} row={row} onOpen={() => handleRow(row.id)} />
-        ))}
-      </div>
-
-      <div className="hidden md:block xl:hidden">
-        {rows.map((row) => (
-          <TabletCaseRow key={row.id} row={row} onOpen={() => handleRow(row.id)} />
-        ))}
-      </div>
-
-      <div className="hidden xl:block">
-        <div className="overflow-x-auto">
-          <div className="min-w-[920px]">
-            <div
-              className="grid border-b border-landing-border bg-landing-surface px-6 py-3.5"
-              style={{ gridTemplateColumns: DESKTOP_TABLE_GRID }}
-            >
-              {[
-                t('tasks.table.headers.case'),
-                t('tasks.table.headers.owner'),
-                t('tasks.table.headers.rule'),
-                t('tasks.table.headers.description'),
-                t('tasks.table.headers.status'),
-              ].map((label) => (
-                <div key={label} className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-                  {label}
-                </div>
-              ))}
-            </div>
-
+      {rowsLoading ? (
+        <div className="flex items-center gap-2 px-6 py-8 text-sm text-landing-ink-soft">
+          <Loader2 size={14} className="animate-spin" />
+          Завантажую кейси
+        </div>
+      ) : rowsError ? (
+        <div className="px-6 py-8">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {rowsError}
+          </div>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="px-6 py-8 text-sm text-landing-ink-soft">
+          Немає кейсів для поточного набору фільтрів.
+        </div>
+      ) : (
+        <>
+          <div className="md:hidden">
             {rows.map((row) => (
-              <DesktopCaseRow
-                key={row.id}
-                row={row}
-                onOpen={() => handleRow(row.id)}
-                onKeyDown={(event) => handleRowKeyDown(event, row.id)}
-              />
+              <MobileCaseCard key={row.id} row={row} onOpen={() => handleRow(row.id)} />
             ))}
           </div>
-        </div>
-      </div>
+
+          <div className="hidden md:block xl:hidden">
+            {rows.map((row) => (
+              <TabletCaseRow key={row.id} row={row} onOpen={() => handleRow(row.id)} />
+            ))}
+          </div>
+
+          <div className="hidden xl:block">
+            <div className="overflow-x-auto">
+              <div className="min-w-[920px]">
+                <div
+                  className="grid border-b border-landing-border bg-landing-surface px-6 py-3.5"
+                  style={{ gridTemplateColumns: DESKTOP_TABLE_GRID }}
+                >
+                  {[
+                    t('tasks.table.headers.case'),
+                    t('tasks.table.headers.owner'),
+                    t('tasks.table.headers.rule'),
+                    t('tasks.table.headers.description'),
+                    t('tasks.table.headers.status'),
+                  ].map((label) => (
+                    <div key={label} className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                {rows.map((row) => (
+                  <DesktopCaseRow
+                    key={row.id}
+                    row={row}
+                    onOpen={() => handleRow(row.id)}
+                    onKeyDown={(event) => handleRowKeyDown(event, row.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-3 border-t border-landing-border px-5 py-4 text-sm text-landing-ink-soft md:flex-row md:items-center md:justify-between md:px-6">
         <p>
@@ -844,7 +949,7 @@ function TabletCaseRow({
   row,
   onOpen,
 }: {
-  row: GeneratedRow;
+  row: DashboardRow;
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -908,7 +1013,7 @@ function DesktopCaseRow({
   onOpen,
   onKeyDown,
 }: {
-  row: GeneratedRow;
+  row: DashboardRow;
   onOpen: () => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
 }) {
@@ -961,7 +1066,7 @@ function MobileCaseCard({
   row,
   onOpen,
 }: {
-  row: GeneratedRow;
+  row: DashboardRow;
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -1031,8 +1136,14 @@ function PageButton({
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+  const { id: taskIdParam } = useParams();
   const { t } = useTranslation();
-  const generatedRows = useMemo(() => generateRows(t), [t]);
+  const taskId = taskIdParam ?? '';
+
+  const [task, setTask] = useState<TaskResponse | null>(null);
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [allRows, setAllRows] = useState<DashboardRow[]>([]);
   const [filters, setFilters] = useState<FilterState>(() => ({
     severities: new Set<Severity>(['HIGH', 'MEDIUM', 'LOW']),
     rules: new Set(RULES.map((rule) => rule.code)),
@@ -1040,6 +1151,96 @@ export default function DashboardPage() {
     search: '',
   }));
   const [page, setPage] = useState(1);
+  const [taskLoading, setTaskLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [rowsLoading, setRowsLoading] = useState(true);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [rowsError, setRowsError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const loadTask = useCallback(async (withSpinner: boolean) => {
+    if (!taskId) return;
+    if (withSpinner) setTaskLoading(true);
+
+    try {
+      const response = await tasksApi.getTask(taskId);
+      setTask(response.data);
+      setTaskError(null);
+    } catch (error) {
+      setTaskError(getApiErrorMessage(error, 'Не вдалося отримати статус завдання.'));
+    } finally {
+      if (withSpinner) setTaskLoading(false);
+    }
+  }, [taskId]);
+
+  const loadSummary = useCallback(async () => {
+    if (!taskId) return;
+    setSummaryLoading(true);
+
+    try {
+      const response = await tasksApi.getSummary(taskId);
+      setSummary(response.data);
+      setSummaryError(null);
+    } catch (error) {
+      setSummaryError(getApiErrorMessage(error, 'Підсумок аналізу поки недоступний.'));
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [taskId]);
+
+  const loadRows = useCallback(async () => {
+    if (!taskId) return;
+    setRowsLoading(true);
+
+    try {
+      const response = await fetchAllResults(taskId);
+      setAllRows(
+        response.map((row) => ({
+          id: row.id,
+          severity: mapSeverity(row.severity),
+          ownerName: row.owner_name || '—',
+          taxId: row.tax_id || '',
+          ruleCode: row.rule_code || '—',
+          ruleName: row.rule_code ? getRuleName(t, row.rule_code) : '—',
+          description: row.description || '—',
+          status: mapStatus(row.resolution_status),
+        })),
+      );
+      setRowsError(null);
+    } catch (error) {
+      setAllRows([]);
+      setRowsError(getApiErrorMessage(error, 'Не вдалося завантажити список кейсів.'));
+    } finally {
+      setRowsLoading(false);
+    }
+  }, [t, taskId]);
+
+  useEffect(() => {
+    if (!taskId) return;
+
+    const timerId = window.setTimeout(() => {
+      void loadTask(true);
+      void loadSummary();
+      void loadRows();
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [loadRows, loadSummary, loadTask, taskId]);
+
+  const taskState = useMemo(() => parseTaskState(task?.status), [task?.status]);
+
+  useEffect(() => {
+    if (!taskId || taskState !== 'pending') return;
+
+    const intervalId = setInterval(() => {
+      void loadTask(false);
+      void loadSummary();
+      void loadRows();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [loadRows, loadSummary, loadTask, taskId, taskState]);
 
   const handleToggleSev = useCallback((severity: Severity) => {
     setFilters((prev) => {
@@ -1081,10 +1282,10 @@ export default function DashboardPage() {
     setPage(1);
   }, []);
 
-  const filtered = useMemo<GeneratedRow[]>(() => {
+  const filteredRows = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
 
-    return generatedRows.filter((row) => {
+    return allRows.filter((row) => {
       if (!filters.severities.has(row.severity)) return false;
       if (!filters.rules.has(row.ruleCode)) return false;
       if (filters.statusFilter !== 'ALL' && row.status !== filters.statusFilter) return false;
@@ -1096,18 +1297,11 @@ export default function DashboardPage() {
 
       return true;
     });
-  }, [filters, generatedRows]);
+  }, [allRows, filters]);
 
-  const isDefault =
-    filters.severities.size === 3 &&
-    filters.rules.size === RULES.length &&
-    filters.statusFilter === 'ALL' &&
-    filters.search.trim() === '';
-
-  const totalCount = isDefault ? TOTAL_CASES : filtered.length;
   const pagedRows = useMemo(
-    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [filtered, page],
+    () => filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredRows, page],
   );
 
   const activeFilterCount = [
@@ -1117,18 +1311,121 @@ export default function DashboardPage() {
     filters.search.trim() !== '',
   ].filter(Boolean).length;
 
+  const severityCounts = useMemo<Record<Severity, number>>(() => ({
+    HIGH: allRows.filter((row) => row.severity === 'HIGH').length,
+    MEDIUM: allRows.filter((row) => row.severity === 'MEDIUM').length,
+    LOW: allRows.filter((row) => row.severity === 'LOW').length,
+  }), [allRows]);
+
+  const ruleOptions = useMemo(
+    () => RULES.map((rule) => ({
+      code: rule.code,
+      count: summary?.by_rule?.[rule.code] ?? allRows.filter((row) => row.ruleCode === rule.code).length,
+    })),
+    [allRows, summary?.by_rule],
+  );
+
+  const ruleBreakdown = useMemo(
+    () =>
+      RULES.map((rule) => ({
+        code: rule.code,
+        name: getRuleName(t, rule.code),
+        count: summary?.by_rule?.[rule.code] ?? allRows.filter((row) => row.ruleCode === rule.code).length,
+        severity: rule.severity,
+      })).sort((a, b) => b.count - a.count),
+    [allRows, summary?.by_rule, t],
+  );
+
+  const totalLand = task?.stats?.total_land ?? 0;
+  const totalEstate = task?.stats?.total_estate ?? 0;
+  const processed = totalLand + totalEstate;
+  const matched = task?.stats?.matched ?? 0;
+  const totalDiscrepancies = summary?.total_count ?? allRows.length;
+
+  const highCount = countFromMap(summary?.by_severity, ['HIGH', 'high'], allRows, 'HIGH');
+  const mediumCount = countFromMap(summary?.by_severity, ['MEDIUM', 'medium'], allRows, 'MEDIUM');
+  const lowCount = countFromMap(summary?.by_severity, ['LOW', 'low'], allRows, 'LOW');
+
+  const handleExport = useCallback(async () => {
+    if (!taskId) return;
+
+    setIsExporting(true);
+    try {
+      const { blob, filename } = await tasksApi.exportTaskCsv(taskId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setRowsError(getApiErrorMessage(error, 'Не вдалося експортувати CSV.'));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [taskId]);
+
+  if (!taskId) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-[900px] px-6 py-10 md:px-10 md:py-12">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            Некоректне посилання: id завдання відсутній.
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1400px] px-6 py-10 md:px-10 md:py-12">
         <div className="space-y-8">
-          <TaskHeader />
-          <SummaryMetrics />
-          <RuleBreakdown />
+          <TaskHeader
+            taskId={taskId}
+            task={task}
+            taskState={taskState}
+            taskLoading={taskLoading}
+            taskError={taskError}
+            isExporting={isExporting}
+            onExport={() => void handleExport()}
+            onRefresh={() => {
+              void loadTask(true);
+              void loadSummary();
+              void loadRows();
+            }}
+            onNewAnalysis={() => navigate('/upload')}
+          />
+
+          <SummaryMetrics
+            processed={processed}
+            totalLand={totalLand}
+            totalEstate={totalEstate}
+            matched={matched}
+            discrepancies={totalDiscrepancies}
+            high={highCount}
+            medium={mediumCount}
+            low={lowCount}
+            summaryError={summaryLoading ? 'Оновлюю підсумок.' : summaryError}
+          />
+
+          <RuleBreakdown rules={ruleBreakdown} />
+
+          {taskState === 'failed' && (
+            <div className="inline-flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <AlertCircle size={14} className="mt-0.5" />
+              Завдання завершилось з помилкою. Перевірте вхідні дані та запустіть аналіз повторно.
+            </div>
+          )}
 
           <section className="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,1fr)]" aria-label={t('tasks.workspaceAria')}>
             <FilterRail
               filters={filters}
               activeFilterCount={activeFilterCount}
+              severityCounts={severityCounts}
+              ruleOptions={ruleOptions}
               onToggleSev={handleToggleSev}
               onToggleRule={handleToggleRule}
               onStatus={handleStatus}
@@ -1137,9 +1434,15 @@ export default function DashboardPage() {
             />
             <DiscrepanciesTable
               rows={pagedRows}
-              totalCount={totalCount}
+              totalCount={filteredRows.length}
               page={page}
+              pageSize={PAGE_SIZE}
+              taskId={taskId}
+              rowsLoading={rowsLoading}
+              rowsError={rowsError}
+              isExporting={isExporting}
               onPageChange={setPage}
+              onExport={() => void handleExport()}
             />
           </section>
         </div>

@@ -12,18 +12,19 @@ export const STATS = {
 
 export interface RuleBreakdown {
   code: string;
+  name: string;
   count: number;
   severity: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export const RULES: RuleBreakdown[] = [
-  { code: 'R01', count: 3708, severity: 'HIGH' },
-  { code: 'R02', count: 177, severity: 'HIGH' },
-  { code: 'R03', count: 470, severity: 'MEDIUM' },
-  { code: 'R04', count: 2673, severity: 'LOW' },
-  { code: 'R05', count: 1, severity: 'MEDIUM' },
-  { code: 'R06', count: 16, severity: 'MEDIUM' },
-  { code: 'R07', count: 44, severity: 'LOW' },
+  { code: 'R01', name: 'Припинене право, активний землекористувач', count: 3708, severity: 'HIGH' },
+  { code: 'R02', name: 'Невідповідність призначення землі', count: 177, severity: 'HIGH' },
+  { code: 'R03', name: 'Земля без нерухомості', count: 470, severity: 'MEDIUM' },
+  { code: 'R04', name: 'Невалідний податковий номер', count: 2673, severity: 'LOW' },
+  { code: 'R05', name: 'Дублікати записів', count: 1, severity: 'MEDIUM' },
+  { code: 'R06', name: 'Розбіжність імен', count: 16, severity: 'MEDIUM' },
+  { code: 'R07', name: 'Неповний запис', count: 44, severity: 'LOW' },
 ];
 
 export type Severity = 'HIGH' | 'MEDIUM' | 'LOW';

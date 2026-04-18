@@ -1,27 +1,34 @@
 import { useState, type FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 import { authApi, getApiErrorMessage } from '@/api';
 
-interface LoginLocationState {
-  registered?: boolean;
+function buildUsername(fullName: string, email: string): string {
+  const normalized = fullName.trim();
+  if (normalized.length > 0) {
+    return normalized.replace(/\s+/g, ' ');
+  }
+
+  return email.trim().split('@')[0] || 'revela-user';
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isEnglish = i18n.resolvedLanguage === 'en';
-  const locationState = (location.state as LoginLocationState | null) ?? null;
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0;
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const canSubmit = fullName.trim().length > 0 && email.trim().length > 0 && passwordsMatch;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,23 +37,21 @@ export default function LoginPage() {
     setSubmitError(null);
     setLoading(true);
     try {
-      await authApi.loginAndLoadUser({
+      await authApi.signup({
+        username: buildUsername(fullName, email),
         email: email.trim(),
         password,
       });
-      navigate('/upload');
+      navigate('/login', { state: { registered: true } });
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, 'Не вдалося виконати вхід. Перевірте дані та спробуйте ще раз.'));
+      setSubmitError(getApiErrorMessage(error, 'Не вдалося створити акаунт. Спробуйте ще раз.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{ background: 'var(--background)' }}
-    >
+    <div className="min-h-screen flex" style={{ background: 'var(--background)' }}>
       <div
         className="hidden lg:flex flex-col justify-between"
         style={{
@@ -71,35 +76,21 @@ export default function LoginPage() {
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 64 }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 3,
-                background: '#fff',
-                display: 'inline-block',
-              }}
-            />
+            <span style={{ width: 8, height: 8, borderRadius: 3, background: '#fff', display: 'inline-block' }} />
             <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' }}>
               Revela
             </span>
           </div>
 
-          <h1
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.2,
-              marginBottom: 20,
-            }}
-          >
-            {t('login.brandHeadingLineOne')}
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 20 }}>
+            {isEnglish ? 'Create access.' : 'Створіть доступ.'}
             <br />
-            {t('login.brandHeadingLineTwo')}
+            {isEnglish ? 'Keep the same workflow.' : 'Залиштесь у тій самій робочій зоні.'}
           </h1>
           <p style={{ fontSize: 15, opacity: 0.8, lineHeight: 1.6, maxWidth: 340 }}>
-            {t('login.brandDescription')}
+            {isEnglish
+              ? 'Register a municipal operator account and continue working inside the same audit interface.'
+              : 'Зареєструйте обліковий запис оператора громади та працюйте в тій самій аудиторській поверхні.'}
           </p>
         </div>
 
@@ -114,17 +105,17 @@ export default function LoginPage() {
             }}
           >
             <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-              42 038
+              10 хв
             </div>
             <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
-              {t('login.processedLabel')}
+              {isEnglish ? 'average to first audit launch' : 'середній час до першого запуску аудиту'}
             </div>
           </div>
 
           <div className="flex gap-6" style={{ fontSize: 12, opacity: 0.5 }}>
-            <span>{t('login.footerCopyright')}</span>
+            <span>© Revela</span>
             <span>·</span>
-            <span>{t('login.footerEvent')}</span>
+            <span>INNOVATE Hackathon 2026</span>
           </div>
         </div>
       </div>
@@ -132,66 +123,53 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center" style={{ padding: 32 }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           <div className="lg:hidden flex items-center gap-2" style={{ marginBottom: 40 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 2,
-                background: 'var(--accent)',
-                display: 'inline-block',
-              }}
-            />
-            <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
-              Revela
-            </span>
+            <span style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--accent)', display: 'inline-block' }} />
+            <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>Revela</span>
           </div>
 
           <div style={{ marginBottom: 32 }}>
-            <h2
-              style={{
-                fontSize: 24,
-                fontWeight: 600,
-                letterSpacing: '-0.01em',
-                color: 'var(--text-primary)',
-                marginBottom: 8,
-              }}
-            >
-              {t('login.title')}
+            <h2 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--text-primary)', marginBottom: 8 }}>
+              {isEnglish ? 'Create account' : 'Створення акаунта'}
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-              {t('login.subtitle')}
+              {isEnglish ? 'Register to access audits and case review.' : 'Зареєструйтесь для доступу до аудитів та роботи з кейсами.'}
             </p>
           </div>
 
-          {locationState?.registered && (
-            <div
-              style={{
-                marginBottom: 16,
-                borderRadius: 8,
-                border: '1px solid #86EFAC',
-                background: '#F0FDF4',
-                color: '#166534',
-                padding: '10px 12px',
-                fontSize: 12,
-                lineHeight: 1.5,
-              }}
-            >
-              {isEnglish ? 'Account created. Sign in to continue.' : 'Акаунт створено. Тепер увійдіть у систему.'}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--text-secondary)',
-                  marginBottom: 6,
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {isEnglish ? 'Full name' : 'Імʼя та прізвище'}
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  if (submitError) setSubmitError(null);
                 }}
-              >
-                {t('login.emailLabel')}
+                placeholder={isEnglish ? 'Name Surname' : 'Імʼя Прізвище'}
+                autoComplete="name"
+                style={{
+                  width: '100%',
+                  height: 44,
+                  padding: '0 14px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  background: 'var(--surface)',
+                  fontSize: 14,
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  transition: 'border-color 150ms',
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {isEnglish ? 'Email' : 'Електронна пошта'}
               </label>
               <input
                 type="email"
@@ -200,7 +178,7 @@ export default function LoginPage() {
                   setEmail(e.target.value);
                   if (submitError) setSubmitError(null);
                 }}
-                placeholder={t('login.emailPlaceholder')}
+                placeholder="you@municipality.gov.ua"
                 autoComplete="email"
                 style={{
                   width: '100%',
@@ -219,17 +197,9 @@ export default function LoginPage() {
               />
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--text-secondary)',
-                  marginBottom: 6,
-                }}
-              >
-                {t('login.passwordLabel')}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {isEnglish ? 'Password' : 'Пароль'}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -239,8 +209,8 @@ export default function LoginPage() {
                     setPassword(e.target.value);
                     if (submitError) setSubmitError(null);
                   }}
-                  placeholder={t('login.passwordPlaceholder')}
-                  autoComplete="current-password"
+                  placeholder={isEnglish ? 'Enter password' : 'Введіть пароль'}
+                  autoComplete="new-password"
                   style={{
                     width: '100%',
                     height: 44,
@@ -258,8 +228,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+                  onClick={() => setShowPassword((value) => !value)}
                   style={{
                     position: 'absolute',
                     right: 12,
@@ -279,22 +248,66 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div style={{ textAlign: 'right', marginBottom: submitError ? 16 : 28 }}>
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--accent)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                {t('login.forgotPassword')}
-              </button>
+            <div style={{ marginBottom: confirmPassword.length > 0 && !passwordsMatch ? 8 : 20 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {isEnglish ? 'Confirm password' : 'Підтвердження пароля'}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (submitError) setSubmitError(null);
+                  }}
+                  placeholder={isEnglish ? 'Repeat password' : 'Повторіть пароль'}
+                  autoComplete="new-password"
+                  style={{
+                    width: '100%',
+                    height: 44,
+                    padding: '0 44px 0 14px',
+                    border: `1px solid ${confirmPassword.length > 0 && !passwordsMatch ? '#DC2626' : 'var(--border)'}`,
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    fontSize: 14,
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    transition: 'border-color 150ms',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = confirmPassword.length > 0 && !passwordsMatch ? '#DC2626' : 'var(--accent)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = confirmPassword.length > 0 && !passwordsMatch ? '#DC2626' : 'var(--border)';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((value) => !value)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    padding: 0,
+                    display: 'flex',
+                  }}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
+
+            {confirmPassword.length > 0 && !passwordsMatch && (
+              <div style={{ marginBottom: 12, color: '#DC2626', fontSize: 12 }}>
+                {isEnglish ? 'Passwords do not match.' : 'Паролі не співпадають.'}
+              </div>
+            )}
 
             {submitError && (
               <div
@@ -352,7 +365,7 @@ export default function LoginPage() {
                 />
               ) : (
                 <>
-                  {t('login.submit')} <ArrowRight size={16} />
+                  {isEnglish ? 'Create account' : 'Створити акаунт'} <ArrowRight size={16} />
                 </>
               )}
             </button>
@@ -361,10 +374,10 @@ export default function LoginPage() {
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
           <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-            {t('login.noAccount')}{' '}
+            {isEnglish ? 'Already have access?' : 'Вже є доступ?'}{' '}
             <button
               type="button"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
               style={{
                 background: 'none',
                 border: 'none',
@@ -375,7 +388,7 @@ export default function LoginPage() {
                 fontWeight: 500,
               }}
             >
-              {isEnglish ? 'Create an account' : 'Створити акаунт'}
+              {isEnglish ? 'Sign in' : 'Увійти'}
             </button>
           </p>
         </div>

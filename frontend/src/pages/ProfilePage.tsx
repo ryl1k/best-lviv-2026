@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BriefcaseBusiness, LogOut, Mail, MapPin, Phone, User } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+
+import { authApi } from '@/api';
 
 import {
   getProfilePageContent,
@@ -13,6 +16,7 @@ type PersonalValues = Record<ProfileFieldId, string>;
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const profilePageContent = useMemo(() => getProfilePageContent(t), [t]);
   const [personalOverrides, setPersonalOverrides] = useState<Partial<PersonalValues>>({});
   const [activeSection, setActiveSection] = useState<string>(
@@ -58,6 +62,10 @@ export default function ProfilePage() {
 
   const handleFieldChange = (fieldId: ProfileFieldId, value: string) => {
     setPersonalOverrides((current) => ({ ...current, [fieldId]: value }));
+  };
+  const handleLogout = () => {
+    authApi.logout();
+    navigate('/login');
   };
 
   return (
@@ -106,6 +114,7 @@ export default function ProfilePage() {
           <button
             type="button"
             className="mt-6 inline-flex items-center gap-2 border-none bg-transparent px-0 py-0 text-sm text-landing-ink-soft transition-colors hover:text-landing-ink"
+            onClick={handleLogout}
           >
             <LogOut size={15} />
             {t('profile.actions.signOut')}
