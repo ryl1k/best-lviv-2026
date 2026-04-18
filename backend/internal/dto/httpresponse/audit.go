@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
-	"github.com/ryl1k/best-lviv-2026/internal/repo"
 )
 
 type UploadTaskResponse struct {
@@ -104,7 +103,7 @@ type SummaryResponse struct {
 	ByRule     map[string]int `json:"by_rule"`
 }
 
-func SummaryToResponse(s repo.DiscrepancySummary) SummaryResponse {
+func SummaryToResponse(s entity.DiscrepancySummary) SummaryResponse {
 	return SummaryResponse{
 		TotalCount: s.TotalCount,
 		BySeverity: s.BySeverity,

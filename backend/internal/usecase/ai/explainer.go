@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	openai "github.com/sashabaranov/go-openai"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type Explainer struct {
@@ -49,14 +49,14 @@ func (e *Explainer) ExplainDiscrepancy(ctx context.Context, d entity.Discrepancy
 func buildPrompt(d entity.Discrepancy) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Власник: %s (ІПН: %s)\n", d.OwnerName, d.TaxID))
-	sb.WriteString(fmt.Sprintf("Виявлена проблема: %s\n", d.Description))
-	sb.WriteString(fmt.Sprintf("Правило: %s, Серйозність: %s, Ризик-бал: %d\n", d.RuleCode, d.Severity, d.RiskScore))
+	fmt.Fprintf(&sb, "Власник: %s (ІПН: %s)\n", d.OwnerName, d.TaxID)
+	fmt.Fprintf(&sb, "Виявлена проблема: %s\n", d.Description)
+	fmt.Fprintf(&sb, "Правило: %s, Серйозність: %s, Ризик-бал: %d\n", d.RuleCode, d.Severity, d.RiskScore)
 
 	if len(d.Details) > 0 {
 		sb.WriteString("Деталі:\n")
 		for k, v := range d.Details {
-			sb.WriteString(fmt.Sprintf("  %s: %v\n", k, v))
+			fmt.Fprintf(&sb, "  %s: %v\n", k, v)
 		}
 	}
 

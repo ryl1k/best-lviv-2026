@@ -1,3 +1,4 @@
+// Package auth handles user authentication: password hashing, JWT issuance, and token validation.
 package auth
 
 import (

@@ -1,3 +1,5 @@
+// Package audit implements the core audit processing use case: parsing uploaded
+// registry files, running the rule engine, and persisting discrepancies.
 package audit
 
 import (
@@ -8,25 +10,52 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
-	"github.com/ryl1k/best-lviv-2026/internal/repo"
-	"github.com/ryl1k/best-lviv-2026/internal/usecase/ai"
 )
 
+type taskRepo interface {
+	Create(ctx context.Context, task entity.Task) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status entity.TaskStatus, errMsg *string) error
+	UpdateCompleted(ctx context.Context, id uuid.UUID, stats entity.TaskStats) error
+	GetByID(ctx context.Context, id uuid.UUID) (entity.Task, error)
+	ListByUserID(ctx context.Context, userID int64) ([]entity.Task, error)
+}
+
+type landRecordRepo interface {
+	BatchInsert(ctx context.Context, records []entity.LandRecord) error
+}
+
+type estateRecordRepo interface {
+	BatchInsert(ctx context.Context, records []entity.EstateRecord) error
+}
+
+type discrepancyRepo interface {
+	BatchInsert(ctx context.Context, discrepancies []entity.Discrepancy) error
+	ListByTaskID(ctx context.Context, taskID uuid.UUID, filter entity.DiscrepancyFilter) ([]entity.Discrepancy, int, error)
+	GetByID(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
+	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
+	SummaryByTaskID(ctx context.Context, taskID uuid.UUID) (entity.DiscrepancySummary, error)
+	ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]entity.PersonRisk, int, error)
+}
+
+type discrepancyExplainer interface {
+	ExplainDiscrepancy(ctx context.Context, d entity.Discrepancy) (string, error)
+}
+
 type UseCase struct {
-	taskRepo        repo.TaskRepo
-	landRepo        repo.LandRecordRepo
-	estateRepo      repo.EstateRecordRepo
-	discrepancyRepo repo.DiscrepancyRepo
-	explainer       *ai.Explainer
+	taskRepo        taskRepo
+	landRepo        landRecordRepo
+	estateRepo      estateRecordRepo
+	discrepancyRepo discrepancyRepo
+	explainer       discrepancyExplainer
 	logger          *slog.Logger
 }
 
 func New(
-	taskRepo repo.TaskRepo,
-	landRepo repo.LandRecordRepo,
-	estateRepo repo.EstateRecordRepo,
-	discrepancyRepo repo.DiscrepancyRepo,
-	explainer *ai.Explainer,
+	taskRepo taskRepo,
+	landRepo landRecordRepo,
+	estateRepo estateRecordRepo,
+	discrepancyRepo discrepancyRepo,
+	explainer discrepancyExplainer,
 	logger *slog.Logger,
 ) *UseCase {
 	return &UseCase{
@@ -239,16 +268,16 @@ func (u *UseCase) GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, e
 	return u.taskRepo.GetByID(ctx, taskID)
 }
 
-func (u *UseCase) GetResults(ctx context.Context, taskID uuid.UUID, filter repo.DiscrepancyFilter) ([]entity.Discrepancy, int, error) {
+func (u *UseCase) GetResults(ctx context.Context, taskID uuid.UUID, filter entity.DiscrepancyFilter) ([]entity.Discrepancy, int, error) {
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
 		return nil, 0, err
 	}
 	return u.discrepancyRepo.ListByTaskID(ctx, taskID, filter)
 }
 
-func (u *UseCase) GetSummary(ctx context.Context, taskID uuid.UUID) (repo.DiscrepancySummary, error) {
+func (u *UseCase) GetSummary(ctx context.Context, taskID uuid.UUID) (entity.DiscrepancySummary, error) {
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
-		return repo.DiscrepancySummary{}, err
+		return entity.DiscrepancySummary{}, err
 	}
 	return u.discrepancyRepo.SummaryByTaskID(ctx, taskID)
 }
@@ -261,7 +290,7 @@ func (u *UseCase) Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discre
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
 		return nil, err
 	}
-	items, _, err := u.discrepancyRepo.ListByTaskID(ctx, taskID, repo.DiscrepancyFilter{
+	items, _, err := u.discrepancyRepo.ListByTaskID(ctx, taskID, entity.DiscrepancyFilter{
 		Page:     1,
 		PageSize: 100_000,
 	})
@@ -279,7 +308,7 @@ func (u *UseCase) ExplainDiscrepancy(ctx context.Context, taskID uuid.UUID, disc
 	return u.explainer.ExplainDiscrepancy(ctx, d)
 }
 
-func (u *UseCase) GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error) {
+func (u *UseCase) GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]entity.PersonRisk, int, error) {
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
 		return nil, 0, err
 	}

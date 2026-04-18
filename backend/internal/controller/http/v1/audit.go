@@ -1,3 +1,4 @@
+// Package v1 contains Echo HTTP handlers for the v1 API: auth, audits, tasks, and subscriptions.
 package v1
 
 import (
@@ -17,9 +18,21 @@ import (
 	"github.com/ryl1k/best-lviv-2026/internal/dto/httprequest"
 	"github.com/ryl1k/best-lviv-2026/internal/dto/httpresponse"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
-	"github.com/ryl1k/best-lviv-2026/internal/repo"
-	"github.com/ryl1k/best-lviv-2026/internal/usecase"
 )
+
+type auditUseCase interface {
+	Upload(ctx context.Context, userID int64, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error)
+	UploadFromRecords(ctx context.Context, userID int64, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error)
+	ListTasks(ctx context.Context, userID int64) ([]entity.Task, error)
+	GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, error)
+	GetResults(ctx context.Context, taskID uuid.UUID, filter entity.DiscrepancyFilter) ([]entity.Discrepancy, int, error)
+	GetSummary(ctx context.Context, taskID uuid.UUID) (entity.DiscrepancySummary, error)
+	GetDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
+	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
+	Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discrepancy, error)
+	GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]entity.PersonRisk, int, error)
+	ExplainDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (string, error)
+}
 
 type auditSubscriptionUseCase interface {
 	GetUserSubscription(ctx context.Context, userID int) (entity.UserSubscription, error)
@@ -28,11 +41,11 @@ type auditSubscriptionUseCase interface {
 
 type AuditController struct {
 	logger     *slog.Logger
-	useCase    usecase.AuditUseCase
+	useCase    auditUseCase
 	subUseCase auditSubscriptionUseCase
 }
 
-func NewAuditController(logger *slog.Logger, useCase usecase.AuditUseCase, subUseCase auditSubscriptionUseCase) *AuditController {
+func NewAuditController(logger *slog.Logger, useCase auditUseCase, subUseCase auditSubscriptionUseCase) *AuditController {
 	return &AuditController{logger: logger, useCase: useCase, subUseCase: subUseCase}
 }
 
@@ -251,7 +264,7 @@ func (c *AuditController) GetResults(ctx *echo.Context) error {
 		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid task id")
 	}
 
-	filter := repo.DiscrepancyFilter{
+	filter := entity.DiscrepancyFilter{
 		Severity:         ctx.QueryParam("severity"),
 		RuleCode:         ctx.QueryParam("rule_code"),
 		ResolutionStatus: ctx.QueryParam("resolution_status"),
