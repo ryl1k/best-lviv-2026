@@ -48,7 +48,7 @@ func (r *UserRepo) GetByUsername(ctx context.Context, username string) (entity.U
 
 func (r *UserRepo) GetById(ctx context.Context, id int) (entity.User, error) {
 	query := `
-		SELECT id, username, password_hash, role, warehouse_id, created_at, updated_at 
+		SELECT id, username, password_hash, created_at, updated_at 
 		FROM users 
 		WHERE id = $1
 	`
