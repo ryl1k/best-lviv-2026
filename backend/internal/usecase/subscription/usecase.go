@@ -85,3 +85,10 @@ func (uc *UseCase) GetUserSubscription(ctx context.Context, userID int) (entity.
 	}
 	return userSub, nil
 }
+
+func (uc *UseCase) IncrementCSVTries(ctx context.Context, userSubID int64) error {
+	if err := uc.userSubRepo.IncrementCSVTries(ctx, userSubID); err != nil {
+		return fmt.Errorf("increment csv tries: %w", err)
+	}
+	return nil
+}

@@ -32,6 +32,8 @@ definitions:
     properties:
       created_at:
         type: string
+      email:
+        type: string
       id:
         type: integer
       updated_at:
@@ -60,15 +62,104 @@ definitions:
       user_id:
         type: integer
     type: object
-  httprequest.Login:
+  httprequest.CreateUser:
     properties:
+      email:
+        type: string
       password:
         type: string
       username:
         type: string
     required:
+    - email
     - password
     - username
+    type: object
+  httprequest.EstateRecord:
+    properties:
+      address:
+        type: string
+      area_m2:
+        type: number
+      co_ownership:
+        type: string
+      object_type:
+        type: string
+      owner_name:
+        type: string
+      raw:
+        additionalProperties:
+          type: string
+        type: object
+      registered_at:
+        type: string
+      share:
+        type: number
+      tax_id:
+        type: string
+      terminated_at:
+        type: string
+    type: object
+  httprequest.LandRecord:
+    properties:
+      area_ha:
+        type: number
+      cadastral_num:
+        type: string
+      koatuu:
+        type: string
+      land_use_type:
+        type: string
+      location:
+        type: string
+      normative_value:
+        type: number
+      owner_name:
+        type: string
+      ownership_form:
+        type: string
+      purpose_code:
+        type: string
+      purpose_text:
+        type: string
+      raw:
+        additionalProperties:
+          type: string
+        type: object
+      registered_at:
+        type: string
+      share:
+        type: number
+      tax_id:
+        type: string
+    required:
+    - cadastral_num
+    type: object
+  httprequest.Login:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  httprequest.UploadJSON:
+    properties:
+      estate_records:
+        items:
+          $ref: '#/definitions/httprequest.EstateRecord'
+        minItems: 1
+        type: array
+      land_records:
+        items:
+          $ref: '#/definitions/httprequest.LandRecord'
+        minItems: 1
+        type: array
+    required:
+    - estate_records
+    - land_records
     type: object
   httpresponse.DiscrepancyResponse:
     properties:
@@ -105,6 +196,36 @@ definitions:
       page_size:
         type: integer
       total:
+        type: integer
+    type: object
+  httpresponse.PaginatedPersonsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/httpresponse.PersonRiskResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  httpresponse.PersonRiskResponse:
+    properties:
+      discrepancy_count:
+        type: integer
+      max_severity:
+        type: string
+      owner_name:
+        type: string
+      rule_codes:
+        items:
+          type: string
+        type: array
+      tax_id:
+        type: string
+      total_risk_score:
         type: integer
     type: object
   httpresponse.Response:
@@ -209,14 +330,52 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Upload registry files for audit
+      tags:
+      - audits
+  /v1/audits/upload/json:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Land and estate records
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httprequest.UploadJSON'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpresponse.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/httpresponse.UploadTaskResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
+      summary: Upload audit data as JSON
       tags:
       - audits
   /v1/auth/login:
     post:
       consumes:
       - application/json
-      description: Authenticates a user using username and password, returning a JWT
+      description: Authenticates a user using email and password, returning a JWT
         token for further requests.
       parameters:
       - description: Login credentials
@@ -277,6 +436,41 @@ paths:
       security:
       - BearerAuth: []
       summary: Get current user profile
+      tags:
+      - Auth
+  /v1/auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with the provided username, email, and
+        password.
+      parameters:
+      - description: Registration credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httprequest.CreateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+        "400":
+          description: Bad Request - Validation error
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+        "409":
+          description: Conflict - Username already exists
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      summary: Register a new user
       tags:
       - Auth
   /v1/subscriptions:
@@ -394,6 +588,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Get task status and stats
       tags:
       - tasks
@@ -470,6 +666,63 @@ paths:
       summary: Update resolution status of a discrepancy
       tags:
       - tasks
+  /v1/tasks/{id}/export:
+    get:
+      parameters:
+      - description: Task UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      summary: Export all discrepancies for a task as CSV
+      tags:
+      - tasks
+  /v1/tasks/{id}/persons:
+    get:
+      parameters:
+      - description: Task UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 50)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpresponse.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/httpresponse.PaginatedPersonsResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      summary: Get persons ranked by cumulative risk score
+      tags:
+      - tasks
   /v1/tasks/{id}/results:
     get:
       parameters:
@@ -522,6 +775,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Get paginated discrepancies for a task
       tags:
       - tasks
@@ -549,6 +804,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Get discrepancy summary for a task
       tags:
       - tasks

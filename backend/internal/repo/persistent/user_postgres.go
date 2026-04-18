@@ -20,17 +20,18 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	}
 }
 
-func (r *UserRepo) GetByUsername(ctx context.Context, username string) (entity.User, error) {
+func (r *UserRepo) GetByEmail(ctx context.Context, email string) (entity.User, error) {
 	query := `
-		SELECT id, username, password_hash, created_at, updated_at 
-		FROM users 
-		WHERE username = $1
+		SELECT id, username, email, password_hash, created_at, updated_at
+		FROM users
+		WHERE email = $1
 	`
 	var user entity.User
 
-	err := r.pool.QueryRow(ctx, query, username).Scan(
+	err := r.pool.QueryRow(ctx, query, email).Scan(
 		&user.Id,
 		&user.Username,
+		&user.Email,
 		&user.PasswordHash,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -38,9 +39,9 @@ func (r *UserRepo) GetByUsername(ctx context.Context, username string) (entity.U
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return entity.User{}, fmt.Errorf("user with username %s not found: %w", username, entity.ErrUserNotFound)
+			return entity.User{}, fmt.Errorf("user with email %s not found: %w", email, entity.ErrUserNotFound)
 		}
-		return entity.User{}, fmt.Errorf("failed to get user by username: %w", err)
+		return entity.User{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
 	return user, nil
@@ -48,8 +49,8 @@ func (r *UserRepo) GetByUsername(ctx context.Context, username string) (entity.U
 
 func (r *UserRepo) GetById(ctx context.Context, id int) (entity.User, error) {
 	query := `
-		SELECT id, username, password_hash, created_at, updated_at 
-		FROM users 
+		SELECT id, username, email, password_hash, created_at, updated_at
+		FROM users
 		WHERE id = $1
 	`
 	var user entity.User
@@ -57,6 +58,7 @@ func (r *UserRepo) GetById(ctx context.Context, id int) (entity.User, error) {
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&user.Id,
 		&user.Username,
+		&user.Email,
 		&user.PasswordHash,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -74,13 +76,13 @@ func (r *UserRepo) GetById(ctx context.Context, id int) (entity.User, error) {
 
 func (r *UserRepo) Create(ctx context.Context, user entity.User) (int, error) {
 	query := `
-INSERT INTO users(username, password_hash) 
-VALUES($1, $2)
+INSERT INTO users(username, email, password_hash)
+VALUES($1, $2, $3)
 RETURNING id
 `
 
 	var id int
-	err := r.pool.QueryRow(ctx, query, user.Username, user.PasswordHash).Scan(
+	err := r.pool.QueryRow(ctx, query, user.Username, user.Email, user.PasswordHash).Scan(
 		&id,
 	)
 	if err != nil {

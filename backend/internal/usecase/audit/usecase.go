@@ -135,6 +135,96 @@ func (u *UseCase) process(ctx context.Context, taskID uuid.UUID, landData, estat
 	log.Info("task completed", "stats", stats)
 }
 
+func (u *UseCase) UploadFromRecords(ctx context.Context, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error) {
+	taskID := uuid.New()
+	task := entity.Task{
+		ID:        taskID,
+		Status:    entity.TaskStatusPending,
+		CreatedAt: time.Now(),
+	}
+
+	if err := u.taskRepo.Create(ctx, task); err != nil {
+		return uuid.UUID{}, fmt.Errorf("create task: %w", err)
+	}
+
+	for i := range landRecords {
+		landRecords[i].TaskID = taskID
+	}
+	for i := range estateRecords {
+		estateRecords[i].TaskID = taskID
+	}
+
+	iCtx := context.WithoutCancel(ctx)
+	go u.processRecords(iCtx, taskID, landRecords, estateRecords)
+
+	return taskID, nil
+}
+
+func (u *UseCase) processRecords(ctx context.Context, taskID uuid.UUID, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) {
+	log := u.logger.With("task_id", taskID)
+	log.Info("task processing started")
+
+	if err := u.taskRepo.UpdateStatus(ctx, taskID, entity.TaskStatusProcessing, nil); err != nil {
+		log.Error("failed to update task status to PROCESSING", "error", err)
+		return
+	}
+
+	fail := func(err error) {
+		msg := err.Error()
+		log.Error("task processing failed", "error", err)
+		if updateErr := u.taskRepo.UpdateStatus(ctx, taskID, entity.TaskStatusFailed, &msg); updateErr != nil {
+			log.Error("failed to update task status to FAILED", "error", updateErr)
+		}
+	}
+
+	discrepancies := runRules(taskID, landRecords, estateRecords)
+	log.Info("rules applied", "discrepancies", len(discrepancies))
+
+	if err := u.landRepo.BatchInsert(ctx, landRecords); err != nil {
+		fail(fmt.Errorf("insert land records: %w", err))
+		return
+	}
+
+	if err := u.estateRepo.BatchInsert(ctx, estateRecords); err != nil {
+		fail(fmt.Errorf("insert estate records: %w", err))
+		return
+	}
+
+	if err := u.discrepancyRepo.BatchInsert(ctx, discrepancies); err != nil {
+		fail(fmt.Errorf("insert discrepancies: %w", err))
+		return
+	}
+
+	estateByTaxID := make(map[string]struct{})
+	for _, e := range estateRecords {
+		if e.TaxID != "" {
+			estateByTaxID[e.TaxID] = struct{}{}
+		}
+	}
+	matchedTaxIDs := make(map[string]struct{})
+	for _, l := range landRecords {
+		if l.TaxID != "" {
+			if _, ok := estateByTaxID[l.TaxID]; ok {
+				matchedTaxIDs[l.TaxID] = struct{}{}
+			}
+		}
+	}
+
+	stats := entity.TaskStats{
+		TotalLand:          len(landRecords),
+		TotalEstate:        len(estateRecords),
+		Matched:            len(matchedTaxIDs),
+		DiscrepanciesCount: len(discrepancies),
+	}
+
+	if err := u.taskRepo.UpdateCompleted(ctx, taskID, stats); err != nil {
+		log.Error("failed to mark task completed", "error", err)
+		return
+	}
+
+	log.Info("task completed", "stats", stats)
+}
+
 func (u *UseCase) GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, error) {
 	return u.taskRepo.GetByID(ctx, taskID)
 }

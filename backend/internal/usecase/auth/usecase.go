@@ -14,7 +14,7 @@ import (
 )
 
 type UserRepo interface {
-	GetByUsername(ctx context.Context, username string) (entity.User, error)
+	GetByEmail(ctx context.Context, email string) (entity.User, error)
 	GetById(ctx context.Context, id int) (entity.User, error)
 	Create(ctx context.Context, user entity.User) (int, error)
 }
@@ -33,8 +33,8 @@ func New(jwtSecret string, jwtDuration time.Duration, userRepo UserRepo) *UseCas
 	}
 }
 
-func (u *UseCase) Login(ctx context.Context, username, password string) (string, error) {
-	user, err := u.userRepo.GetByUsername(ctx, username)
+func (u *UseCase) Login(ctx context.Context, email, password string) (string, error) {
+	user, err := u.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", entity.ErrInvalidCredentials
 	}
@@ -51,6 +51,7 @@ func (u *UseCase) Login(ctx context.Context, username, password string) (string,
 	claims := &dto.UserClaims{
 		UserID:   user.Id,
 		Username: user.Username,
+		Email:    user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -89,7 +90,7 @@ func (u *UseCase) Validate(ctx context.Context, tokenString string) (dto.UserCla
 	return claims, nil
 }
 
-func (u *UseCase) Create(ctx context.Context, username, password string) error {
+func (u *UseCase) Create(ctx context.Context, username, email, password string) error {
 	hashedPassword, err := u.HashPassword(password)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
@@ -97,6 +98,7 @@ func (u *UseCase) Create(ctx context.Context, username, password string) error {
 
 	user := entity.User{
 		Username:     username,
+		Email:        email,
 		PasswordHash: hashedPassword,
 	}
 

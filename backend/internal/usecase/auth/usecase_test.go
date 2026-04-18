@@ -16,6 +16,10 @@ type stubUserRepo struct {
 	getByIDErr       error
 }
 
+func (s *stubUserRepo) GetByEmail(ctx context.Context, email string) (entity.User, error) {
+	return entity.User{}, nil
+}
+
 func (s *stubUserRepo) GetByUsername(ctx context.Context, username string) (entity.User, error) {
 	if s.getByUsernameErr != nil {
 		return entity.User{}, s.getByUsernameErr
