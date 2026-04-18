@@ -24,6 +24,7 @@ type TaskStats struct {
 
 type Task struct {
 	ID           uuid.UUID  `json:"id"`
+	UserID       int64      `json:"user_id"`
 	Status       TaskStatus `json:"status"`
 	CreatedAt    time.Time  `json:"created_at"`
 	CompletedAt  *time.Time `json:"completed_at,omitempty"`

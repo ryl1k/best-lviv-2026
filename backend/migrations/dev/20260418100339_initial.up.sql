@@ -39,12 +39,14 @@ CREATE TABLE users (
 
 CREATE TABLE tasks (
     id            UUID PRIMARY KEY,
+    user_id       BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status        task_status  NOT NULL,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     completed_at  TIMESTAMPTZ,
     error_message TEXT,
     stats         JSONB
 );
+CREATE INDEX idx_tasks_user_id ON tasks(user_id);
 
 CREATE TABLE land_records (
     id              BIGSERIAL PRIMARY KEY,
