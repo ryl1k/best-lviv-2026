@@ -8,6 +8,7 @@ import UploadPage from '@/pages/UploadPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ObjectDetailsPage from '@/pages/ObjectDetailsPage';
 import ProfilePage from '@/pages/ProfilePage';
+import SatelliteAnalysisPage from '@/pages/SatelliteAnalysisPage';
 
 function App() {
   return (
@@ -48,6 +49,14 @@ function App() {
             element={
               <Layout>
                 <ObjectDetailsPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/satellite"
+            element={
+              <Layout>
+                <SatelliteAnalysisPage />
               </Layout>
             }
           />

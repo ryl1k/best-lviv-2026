@@ -43,11 +43,13 @@ export function Navbar() {
   const isHome = location.pathname === '/home';
   const isUpload = location.pathname === '/upload';
   const isDashboard = location.pathname.startsWith('/tasks');
+  const isSatellite = location.pathname === '/satellite';
 
   const navItems = [
     { label: 'Панель', path: '/home', active: isHome },
     { label: 'Новий аналіз', path: '/upload', active: isUpload },
     { label: 'Дашборд', path: '/tasks/a4f2', active: isDashboard },
+    { label: 'Супутник', path: '/satellite', active: isSatellite },
   ];
 
   const currentLang = LANGUAGES.find((l) => l.code === i18n.language) ?? LANGUAGES[0];

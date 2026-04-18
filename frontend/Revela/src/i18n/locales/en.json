@@ -7,5 +7,20 @@
   "exploreVite": "Explore Vite",
   "learnMore": "Learn more",
   "connectWithUs": "Connect with us",
-  "joinCommunity": "Join the Vite community"
+  "joinCommunity": "Join the Vite community",
+  "satellite.title": "Satellite Analysis",
+  "satellite.subtitle": "Detect unregistered buildings using satellite imagery and AI",
+  "satellite.cadastralNumber": "Cadastral Number",
+  "satellite.address": "Address (optional)",
+  "satellite.analyze": "Analyze",
+  "satellite.propertyInfo": "Registry Data",
+  "satellite.satelliteView": "Satellite View",
+  "satellite.analysisResults": "Analysis Results",
+  "satellite.timeline": "Change History",
+  "satellite.detected": "New structure detected",
+  "satellite.compliant": "Matches registry",
+  "satellite.confidence": "Confidence",
+  "satellite.registered": "Registered",
+  "satellite.unregistered": "Unregistered",
+  "satellite.loading": "Analyzing satellite imagery..."
 }

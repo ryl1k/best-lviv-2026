@@ -7,5 +7,20 @@
   "exploreVite": "Дослідити Vite",
   "learnMore": "Дізнатися більше",
   "connectWithUs": "Зв'яжіться з нами",
-  "joinCommunity": "Приєднуйтесь до спільноти Vite"
+  "joinCommunity": "Приєднуйтесь до спільноти Vite",
+  "satellite.title": "Аналіз з супутника",
+  "satellite.subtitle": "Виявлення незареєстрованих будівель за допомогою супутникових знімків та AI",
+  "satellite.cadastralNumber": "Кадастровий номер",
+  "satellite.address": "Адреса (необов'язково)",
+  "satellite.analyze": "Аналізувати",
+  "satellite.propertyInfo": "Дані з реєстру",
+  "satellite.satelliteView": "Супутниковий знімок",
+  "satellite.analysisResults": "Результати аналізу",
+  "satellite.timeline": "Історія змін",
+  "satellite.detected": "Виявлено нову структуру",
+  "satellite.compliant": "Відповідає реєстру",
+  "satellite.confidence": "Впевненість",
+  "satellite.registered": "Зареєстровано",
+  "satellite.unregistered": "Не зареєстровано",
+  "satellite.loading": "Аналіз супутникових знімків..."
 }
