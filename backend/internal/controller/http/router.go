@@ -84,5 +84,7 @@ func (r *Router) RegisterRoutes() {
 		tasks.GET("/:id/results/summary", r.auditController.GetSummary)
 		tasks.GET("/:id/discrepancies/:disc_id", r.auditController.GetDiscrepancy)
 		tasks.PATCH("/:id/discrepancies/:disc_id", r.auditController.UpdateResolutionStatus)
+		tasks.GET("/:id/export", r.auditController.ExportDiscrepancies)
+		tasks.GET("/:id/persons", r.auditController.GetPersons)
 	}
 }

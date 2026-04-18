@@ -32,6 +32,16 @@ type DiscrepancyRepo interface {
 	GetByID(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
 	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
 	SummaryByTaskID(ctx context.Context, taskID uuid.UUID) (DiscrepancySummary, error)
+	ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]PersonRisk, int, error)
+}
+
+type PersonRisk struct {
+	TaxID            string
+	OwnerName        string
+	TotalRiskScore   int
+	MaxSeverity      string
+	DiscrepancyCount int
+	RuleCodes        []string
 }
 
 type DiscrepancyFilter struct {

@@ -1,0 +1,23 @@
+## 1. Upload files
+curl -X POST http://localhost:8080/v1/audits/upload -F "land_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП земля.xlsx" -F "estate_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП нерухомість.xlsx"
+
+## 2. Poll task status (replace TASK_ID)
+curl http://localhost:8080/v1/tasks/16e95ef6-6cb1-4a1d-946a-9a3bddd4cab3
+
+## 3. Get results
+curl http://localhost:8080/v1/tasks/TASK_ID/results
+
+## 4. Filter HIGH severity
+curl "http://localhost:8080/v1/tasks/TASK_ID/results?severity=HIGH&page=1&page_size=50"
+
+## 5. Get summary
+curl http://localhost:8080/v1/tasks/TASK_ID/results/summary
+
+## 6. Get single discrepancy
+curl http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1
+
+## 7. Update resolution status
+curl -X PATCH http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1 -H "Content-Type: application/json" -d '{"resolution_status":"CONFIRMED"}'
+
+## 8. Export CSV
+curl http://localhost:8080/v1/tasks/TASK_ID/export -o export.csv
