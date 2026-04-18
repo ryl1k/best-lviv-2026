@@ -80,7 +80,7 @@ func (c *AuditController) Upload(ctx *echo.Context) error {
 	landExt := filepath.Ext(landFile.Filename)
 	estateExt := filepath.Ext(estateFile.Filename)
 
-	taskID, err := c.useCase.Upload(ctx.Request().Context(), landData, estateData, landExt, estateExt)
+	taskID, err := c.useCase.Upload(ctx.Request().Context(), int64(userClaims.UserID), landData, estateData, landExt, estateExt)
 	if err != nil {
 		c.logger.Error("upload failed", "error", err)
 		return httpresponse.NewErrorResponse(ctx, err)
@@ -164,7 +164,7 @@ func (c *AuditController) UploadJSON(ctx *echo.Context) error {
 		}
 	}
 
-	taskID, err := c.useCase.UploadFromRecords(ctx.Request().Context(), landRecords, estateRecords)
+	taskID, err := c.useCase.UploadFromRecords(ctx.Request().Context(), int64(userClaims.UserID), landRecords, estateRecords)
 	if err != nil {
 		c.logger.Error("upload json failed", "error", err)
 		return httpresponse.NewErrorResponse(ctx, err)
@@ -180,6 +180,30 @@ func (c *AuditController) UploadJSON(ctx *echo.Context) error {
 			StatusCode: http.StatusAccepted,
 		},
 	})
+}
+
+// ListTasks godoc
+// @Summary      List all tasks for the authenticated user
+// @Tags         tasks
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  httpresponse.Response{data=[]httpresponse.TaskResponse}
+// @Failure      401  {object}  httpresponse.Response
+// @Router       /v1/tasks [get]
+func (c *AuditController) ListTasks(ctx *echo.Context) error {
+	userClaims := ctx.Get(entity.UserKey).(dto.UserClaims)
+
+	tasks, err := c.useCase.ListTasks(ctx.Request().Context(), int64(userClaims.UserID))
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, err)
+	}
+
+	responses := make([]httpresponse.TaskResponse, 0, len(tasks))
+	for _, t := range tasks {
+		responses = append(responses, httpresponse.TaskToResponse(t))
+	}
+
+	return httpresponse.NewSuccessResponse(ctx, responses, http.StatusOK)
 }
 
 // GetTask godoc

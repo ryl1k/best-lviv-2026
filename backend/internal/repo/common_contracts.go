@@ -16,6 +16,7 @@ type TaskRepo interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status entity.TaskStatus, errMsg *string) error
 	UpdateCompleted(ctx context.Context, id uuid.UUID, stats entity.TaskStats) error
 	GetByID(ctx context.Context, id uuid.UUID) (entity.Task, error)
+	ListByUserID(ctx context.Context, userID int64) ([]entity.Task, error)
 }
 
 type LandRecordRepo interface {
