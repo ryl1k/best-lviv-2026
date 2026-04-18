@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.3.0...v1.4.0) (2026-04-18)
+
+
+### Features
+
+* **audit:** add JSON upload endpoint for land and estate records ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **audit:** implement subscription checks for CSV upload and JSON upload ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **auth:** update user authentication to use email instead of username ([ad33aa9](https://github.com/ryl1k/best-lviv-2026/commit/ad33aa99d577c37bfcb5a085c0d3c841e224f998))
+* **auth:** update user authentication to use email instead of username ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **docs:** update Swagger documentation for new user signup and JSON upload endpoints ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **tasks:** implement user-specific task management and update database schema ([c0cc08a](https://github.com/ryl1k/best-lviv-2026/commit/c0cc08ae3ef2c4079ef8e60b1aaefed8f21f4f7d))
+* **user:** add email field to user entity and update related repositories ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+
+
+### Bug Fixes
+
+* **auth:** adjust login method to authenticate using email ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **migrations:** update users table to include email and remove unique constraint on username ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+* **repo:** change user repository methods to use email instead of username ([b90fe96](https://github.com/ryl1k/best-lviv-2026/commit/b90fe965940b6422ed1ab7d5152a9dcafa4e7963))
+
 ## [1.3.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.2.0...v1.3.0) (2026-04-18)
 
 
