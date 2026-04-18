@@ -64,6 +64,11 @@ export default function DocsPage() {
     if (s === 'MEDIUM') return 'var(--warning)';
     return 'var(--success)';
   };
+  const severityLabel = (s: string) => {
+    if (s === 'HIGH') return t('tasks.severity.high');
+    if (s === 'MEDIUM') return t('tasks.severity.medium');
+    return t('tasks.severity.low');
+  };
 
   return (
     <section className="mx-auto max-w-[1400px] px-6 py-24 md:px-10">
@@ -165,7 +170,7 @@ export default function DocsPage() {
                               background: `color-mix(in oklch, ${severityColor(rule.severity)} 12%, transparent)`,
                             }}
                           >
-                            {rule.severity}
+                            {severityLabel(rule.severity)}
                           </span>
                         </td>
                       </tr>
