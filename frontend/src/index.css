@@ -1,0 +1,296 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource/inter/latin.css";
+@import "@fontsource/inter/cyrillic.css";
+@import "@fontsource/jetbrains-mono/latin.css";
+@import "@fontsource/jetbrains-mono/cyrillic.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Revela Nordic GovTech tokens */
+  --background: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-muted: #F4F4F5;
+  --border: #E4E4E7;
+  --border-strong: #D4D4D8;
+
+  --text-primary: #0A0A0A;
+  --text-secondary: #3F3F46;
+  --text-muted: #71717A;
+  --text-disabled: #A1A1AA;
+
+  --accent: #0050B5;
+  --accent-hover: #003D8A;
+  --accent-subtle: #E6EEF8;
+
+  --success: #16A34A;
+  --success-subtle: #DCFCE7;
+  --warning: #F59E0B;
+  --warning-subtle: #FEF3C7;
+  --danger: #DC2626;
+  --danger-subtle: #FEE2E2;
+  --info: #0284C7;
+  --info-subtle: #E0F2FE;
+
+  /* shadcn mappings */
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger);
+  --input: var(--border);
+  --ring: var(--accent);
+
+  --chart-1: var(--danger);
+  --chart-2: var(--warning);
+  --chart-3: var(--success);
+  --chart-4: var(--accent);
+  --chart-5: var(--info);
+
+  --radius: 0.375rem;
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--accent-subtle);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent);
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-landing-display: 'Instrument Serif', 'Times New Roman', serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.667);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.333);
+  --radius-xl: calc(var(--radius) * 2);
+  --radius-2xl: calc(var(--radius) * 2.667);
+  --radius-3xl: calc(var(--radius) * 3.333);
+
+  /* Custom Revela colors for direct use */
+  --color-revela-accent: #0050B5;
+  --color-revela-accent-hover: #003D8A;
+  --color-revela-accent-subtle: #E6EEF8;
+  --color-revela-success: #16A34A;
+  --color-revela-success-subtle: #DCFCE7;
+  --color-revela-warning: #F59E0B;
+  --color-revela-warning-subtle: #FEF3C7;
+  --color-revela-danger: #DC2626;
+  --color-revela-danger-subtle: #FEE2E2;
+  --color-revela-info: #0284C7;
+  --color-revela-info-subtle: #E0F2FE;
+  --color-revela-surface: #FFFFFF;
+  --color-revela-surface-muted: #F4F4F5;
+  --color-revela-text-primary: #0A0A0A;
+  --color-revela-text-secondary: #3F3F46;
+  --color-revela-text-muted: #71717A;
+
+  /* Landing-only palette */
+  --color-landing-paper: var(--landing-paper);
+  --color-landing-ink: var(--landing-ink);
+  --color-landing-ink-soft: var(--landing-ink-soft);
+  --color-landing-surface: var(--landing-surface);
+  --color-landing-surface-elevated: var(--landing-surface-elevated);
+  --color-landing-border: var(--landing-border);
+  --color-landing-border-strong: var(--landing-border-strong);
+  --color-landing-signal: var(--landing-signal);
+  --color-landing-success: var(--landing-success);
+  --color-landing-secondary: var(--landing-secondary);
+  --color-landing-muted: var(--landing-muted);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+.landing-page {
+  --landing-paper: oklch(0.985 0.005 80);
+  --landing-ink: oklch(0.14 0.015 250);
+  --landing-ink-soft: oklch(0.32 0.015 250);
+  --landing-surface: oklch(0.965 0.006 80);
+  --landing-surface-elevated: oklch(1 0 0);
+  --landing-border: oklch(0.9 0.008 80);
+  --landing-border-strong: oklch(0.82 0.01 80);
+  --landing-signal: oklch(0.62 0.16 45);
+  --landing-success: oklch(0.55 0.13 155);
+  --landing-secondary: oklch(0.94 0.008 80);
+  --landing-muted: oklch(0.5 0.012 250);
+  --landing-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --landing-shadow-md: 0 4px 16px -4px oklch(0.18 0.015 250 / 8%);
+  --landing-shadow-lg: 0 24px 48px -16px oklch(0.18 0.015 250 / 12%);
+  --landing-shadow-xl: 0 40px 80px -24px oklch(0.18 0.015 250 / 16%);
+}
+
+@layer utilities {
+  .font-landing-display {
+    font-family: var(--font-landing-display);
+  }
+
+  .landing-bg-paper-grain {
+    background-color: var(--landing-paper);
+    background-image: radial-gradient(oklch(0.18 0.015 250 / 4%) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .landing-bg-rule-grid {
+    background-image:
+      linear-gradient(to right, oklch(0.18 0.015 250 / 4%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.18 0.015 250 / 4%) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .landing-mask-fade-edges {
+    mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .landing-link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: background-size 0.4s var(--landing-ease-out-expo);
+  }
+
+  .landing-link-underline:hover {
+    background-size: 100% 1px;
+  }
+
+  .landing-signal-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--landing-signal);
+    box-shadow: 0 0 0 4px oklch(0.62 0.16 45 / 12%);
+  }
+
+  .landing-paper-noise {
+    position: relative;
+  }
+
+  .landing-paper-noise::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    mix-blend-mode: multiply;
+    background-image:
+      radial-gradient(oklch(0.18 0.015 250) 0.5px, transparent 0.5px),
+      radial-gradient(oklch(0.18 0.015 250) 0.5px, transparent 0.5px);
+    background-size: 6px 6px, 11px 11px;
+    background-position: 0 0, 3px 3px;
+  }
+
+  .landing-shadow-md {
+    box-shadow: var(--landing-shadow-md);
+  }
+
+  .landing-shadow-lg {
+    box-shadow: var(--landing-shadow-lg);
+  }
+
+  .landing-shadow-xl {
+    box-shadow: var(--landing-shadow-xl);
+  }
+
+  .landing-animate-ticker {
+    animation: landing-ticker 40s linear infinite;
+  }
+
+  .landing-animate-pulse-soft {
+    animation: landing-pulse-soft 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes landing-ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes landing-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
