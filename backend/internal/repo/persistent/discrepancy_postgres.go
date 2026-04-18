@@ -1,3 +1,4 @@
+// Package persistent provides PostgreSQL-backed implementations of the repository interfaces.
 package persistent
 
 import (
@@ -11,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
-	"github.com/ryl1k/best-lviv-2026/internal/repo"
 )
 
 type DiscrepancyRepo struct {
@@ -65,7 +65,7 @@ func (r *DiscrepancyRepo) insertBatch(ctx context.Context, discrepancies []entit
 	return nil
 }
 
-func (r *DiscrepancyRepo) ListByTaskID(ctx context.Context, taskID uuid.UUID, filter repo.DiscrepancyFilter) ([]entity.Discrepancy, int, error) {
+func (r *DiscrepancyRepo) ListByTaskID(ctx context.Context, taskID uuid.UUID, filter entity.DiscrepancyFilter) ([]entity.Discrepancy, int, error) {
 	args := []any{taskID}
 	conds := []string{"task_id = $1"}
 	idx := 2
@@ -173,8 +173,8 @@ func (r *DiscrepancyRepo) UpdateResolutionStatus(ctx context.Context, taskID uui
 	return nil
 }
 
-func (r *DiscrepancyRepo) SummaryByTaskID(ctx context.Context, taskID uuid.UUID) (repo.DiscrepancySummary, error) {
-	summary := repo.DiscrepancySummary{
+func (r *DiscrepancyRepo) SummaryByTaskID(ctx context.Context, taskID uuid.UUID) (entity.DiscrepancySummary, error) {
+	summary := entity.DiscrepancySummary{
 		BySeverity: make(map[string]int),
 		ByRule:     make(map[string]int),
 	}
@@ -222,7 +222,7 @@ func (r *DiscrepancyRepo) SummaryByTaskID(ctx context.Context, taskID uuid.UUID)
 	return summary, nil
 }
 
-func (r *DiscrepancyRepo) ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error) {
+func (r *DiscrepancyRepo) ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]entity.PersonRisk, int, error) {
 	if pageSize <= 0 {
 		pageSize = 50
 	}
@@ -268,9 +268,9 @@ func (r *DiscrepancyRepo) ListPersonsByTaskID(ctx context.Context, taskID uuid.U
 	}
 	defer rows.Close()
 
-	var result []repo.PersonRisk
+	var result []entity.PersonRisk
 	for rows.Next() {
-		var p repo.PersonRisk
+		var p entity.PersonRisk
 		if err := rows.Scan(&p.TaxID, &p.OwnerName, &p.TotalRiskScore, &p.MaxSeverity, &p.DiscrepancyCount, &p.RuleCodes); err != nil {
 			return nil, 0, fmt.Errorf("persons scan: %w", err)
 		}
