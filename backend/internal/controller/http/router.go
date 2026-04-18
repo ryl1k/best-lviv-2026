@@ -26,10 +26,11 @@ import (
 type Router struct {
 	e *echo.Echo
 
-	middleware      *middleware.Middleware
-	authController  *v1.AuthController
-	auditController *v1.AuditController
-	validator       *httprequest.CustomValidator
+	middleware             *middleware.Middleware
+	authController         *v1.AuthController
+	auditController        *v1.AuditController
+	subscriptionController *v1.SubscriptionController
+	validator              *httprequest.CustomValidator
 }
 
 func NewRouter(
@@ -37,14 +38,16 @@ func NewRouter(
 	middleware *middleware.Middleware,
 	authController *v1.AuthController,
 	auditController *v1.AuditController,
+	subscriptionController *v1.SubscriptionController,
 	validator *httprequest.CustomValidator,
 ) *Router {
 	return &Router{
-		e:               e,
-		middleware:      middleware,
-		authController:  authController,
-		auditController: auditController,
-		validator:       validator,
+		e:                      e,
+		middleware:             middleware,
+		authController:         authController,
+		auditController:        auditController,
+		subscriptionController: subscriptionController,
+		validator:              validator,
 	}
 }
 
@@ -71,6 +74,14 @@ func (r *Router) RegisterRoutes() {
 		auth.GET("/me", r.authController.GetMe, withJWT)
 	}
 
+	// Subscriptions
+	{
+		subs := v1.Group("/subscriptions")
+		subs.GET("", r.subscriptionController.List)
+		subs.GET("/me", r.subscriptionController.GetMine, withJWT)
+		subs.POST("/:id/purchase", r.subscriptionController.Purchase, withJWT)
+	}
+
 	// Audits
 	{
 		v1.POST("/audits/upload", r.auditController.Upload)
@@ -84,5 +95,7 @@ func (r *Router) RegisterRoutes() {
 		tasks.GET("/:id/results/summary", r.auditController.GetSummary)
 		tasks.GET("/:id/discrepancies/:disc_id", r.auditController.GetDiscrepancy)
 		tasks.PATCH("/:id/discrepancies/:disc_id", r.auditController.UpdateResolutionStatus)
+		tasks.GET("/:id/export", r.auditController.ExportDiscrepancies)
+		tasks.GET("/:id/persons", r.auditController.GetPersons)
 	}
 }

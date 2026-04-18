@@ -32,6 +32,32 @@ type DiscrepancyRepo interface {
 	GetByID(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
 	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
 	SummaryByTaskID(ctx context.Context, taskID uuid.UUID) (DiscrepancySummary, error)
+	ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]PersonRisk, int, error)
+}
+
+type PersonRisk struct {
+	TaxID            string
+	OwnerName        string
+	TotalRiskScore   int
+	MaxSeverity      string
+	DiscrepancyCount int
+	RuleCodes        []string
+}
+
+type SubscriptionRepo interface {
+	List(ctx context.Context) ([]entity.Subscription, error)
+	GetByID(ctx context.Context, id int64) (entity.Subscription, error)
+}
+
+type UserSubscriptionRepo interface {
+	GetActive(ctx context.Context, userID int) (entity.UserSubscription, error)
+	Create(ctx context.Context, sub entity.UserSubscription) (entity.UserSubscription, error)
+	IncrementSatelliteTries(ctx context.Context, id int64) error
+	IncrementCSVTries(ctx context.Context, id int64) error
+}
+
+type SubscriptionTransactionRepo interface {
+	Create(ctx context.Context, tx entity.SubscriptionTransaction) (entity.SubscriptionTransaction, error)
 }
 
 type DiscrepancyFilter struct {

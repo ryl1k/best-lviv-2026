@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"encoding/csv"
+	"fmt"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -239,6 +241,98 @@ func (c *AuditController) UpdateResolutionStatus(ctx *echo.Context) error {
 	}
 
 	return httpresponse.NewSuccessResponse(ctx, nil, http.StatusOK)
+}
+
+// GetPersons godoc
+// @Summary      Get persons ranked by cumulative risk score
+// @Tags         tasks
+// @Produce      json
+// @Param        id        path   string  true   "Task UUID"
+// @Param        page      query  int     false  "Page number (default 1)"
+// @Param        page_size query  int     false  "Page size (default 50)"
+// @Success      200  {object}  httpresponse.Response{data=httpresponse.PaginatedPersonsResponse}
+// @Failure      404  {object}  httpresponse.Response
+// @Router       /v1/tasks/{id}/persons [get]
+func (c *AuditController) GetPersons(ctx *echo.Context) error {
+	taskID, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid task id")
+	}
+
+	page, _ := strconv.Atoi(ctx.QueryParam("page"))
+	pageSize, _ := strconv.Atoi(ctx.QueryParam("page_size"))
+
+	persons, total, err := c.useCase.GetPersons(ctx.Request().Context(), taskID, page, pageSize)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, err)
+	}
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 50
+	}
+
+	items := make([]httpresponse.PersonRiskResponse, 0, len(persons))
+	for _, p := range persons {
+		items = append(items, httpresponse.PersonRiskResponse{
+			TaxID:            p.TaxID,
+			OwnerName:        p.OwnerName,
+			TotalRiskScore:   p.TotalRiskScore,
+			MaxSeverity:      p.MaxSeverity,
+			DiscrepancyCount: p.DiscrepancyCount,
+			RuleCodes:        p.RuleCodes,
+		})
+	}
+
+	return httpresponse.NewSuccessResponse(ctx, httpresponse.PaginatedPersonsResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, http.StatusOK)
+}
+
+// ExportDiscrepancies godoc
+// @Summary      Export all discrepancies for a task as CSV
+// @Tags         tasks
+// @Produce      text/csv
+// @Param        id  path  string  true  "Task UUID"
+// @Success      200  {string}  string  "CSV file"
+// @Failure      404  {object}  httpresponse.Response
+// @Router       /v1/tasks/{id}/export [get]
+func (c *AuditController) ExportDiscrepancies(ctx *echo.Context) error {
+	taskID, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid task id")
+	}
+
+	items, err := c.useCase.Export(ctx.Request().Context(), taskID)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, err)
+	}
+
+	ctx.Response().Header().Set("Content-Type", "text/csv; charset=utf-8")
+	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="revela-export-%s.csv"`, taskID))
+	ctx.Response().WriteHeader(http.StatusOK)
+
+	w := csv.NewWriter(ctx.Response())
+	_ = w.Write([]string{"id", "rule_code", "severity", "risk_score", "tax_id", "owner_name", "description", "resolution_status"})
+	for _, d := range items {
+		_ = w.Write([]string{
+			strconv.FormatInt(d.ID, 10),
+			string(d.RuleCode),
+			string(d.Severity),
+			strconv.Itoa(d.RiskScore),
+			d.TaxID,
+			d.OwnerName,
+			d.Description,
+			string(d.ResolutionStatus),
+		})
+	}
+	w.Flush()
+	return w.Error()
 }
 
 func parseUUIDParam(ctx *echo.Context, name string) (uuid.UUID, error) {

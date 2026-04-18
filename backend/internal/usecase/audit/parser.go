@@ -14,27 +14,41 @@ import (
 )
 
 // landColumnAliases maps normalized header variants to canonical field names.
+// Keys are written with Latin i (not Ukrainian i) because normalizeHeader converts them.
 var landColumnAliases = map[string]string{
 	"кадастровий номер":                              "cadastral_num",
 	"кадастровийномер":                               "cadastral_num",
-	"іпн землекористувача":                           "tax_id",
-	"іпнземлекористувача":                            "tax_id",
+	// tax_id: both ЄДРПОУ (corporate) and ІПН (individual) variants
+	"єдрпоу землекористувача":                        "tax_id",
+	"єдрпоуземлекористувача":                         "tax_id",
+	"iпн землекористувача":                           "tax_id",
+	"iпнземлекористувача":                            "tax_id",
+	"iдентифiкацiйний номер землекористувача":        "tax_id",
 	"ідентифікаційний номер землекористувача":        "tax_id",
 	"землекористувач":                                "owner_name",
+	"цiльове призначення":                            "purpose_text",
 	"цільове призначення":                            "purpose_text",
+	"цiльовепризначення":                             "purpose_text",
 	"цільовепризначення":                             "purpose_text",
 	"площа, га":                                      "area_ha",
+	"площа,га":                                       "area_ha",
 	"площа":                                          "area_ha",
+	"усереднена нормативна грошова оцiнка":           "normative_value",
 	"усереднена нормативна грошова оцінка":           "normative_value",
+	"нормативна грошова оцiнка":                      "normative_value",
 	"нормативна грошова оцінка":                      "normative_value",
+	"нормативнагрошовооцiнка":                        "normative_value",
 	"нормативнагрошовоцінка":                         "normative_value",
+	"дата державної реєстрацiї права власностi":      "registered_at",
 	"дата державної реєстрації права власності":      "registered_at",
 	"датадержавноїреєстраціїправавласності":          "registered_at",
 	"коатуу":                                         "koatuu",
+	"форма власностi":                                "ownership_form",
 	"форма власності":                                "ownership_form",
 	"формавласності":                                 "ownership_form",
 	"вид використання":                               "land_use_type",
 	"видвикористання":                                "land_use_type",
+	"мiсцезнаходження":                               "location",
 	"місцезнаходження":                               "location",
 	"адреса":                                         "location",
 }
@@ -52,12 +66,16 @@ var estateColumnAliases = map[string]string{
 	"адресаоб'єкта":                                 "address",
 	"адреса об єкта":                                "address",
 	"адреса":                                        "address",
-	"дата держ. реєстр. права власн":               "registered_at",
+	"дата держ. реєстр. права власн":                "registered_at",
+	"дата держ.реєстр.права власн":                  "registered_at",
 	"датадерж.реєстр.прававласн":                    "registered_at",
 	"дата держ реєстр права власн":                  "registered_at",
 	"дата держ. реєстр. прип. права власн":          "terminated_at",
+	"дата держ. реєстр. прип. права власн.":         "terminated_at",
+	"дата держ.реєстр.прип.права власн":             "terminated_at",
 	"датадерж.реєстр.прип.прававласн":               "terminated_at",
 	"дата держ реєстр прип права власн":             "terminated_at",
+	"датадерж реєстр прип прававласн":               "terminated_at",
 	"загальна площа":                                "area_m2",
 	"загальнаплоща":                                 "area_m2",
 	"площа":                                         "area_m2",
@@ -73,18 +91,23 @@ func normalizeHeader(h string) string {
 }
 
 func mapHeaders(headers []string, aliases map[string]string) map[int]string {
+	// Pre-normalize alias keys so Ukrainian і vs Latin i mismatches can't occur.
+	normalized := make(map[string]string, len(aliases))
+	for k, v := range aliases {
+		normalized[normalizeHeader(k)] = v
+	}
+
 	result := make(map[int]string)
 	for i, h := range headers {
 		norm := normalizeHeader(h)
-		if field, ok := aliases[norm]; ok {
+		if field, ok := normalized[norm]; ok {
 			result[i] = field
 		} else {
-			// also try without spaces
 			noSpace := strings.ReplaceAll(norm, " ", "")
-			if field, ok := aliases[noSpace]; ok {
+			if field, ok := normalized[noSpace]; ok {
 				result[i] = field
 			} else {
-				result[i] = norm // keep original for raw map
+				result[i] = norm
 			}
 		}
 	}
@@ -259,7 +282,9 @@ func readCSV(data []byte) ([][]string, error) {
 }
 
 var dateFormats = []string{
+	"02.01.2006 15:04:05",
 	"02.01.2006",
+	"2006-01-02 15:04:05",
 	"2006-01-02",
 	"01/02/2006",
 	"2006/01/02",

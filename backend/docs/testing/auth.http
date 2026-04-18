@@ -1,0 +1,23 @@
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### Health check
+GET {{baseUrl}}/health
+
+###
+
+### Login — returns JWT token, copy it to @token below
+POST {{baseUrl}}/v1/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "password"
+}
+
+###
+
+### Get current user (requires JWT)
+# @token = <paste token here>
+GET {{baseUrl}}/v1/auth/me
+Authorization: Bearer {{token}}

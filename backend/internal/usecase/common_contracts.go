@@ -10,6 +10,12 @@ import (
 
 type AuthUseCase interface{}
 
+type SubscriptionUseCase interface {
+	List(ctx context.Context) ([]entity.Subscription, error)
+	Purchase(ctx context.Context, userID int, subscriptionID int64) (entity.UserSubscription, error)
+	GetUserSubscription(ctx context.Context, userID int) (entity.UserSubscription, error)
+}
+
 type AuditUseCase interface {
 	Upload(ctx context.Context, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error)
 	GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, error)
@@ -17,4 +23,6 @@ type AuditUseCase interface {
 	GetSummary(ctx context.Context, taskID uuid.UUID) (repo.DiscrepancySummary, error)
 	GetDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
 	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
+	Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discrepancy, error)
+	GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error)
 }

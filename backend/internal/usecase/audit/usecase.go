@@ -12,11 +12,11 @@ import (
 )
 
 type UseCase struct {
-	taskRepo       repo.TaskRepo
-	landRepo       repo.LandRecordRepo
-	estateRepo     repo.EstateRecordRepo
+	taskRepo        repo.TaskRepo
+	landRepo        repo.LandRecordRepo
+	estateRepo      repo.EstateRecordRepo
 	discrepancyRepo repo.DiscrepancyRepo
-	logger         *slog.Logger
+	logger          *slog.Logger
 }
 
 func New(
@@ -48,7 +48,8 @@ func (u *UseCase) Upload(ctx context.Context, landData []byte, estateData []byte
 	}
 
 	// Process asynchronously; use Background so it outlives the request context.
-	go u.process(context.Background(), taskID, landData, estateData, landExt, estateExt)
+	iCtx := context.WithoutCancel(ctx)
+	go u.process(iCtx, taskID, landData, estateData, landExt, estateExt)
 
 	return taskID, nil
 }
@@ -102,19 +103,22 @@ func (u *UseCase) process(ctx context.Context, taskID uuid.UUID, landData, estat
 		return
 	}
 
-	// Count matched tax IDs
+	// Count unique tax IDs present in both registries
 	estateByTaxID := make(map[string]struct{})
 	for _, e := range estateRecords {
 		if e.TaxID != "" {
 			estateByTaxID[e.TaxID] = struct{}{}
 		}
 	}
-	matched := 0
+	matchedTaxIDs := make(map[string]struct{})
 	for _, l := range landRecords {
-		if _, ok := estateByTaxID[l.TaxID]; ok {
-			matched++
+		if l.TaxID != "" {
+			if _, ok := estateByTaxID[l.TaxID]; ok {
+				matchedTaxIDs[l.TaxID] = struct{}{}
+			}
 		}
 	}
+	matched := len(matchedTaxIDs)
 
 	stats := entity.TaskStats{
 		TotalLand:          len(landRecords),
@@ -151,6 +155,24 @@ func (u *UseCase) GetSummary(ctx context.Context, taskID uuid.UUID) (repo.Discre
 
 func (u *UseCase) GetDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error) {
 	return u.discrepancyRepo.GetByID(ctx, taskID, discID)
+}
+
+func (u *UseCase) Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discrepancy, error) {
+	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
+		return nil, err
+	}
+	items, _, err := u.discrepancyRepo.ListByTaskID(ctx, taskID, repo.DiscrepancyFilter{
+		Page:     1,
+		PageSize: 100_000,
+	})
+	return items, err
+}
+
+func (u *UseCase) GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error) {
+	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
+		return nil, 0, err
+	}
+	return u.discrepancyRepo.ListPersonsByTaskID(ctx, taskID, page, pageSize)
 }
 
 func (u *UseCase) UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error {
