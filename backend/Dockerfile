@@ -1,29 +1,19 @@
 FROM golang:1.25-alpine AS builder
 
-ENV GOCACHE=/root/.cache/go-build
-ENV GOMODCACHE=/go/pkg/mod
-
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
+COPY ["go.mod","go.sum" ,"./"]
 
-COPY . .
+RUN go mod download
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build \
-    -p 2 \
-    -trimpath \
-    -ldflags="-s -w" \
-    -o /app/server ./cmd/api/main.go
+COPY . . 
 
-FROM alpine:3.21
+RUN go build -o ./api ./cmd/api/main.go
 
-RUN apk --no-cache add ca-certificates tzdata
+FROM alpine
 
-WORKDIR /app
+WORKDIR /
 
-COPY --from=builder /app/server .
+COPY --from=builder /app/api /api
 
-CMD ["./server"]
+CMD ["/api"]
