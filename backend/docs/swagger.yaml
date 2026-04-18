@@ -647,6 +647,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Get a single discrepancy detail
       tags:
       - tasks
@@ -688,7 +690,50 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Update resolution status of a discrepancy
+      tags:
+      - tasks
+  /v1/tasks/{id}/discrepancies/{disc_id}/explain:
+    get:
+      parameters:
+      - description: Task UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Discrepancy ID
+        in: path
+        name: disc_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpresponse.Response'
+            - properties:
+                data:
+                  properties:
+                    explanation:
+                      type: string
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
+      summary: Get AI explanation for a discrepancy
       tags:
       - tasks
   /v1/tasks/{id}/export:
@@ -745,6 +790,8 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
       summary: Get persons ranked by cumulative risk score
       tags:
       - tasks
