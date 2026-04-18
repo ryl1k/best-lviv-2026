@@ -44,6 +44,22 @@ type PersonRisk struct {
 	RuleCodes        []string
 }
 
+type SubscriptionRepo interface {
+	List(ctx context.Context) ([]entity.Subscription, error)
+	GetByID(ctx context.Context, id int64) (entity.Subscription, error)
+}
+
+type UserSubscriptionRepo interface {
+	GetActive(ctx context.Context, userID int) (entity.UserSubscription, error)
+	Create(ctx context.Context, sub entity.UserSubscription) (entity.UserSubscription, error)
+	IncrementSatelliteTries(ctx context.Context, id int64) error
+	IncrementCSVTries(ctx context.Context, id int64) error
+}
+
+type SubscriptionTransactionRepo interface {
+	Create(ctx context.Context, tx entity.SubscriptionTransaction) (entity.SubscriptionTransaction, error)
+}
+
 type DiscrepancyFilter struct {
 	Severity         string
 	RuleCode         string

@@ -21,6 +21,7 @@ import (
 	"github.com/ryl1k/best-lviv-2026/internal/repo/persistent"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/audit"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/auth"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/subscription"
 )
 
 func main() {
@@ -75,22 +76,27 @@ func newApp(ctx context.Context) (*app, error) {
 	landRecordRepo := persistent.NewLandRecordRepo(pool)
 	estateRecordRepo := persistent.NewEstateRecordRepo(pool)
 	discrepancyRepo := persistent.NewDiscrepancyRepo(pool)
+	subscriptionRepo := persistent.NewSubscriptionRepo(pool)
+	userSubscriptionRepo := persistent.NewUserSubscriptionRepo(pool)
+	subscriptionTxRepo := persistent.NewSubscriptionTransactionRepo(pool)
 
 	// Use cases
 	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
 	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, logger)
+	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)
 	auditController := v1.NewAuditController(logger, auditUseCase)
+	subscriptionController := v1.NewSubscriptionController(logger, subscriptionUseCase)
 
-	mw := middleware.NewMiddleware(logger, authUseCase)
+	mw := middleware.NewMiddleware(logger, authUseCase, subscriptionUseCase)
 	validator, err := httprequest.NewCustomValidator()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new custom validator: %w", err)
 	}
 
-	router := httprouter.NewRouter(e, mw, authController, auditController, validator)
+	router := httprouter.NewRouter(e, mw, authController, auditController, subscriptionController, validator)
 	router.RegisterRoutes()
 
 	appCtx, cancel := context.WithCancel(ctx)
