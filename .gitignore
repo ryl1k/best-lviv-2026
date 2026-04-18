@@ -1,2 +1,4 @@
 dataset
 *.env
+.DS_Store
+MASTER_PROMPT.md
