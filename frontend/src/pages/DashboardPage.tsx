@@ -1,21 +1,16 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import {
-  Upload,
-  Download,
-  TrendingUp,
-  Info,
-  Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
+  Download,
+  Filter,
+  Info,
+  Search,
+  Upload,
 } from 'lucide-react'
-import type { Severity, ResolutionStatus } from '@/data/demo'
-import { RULES, formatNumber } from '@/data/demo'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { RULES, STATS, formatNumber, type ResolutionStatus, type Severity } from '@/data/demo'
 
 interface GeneratedRow {
   id: number
@@ -27,10 +22,6 @@ interface GeneratedRow {
   description: string
   status: ResolutionStatus
 }
-
-// ---------------------------------------------------------------------------
-// Seeded random data generation (seed 42, 50 rows)
-// ---------------------------------------------------------------------------
 
 function seededRand(seed: number) {
   let s = seed
@@ -67,8 +58,8 @@ const RULE_DESCRIPTIONS: Record<string, string[]> = {
   ],
   R03: [
     'Є {n} земельних ділянок, але жодного запису в реєстрі нерухомості',
-    'Земельна ділянка без пов\u2019язаної нерухомості у ДРПП',
-    '{n} ділянок не мають відповідних об\u2019єктів нерухомості',
+    'Земельна ділянка без пов’язаної нерухомості у ДРПП',
+    '{n} ділянок не мають відповідних об’єктів нерухомості',
   ],
   R04: [
     'Податковий номер {n} цифр замість 10',
@@ -80,14 +71,14 @@ const RULE_DESCRIPTIONS: Record<string, string[]> = {
     'Дублювання запису: {n} однакових кадастрових номерів',
   ],
   R06: [
-    'В ДЗК "{short}", в ДРПП повне ім\u2019я з розбіжністю транслітерації',
+    'В ДЗК "{short}", в ДРПП повне ім’я з розбіжністю транслітерації',
     'Різночитання ПІБ між реєстрами: можлива латинська літера',
-    'Ім\u2019я у двох реєстрах відрізняється на {n} символи',
+    'Ім’я у двох реєстрах відрізняється на {n} символи',
   ],
   R07: [
     'Відсутня адреса у записі нерухомості',
     'Неповний запис: відсутні координати ділянки',
-    'Запис нерухомості без площі об\u2019єкта',
+    'Запис нерухомості без площі об’єкта',
   ],
 }
 
@@ -97,7 +88,6 @@ function generateRows(): GeneratedRow[] {
   const rand = seededRand(42)
   const rows: GeneratedRow[] = []
 
-  // Showcase row pinned at index 0
   rows.push({
     id: 1847,
     severity: 'HIGH',
@@ -118,12 +108,13 @@ function generateRows(): GeneratedRow[] {
     { code: 'R06', weight: 16, severity: 'MEDIUM' as Severity },
     { code: 'R07', weight: 44, severity: 'LOW' as Severity },
   ]
-  const totalWeight = ruleWeights.reduce((s, r) => s + r.weight, 0)
+  const totalWeight = ruleWeights.reduce((sum, rule) => sum + rule.weight, 0)
 
   for (let i = 1; i < 50; i++) {
     const r = rand()
     let acc = 0
     let selectedRule = ruleWeights[0]
+
     for (const rule of ruleWeights) {
       acc += rule.weight / totalWeight
       if (r <= acc) {
@@ -136,23 +127,24 @@ function generateRows(): GeneratedRow[] {
     const lastName = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)]
     const patronymic = PATRONYMICS[Math.floor(rand() * PATRONYMICS.length)]
     const ownerName = `${lastName} ${firstName} ${patronymic}`
-
     const taxIdRaw = Math.floor(rand() * 9_000_000_000 + 1_000_000_000)
     const taxId = selectedRule.code === 'R04' && rand() < 0.3 ? '' : String(taxIdRaw)
 
-    const descTemplates = RULE_DESCRIPTIONS[selectedRule.code]
-    let desc = descTemplates[Math.floor(rand() * descTemplates.length)]
+    let description = RULE_DESCRIPTIONS[selectedRule.code][Math.floor(rand() * RULE_DESCRIPTIONS[selectedRule.code].length)]
     const year = 2012 + Math.floor(rand() * 10)
     const month = String(1 + Math.floor(rand() * 12)).padStart(2, '0')
     const day = String(1 + Math.floor(rand() * 28)).padStart(2, '0')
-    desc = desc
+
+    description = description
       .replace('{date}', `${day}.${month}.${year}`)
       .replace('{n}', String(1 + Math.floor(rand() * 4)))
-      .replace('{cn}', `4624884200:0${Math.floor(rand() * 9)}:000:${String(Math.floor(rand() * 9000) + 1000).padStart(4, '0')}`)
+      .replace(
+        '{cn}',
+        `4624884200:0${Math.floor(rand() * 9)}:000:${String(Math.floor(rand() * 9000) + 1000).padStart(4, '0')}`,
+      )
       .replace('{short}', `${lastName} ${firstName[0]}.${patronymic[0]}.`)
 
-    const ruleObj = RULES.find((ru) => ru.code === selectedRule.code)!
-    const status = STATUSES[Math.floor(rand() * STATUSES.length)]
+    const ruleObj = RULES.find((rule) => rule.code === selectedRule.code)!
 
     rows.push({
       id: 1848 + i,
@@ -161,8 +153,8 @@ function generateRows(): GeneratedRow[] {
       taxId,
       ruleCode: selectedRule.code,
       ruleName: ruleObj.name,
-      description: desc,
-      status,
+      description,
+      status: STATUSES[Math.floor(rand() * STATUSES.length)],
     })
   }
 
@@ -170,366 +162,53 @@ function generateRows(): GeneratedRow[] {
 }
 
 const GENERATED_ROWS = generateRows()
-
-// ---------------------------------------------------------------------------
-// Constants / data
-// ---------------------------------------------------------------------------
-
 const TOTAL_CASES = 4_027
 const PAGE_SIZE = 50
-// Total pages: Math.ceil(TOTAL_CASES / PAGE_SIZE) = 81
-
+const TASK_ID = 'A4F2'
+const TASK_FILES = ['ДРПП_ostriv.xlsx', 'ДЗК_ostriv.xlsx'] as const
 const RULE_BREAKDOWN = [...RULES].sort((a, b) => b.count - a.count)
 const MAX_RULE_COUNT = RULE_BREAKDOWN[0].count
+const DESKTOP_TABLE_GRID = '112px minmax(220px,1.15fr) minmax(220px,0.95fr) minmax(320px,1.45fr) 120px'
+const SEVERITY_TONES: Record<Severity, { label: string; dot: string; text: string; bar: string }> = {
+  HIGH: {
+    label: 'Висока',
+    dot: 'oklch(0.58 0.10 26)',
+    text: 'oklch(0.34 0.03 26)',
+    bar: 'oklch(0.70 0.05 26)',
+  },
+  MEDIUM: {
+    label: 'Середня',
+    dot: 'oklch(0.66 0.08 78)',
+    text: 'oklch(0.38 0.025 78)',
+    bar: 'oklch(0.76 0.04 78)',
+  },
+  LOW: {
+    label: 'Низька',
+    dot: 'oklch(0.60 0.07 155)',
+    text: 'oklch(0.34 0.02 155)',
+    bar: 'oklch(0.74 0.035 155)',
+  },
+}
+const STATUS_TONES: Record<ResolutionStatus, { label: string; dot: string; text: string }> = {
+  NEW: { label: 'Нова', dot: 'oklch(0.56 0.07 240)', text: 'oklch(0.30 0.02 240)' },
+  IN_REVIEW: { label: 'В роботі', dot: 'oklch(0.66 0.08 78)', text: 'oklch(0.38 0.025 78)' },
+  CONFIRMED: { label: 'Підтверджено', dot: 'oklch(0.58 0.10 26)', text: 'oklch(0.34 0.03 26)' },
+  DISMISSED: { label: 'Відхилено', dot: 'oklch(0.62 0.01 250)', text: 'oklch(0.40 0.01 250)' },
+}
 
-const SEV_FILTERS: { key: Severity; label: string; color: string; count: number }[] = [
-  { key: 'HIGH', label: 'Висока', color: 'var(--danger)', count: 3708 + 177 },
-  { key: 'MEDIUM', label: 'Середня', color: 'var(--warning)', count: 470 + 1 + 16 },
-  { key: 'LOW', label: 'Низька', color: '#86EFAC', count: 2673 + 44 },
+const SEV_FILTERS: { key: Severity; label: string; count: number }[] = [
+  { key: 'HIGH', label: 'Висока', count: STATS.highSeverity },
+  { key: 'MEDIUM', label: 'Середня', count: STATS.mediumSeverity },
+  { key: 'LOW', label: 'Низька', count: STATS.lowSeverity },
 ]
 
-// ---------------------------------------------------------------------------
-// Small chip helpers
-// ---------------------------------------------------------------------------
-
-function SevChip({ severity }: { severity: Severity }) {
-  const map: Record<Severity, { bg: string; text: string; dot: string; label: string }> = {
-    HIGH: { bg: 'var(--danger-subtle)', text: 'var(--danger)', dot: 'var(--danger)', label: 'Висока' },
-    MEDIUM: { bg: 'var(--warning-subtle)', text: 'var(--warning)', dot: 'var(--warning)', label: 'Середня' },
-    LOW: { bg: 'var(--success-subtle)', text: 'var(--success)', dot: '#86EFAC', label: 'Низька' },
-  }
-  const s = map[severity]
-  return (
-    <span
-      style={{ background: s.bg, color: s.text }}
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
-    >
-      <span
-        style={{ background: s.dot }}
-        className="inline-block size-1.5 rounded-full shrink-0"
-      />
-      {s.label}
-    </span>
-  )
-}
-
-function StatusChip({ status }: { status: ResolutionStatus }) {
-  const map: Record<ResolutionStatus, { bg: string; text: string; label: string }> = {
-    NEW: { bg: 'var(--info-subtle)', text: 'var(--info)', label: 'Нова' },
-    IN_REVIEW: { bg: 'var(--warning-subtle)', text: 'var(--warning)', label: 'В роботі' },
-    CONFIRMED: { bg: 'var(--danger-subtle)', text: 'var(--danger)', label: 'Підтверджено' },
-    DISMISSED: { bg: 'var(--surface-muted)', text: 'var(--text-muted)', label: 'Відхилено' },
-  }
-  const s = map[status]
-  return (
-    <span
-      style={{ background: s.bg, color: s.text }}
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
-    >
-      {s.label}
-    </span>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Tooltip (Info icon)
-// ---------------------------------------------------------------------------
-
-function InfoTooltip({ text }: { text: string }) {
-  const [show, setShow] = useState(false)
-  return (
-    <span className="relative inline-flex items-center">
-      <button
-        type="button"
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-        onFocus={() => setShow(true)}
-        onBlur={() => setShow(false)}
-        className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-        aria-label="Підказка"
-      >
-        <Info size={13} />
-      </button>
-      {show && (
-        <span
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-56 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-secondary)] shadow-lg pointer-events-none"
-        >
-          {text}
-        </span>
-      )}
-    </span>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Section 1 - Task header
-// ---------------------------------------------------------------------------
-
-function TaskHeader() {
-  return (
-    <div className="mb-6 flex items-start justify-between gap-6">
-      <div className="min-w-0">
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ЗАВДАННЯ #A4F2
-        </p>
-        <h1
-          className="mt-1 font-semibold leading-tight"
-          style={{
-            fontSize: 24,
-            letterSpacing: '-0.01em',
-            color: 'var(--text-primary)',
-          }}
-        >
-          Аналіз розбіжностей - Острівська ТГ
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Завершено 18.04.2026 о 14:32 · ДРПП_ostriv.xlsx + ДЗК_ostriv.xlsx
-        </p>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors"
-          style={{
-            borderColor: 'var(--border)',
-            background: 'var(--surface)',
-            color: 'var(--text-primary)',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-muted)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface)')}
-        >
-          <Upload size={15} aria-hidden="true" />
-          Новий аналіз
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-white transition-colors"
-          style={{ background: 'var(--accent)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent)')}
-        >
-          <Download size={15} aria-hidden="true" />
-          Завантажити звіт
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Section 2 - Stats row
-// ---------------------------------------------------------------------------
-
-function StatsRow() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {/* Card 1 */}
-      <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ОБРОБЛЕНО
-        </p>
-        <p
-          className="mt-1.5 font-mono font-bold leading-none"
-          style={{ fontSize: 28, color: 'var(--text-primary)' }}
-        >
-          42 038
-        </p>
-        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-          21 656 землі · 20 382 нерухомості
-        </p>
-      </div>
-
-      {/* Card 2 */}
-      <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ЗІСТАВЛЕНО ВЛАСНИКІВ
-        </p>
-        <p
-          className="mt-1.5 font-mono font-bold leading-none"
-          style={{ fontSize: 28, color: 'var(--text-primary)' }}
-        >
-          {formatNumber(10_936)}
-        </p>
-        <p className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-          100% покриття по ЄДРПОУ
-        </p>
-        <span
-          className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ background: 'var(--success-subtle)', color: 'var(--success)' }}
-        >
-          ✓ Високе покриття
-        </span>
-      </div>
-
-      {/* Card 3 */}
-      <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          РОЗБІЖНОСТЕЙ
-        </p>
-        <p
-          className="mt-1.5 font-mono font-bold leading-none"
-          style={{ fontSize: 28, color: 'var(--danger)' }}
-        >
-          4 027
-        </p>
-        <p className="mt-1.5 flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <TrendingUp size={12} aria-hidden="true" />
-          3 708 високої критичності
-        </p>
-      </div>
-
-      {/* Card 4 */}
-      <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        <p
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ПОТЕНЦІЙНІ ВТРАТИ
-        </p>
-        <p
-          className="mt-1.5 font-mono font-bold leading-none"
-          style={{ fontSize: 28, color: 'var(--accent)' }}
-        >
-          ~2.4 млн ₴
-        </p>
-        <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-          річні податкові надходження
-          <InfoTooltip text="Оцінка: медіана податку × кількість R01" />
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Section 3 - Rule breakdown (pure CSS bars)
-// ---------------------------------------------------------------------------
-
-const SEVERITY_BAR_COLOR: Record<string, string> = {
-  HIGH: 'var(--danger)',
-  MEDIUM: 'var(--warning)',
-  LOW: '#86EFAC',
-}
-
-const SEVERITY_CHIP: Record<string, { bg: string; text: string; label: string }> = {
-  HIGH: { bg: 'var(--danger-subtle)', text: 'var(--danger)', label: 'Висока' },
-  MEDIUM: { bg: 'var(--warning-subtle)', text: 'var(--warning)', label: 'Середня' },
-  LOW: { bg: 'var(--success-subtle)', text: 'var(--success)', label: 'Низька' },
-}
-
-function RuleBreakdown() {
-  return (
-    <div
-      className="mt-6 rounded-lg border p-5"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-    >
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Розбіжності за типами
-        </h2>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Сортування: за кількістю
-        </p>
-      </div>
-
-      {/* Rows */}
-      <div className="flex flex-col gap-2">
-        {RULE_BREAKDOWN.map((rule) => {
-          const barPct = (rule.count / MAX_RULE_COUNT) * 100
-          const chip = SEVERITY_CHIP[rule.severity]
-          const barColor = SEVERITY_BAR_COLOR[rule.severity]
-          return (
-            <div key={rule.code} className="flex items-center gap-3">
-              {/* Code chip */}
-              <span
-                className="shrink-0 rounded font-mono text-[11px] font-medium text-center"
-                style={{
-                  width: 44,
-                  background: 'var(--accent-subtle)',
-                  color: 'var(--accent)',
-                  padding: '2px 0',
-                }}
-              >
-                {rule.code}
-              </span>
-
-              {/* Rule name */}
-              <span
-                className="hidden shrink-0 truncate text-sm md:block"
-                style={{ width: 280, color: 'var(--text-secondary)' }}
-                title={rule.name}
-              >
-                {rule.name}
-              </span>
-
-              {/* Progress bar */}
-              <div
-                className="flex-1 rounded-full overflow-hidden"
-                style={{ height: 8, background: 'var(--surface-muted)' }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${barPct}%`, background: barColor }}
-                />
-              </div>
-
-              {/* Count */}
-              <span
-                className="shrink-0 font-mono text-xs text-right"
-                style={{ width: 70, color: 'var(--text-muted)' }}
-              >
-                {formatNumber(rule.count)}
-              </span>
-
-              {/* Severity chip */}
-              <span
-                className="shrink-0 inline-flex items-center justify-center rounded-full text-[11px] font-medium"
-                style={{
-                  width: 72,
-                  background: chip.bg,
-                  color: chip.text,
-                  padding: '2px 0',
-                }}
-              >
-                {chip.label}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Section 4 - Filter rail
-// ---------------------------------------------------------------------------
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Всі' },
+  { value: 'NEW', label: 'Нові' },
+  { value: 'IN_REVIEW', label: 'В роботі' },
+  { value: 'CONFIRMED', label: 'Підтверджені' },
+  { value: 'DISMISSED', label: 'Відхилені' },
+] as const
 
 type StatusFilter = 'ALL' | 'NEW' | 'IN_REVIEW' | 'CONFIRMED' | 'DISMISSED'
 
@@ -542,6 +221,7 @@ interface FilterState {
 
 interface FilterRailProps {
   filters: FilterState
+  activeFilterCount: number
   onToggleSev: (s: Severity) => void
   onToggleRule: (code: string) => void
   onStatus: (s: StatusFilter) => void
@@ -549,8 +229,333 @@ interface FilterRailProps {
   onReset: () => void
 }
 
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+      {children}
+    </p>
+  )
+}
+
+function QuietButton({
+  children,
+  strong = false,
+}: {
+  children: ReactNode
+  strong?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+        strong
+          ? 'border-landing-ink bg-landing-ink text-landing-paper hover:bg-landing-ink-soft'
+          : 'border-landing-border-strong bg-transparent text-landing-ink hover:bg-landing-surface'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false)
+
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        className="text-landing-muted transition-colors hover:text-landing-ink"
+        aria-label="Пояснення показника"
+      >
+        <Info size={13} />
+      </button>
+      {show ? (
+        <span className="absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-landing-border bg-landing-paper px-3 py-2 text-xs leading-relaxed text-landing-ink-soft shadow-sm">
+          {text}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+function SeverityChip({ severity }: { severity: Severity }) {
+  const tone = SEVERITY_TONES[severity]
+
+  return (
+    <span className="inline-flex h-6 items-center gap-2 whitespace-nowrap px-0 font-mono text-[10px] font-medium uppercase tracking-[0.14em] leading-none">
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: tone.dot }}
+        aria-hidden="true"
+      />
+      <span style={{ color: tone.text }}>{tone.label}</span>
+    </span>
+  )
+}
+
+function StatusChip({ status }: { status: ResolutionStatus }) {
+  const tone = STATUS_TONES[status]
+
+  return (
+    <span className="inline-flex h-6 items-center gap-2 whitespace-nowrap px-0 font-mono text-[10px] font-medium uppercase tracking-[0.14em] leading-none">
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: tone.dot }}
+        aria-hidden="true"
+      />
+      <span style={{ color: tone.text }}>{tone.label}</span>
+    </span>
+  )
+}
+
+function ReportMeta({
+  label,
+  value,
+}: {
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="border-b border-landing-border pb-4 last:border-b-0 last:pb-0">
+      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+        {label}
+      </dt>
+      <dd className="mt-2 text-sm leading-relaxed text-landing-ink">{value}</dd>
+    </div>
+  )
+}
+
+function TaskHeader() {
+  return (
+    <section className="overflow-hidden border border-landing-border bg-landing-paper">
+      <div className="grid gap-px bg-landing-border xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="bg-landing-paper p-6 md:p-8">
+          <SectionLabel>Analysis session #{TASK_ID}</SectionLabel>
+          <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-landing-ink md:text-4xl">
+            Аналіз розбіжностей
+          </h1>
+          <p className="mt-2 text-base text-landing-ink-soft">
+            Острівська територіальна громада · результати звірки земельного та майнового реєстрів.
+          </p>
+
+          <dl className="mt-8 grid gap-5 sm:grid-cols-2">
+            <ReportMeta label="Завершено" value="18.04.2026 о 14:32" />
+            <ReportMeta label="Сесія" value={`Завдання #${TASK_ID} · 42 038 записів у звірці`} />
+            <ReportMeta
+              label="Вхідні файли"
+              value={
+                <div className="space-y-1">
+                  {TASK_FILES.map((file) => (
+                    <div key={file} className="font-mono text-[12px] text-landing-ink-soft">
+                      {file}
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+            <ReportMeta label="Фокус перевірки" value="Невідповідності права, ІПН, призначення та повноти записів" />
+          </dl>
+        </div>
+
+        <div className="flex flex-col justify-between gap-6 bg-landing-surface p-6 md:p-8">
+          <div>
+            <SectionLabel>Report actions</SectionLabel>
+            <div className="mt-5 flex flex-col gap-2.5">
+              <QuietButton strong>
+                <Download size={15} />
+                Завантажити звіт
+              </QuietButton>
+              <QuietButton>
+                <Upload size={15} />
+                Новий аналіз
+              </QuietButton>
+            </div>
+          </div>
+
+          <div className="border-t border-landing-border pt-5">
+            <SectionLabel>Result overview</SectionLabel>
+            <p className="mt-3 text-sm leading-relaxed text-landing-ink-soft">
+              Основний ризик сконцентрований у правилах R01 та R04. Робоча зона нижче призначена для фільтрації та по-кейсного опрацювання.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SummaryMetrics() {
+  const metrics = [
+    {
+      label: 'Оброблено',
+      value: formatNumber(STATS.totalRecords),
+      note: `${formatNumber(STATS.totalLand)} землі · ${formatNumber(STATS.totalEstate)} нерухомості`,
+    },
+    {
+      label: 'Зіставлено власників',
+      value: formatNumber(STATS.matchedOwners),
+      note: '100% покриття по ЄДРПОУ',
+    },
+    {
+      label: 'Усього розбіжностей',
+      value: formatNumber(STATS.totalDiscrepancies),
+      note: `${formatNumber(STATS.highSeverity)} високої критичності`,
+      accent: true,
+    },
+    {
+      label: 'Потенційні втрати',
+      value: STATS.estimatedLoss,
+      note: 'Орієнтовні річні податкові надходження',
+      extra: <InfoTooltip text="Оцінка: медіана податку × кількість кейсів R01." />,
+    },
+  ]
+
+  return (
+    <section className="overflow-hidden border border-landing-border bg-landing-paper">
+      <div className="grid gap-px bg-landing-border sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="bg-landing-paper p-6">
+            <SectionLabel>{metric.label}</SectionLabel>
+            <div className={`mt-3 font-mono text-3xl leading-none ${metric.accent ? 'text-[var(--danger)]' : 'text-landing-ink'}`}>
+              {metric.value}
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-sm leading-relaxed text-landing-ink-soft">
+              <span>{metric.note}</span>
+              {metric.extra}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function RuleBreakdown() {
+  return (
+    <section className="overflow-hidden border border-landing-border bg-landing-paper">
+      <div className="border-b border-landing-border px-6 py-5 md:px-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <SectionLabel>Discrepancy breakdown</SectionLabel>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-landing-ink">
+              Розбіжності за типами
+            </h2>
+          </div>
+          <p className="text-sm text-landing-ink-soft">Сортування за кількістю кейсів у звіті</p>
+        </div>
+      </div>
+
+      <div className="divide-y divide-landing-border">
+        {RULE_BREAKDOWN.map((rule) => {
+          const width = (rule.count / MAX_RULE_COUNT) * 100
+
+          return (
+            <div
+              key={rule.code}
+              className="grid gap-x-4 gap-y-2.5 px-6 py-4 md:grid-cols-[64px_minmax(240px,1.15fr)_minmax(190px,0.85fr)_84px_96px] md:items-center md:px-8"
+            >
+              <div className="pt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-landing-ink">
+                {rule.code}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm leading-5 text-landing-ink">
+                  {rule.name}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="h-1.5 rounded-full bg-landing-secondary">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${width}%`,
+                      backgroundColor:
+                        SEVERITY_TONES[rule.severity].bar,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="font-mono text-sm tabular-nums text-landing-ink md:text-right">
+                {formatNumber(rule.count)}
+              </div>
+              <div className="md:flex md:justify-end">
+                <SeverityChip severity={rule.severity} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function FilterSection({
+  title,
+  children,
+  className = '',
+}: {
+  title: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section className={`border-b border-landing-border px-4 py-4.5 last:border-b-0 ${className}`}>
+      <div className="flex items-center justify-between">
+        <SectionLabel>{title}</SectionLabel>
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  )
+}
+
+function FilterOption({
+  active,
+  onClick,
+  marker,
+  label,
+  suffix,
+}: {
+  active: boolean
+  onClick: () => void
+  marker?: ReactNode
+  label: ReactNode
+  suffix?: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="grid w-full grid-cols-[16px_12px_minmax(0,1fr)_48px] items-start gap-x-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-landing-surface"
+    >
+      <span
+        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border"
+        style={{
+          borderColor: active ? 'var(--accent)' : 'var(--landing-border-strong)',
+          backgroundColor: active ? 'var(--accent)' : 'transparent',
+        }}
+      >
+        {active ? <span className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+      </span>
+      <span className="mt-1 flex h-3 w-3 shrink-0 items-center justify-center">
+        {marker}
+      </span>
+      <span className="min-w-0 text-sm leading-5 text-landing-ink">{label}</span>
+      {suffix ? (
+        <span className="mt-0.5 w-12 shrink-0 text-right font-mono text-xs tabular-nums text-landing-muted">
+          {suffix}
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
 function FilterRail({
   filters,
+  activeFilterCount,
   onToggleSev,
   onToggleRule,
   onStatus,
@@ -558,281 +563,104 @@ function FilterRail({
   onReset,
 }: FilterRailProps) {
   return (
-    <aside
-      className="w-full shrink-0 rounded-lg border lg:w-[280px]"
-      style={{
-        position: 'sticky',
-        top: 80,
-        alignSelf: 'flex-start',
-        borderColor: 'var(--border)',
-        background: 'var(--surface)',
-      }}
-      aria-label="Фільтри"
-    >
-      {/* Header */}
-      <div
-        className="flex items-center gap-2 border-b px-4 py-3"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <Filter size={14} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
-        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Фільтри
-        </span>
-      </div>
-
-      <div className="p-4 flex flex-col gap-0">
-        {/* Severity */}
-        <div>
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Критичність
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {SEV_FILTERS.map(({ key, label, color, count }) => (
-              <label
-                key={key}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-0.5 transition-colors"
-                style={{ '--hover-bg': 'var(--surface-muted)' } as React.CSSProperties}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'var(--surface-muted)')
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                {/* Custom checkbox */}
-                <span
-                  className="flex size-4 shrink-0 items-center justify-center rounded border transition-colors"
-                  style={{
-                    borderColor: filters.severities.has(key)
-                      ? 'var(--accent)'
-                      : 'var(--border-strong)',
-                    background: filters.severities.has(key)
-                      ? 'var(--accent)'
-                      : 'transparent',
-                  }}
-                  onClick={() => onToggleSev(key)}
-                >
-                  {filters.severities.has(key) && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path
-                        d="M2 5l2.5 2.5L8 2.5"
-                        stroke="white"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-                {/* Severity dot */}
-                <span
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{
-                    background: color,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                  }}
-                  aria-hidden="true"
-                />
-                <span className="flex-1 text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {label}
-                </span>
-                <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {formatNumber(count)}
-                </span>
-              </label>
-            ))}
+    <aside className="w-full xl:sticky xl:top-24 xl:w-[240px] xl:self-start" aria-label="Фільтри">
+      <div className="overflow-hidden border border-landing-border bg-landing-paper">
+        <div className="flex items-center justify-between border-b border-landing-border px-4 py-4">
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-landing-muted" />
+            <span className="text-sm font-medium text-landing-ink">Фільтри</span>
           </div>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+            {activeFilterCount === 0 ? 'base view' : `${activeFilterCount} active`}
+          </span>
         </div>
 
-        <div className="my-3 h-px" style={{ background: 'var(--border)' }} />
-
-        {/* Rule type */}
-        <div>
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Тип розбіжності
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {RULES.map((rule) => (
-              <label
-                key={rule.code}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-0.5 transition-colors"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'var(--surface-muted)')
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span
-                  className="flex size-4 shrink-0 items-center justify-center rounded border transition-colors"
-                  style={{
-                    borderColor: filters.rules.has(rule.code)
-                      ? 'var(--accent)'
-                      : 'var(--border-strong)',
-                    background: filters.rules.has(rule.code)
-                      ? 'var(--accent)'
-                      : 'transparent',
-                  }}
-                  onClick={() => onToggleRule(rule.code)}
-                >
-                  {filters.rules.has(rule.code) && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path
-                        d="M2 5l2.5 2.5L8 2.5"
-                        stroke="white"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-                <span className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
-                  <span
-                    className="shrink-0 font-mono text-[11px] font-medium"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {rule.code}
-                  </span>
-                  <span
-                    className="truncate"
-                    style={{ color: 'var(--text-primary)' }}
-                    title={rule.name}
-                  >
-                    {rule.name}
-                  </span>
-                </span>
-                <span className="shrink-0 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {formatNumber(rule.count)}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="my-3 h-px" style={{ background: 'var(--border)' }} />
-
-        {/* Status */}
-        <div>
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Статус
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {(
-              [
-                { value: 'ALL', label: 'Всі' },
-                { value: 'NEW', label: 'Нові' },
-                { value: 'IN_REVIEW', label: 'В роботі' },
-                { value: 'CONFIRMED', label: 'Підтверджені' },
-                { value: 'DISMISSED', label: 'Відхилені' },
-              ] as { value: StatusFilter; label: string }[]
-            ).map(({ value, label }) => (
-              <label
-                key={value}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-0.5 transition-colors"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = 'var(--surface-muted)')
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span
-                  className="flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors"
-                  style={{
-                    borderColor:
-                      filters.statusFilter === value
-                        ? 'var(--accent)'
-                        : 'var(--border-strong)',
-                  }}
-                  onClick={() => onStatus(value)}
-                >
-                  {filters.statusFilter === value && (
+        <div className="md:grid md:grid-cols-2 xl:block">
+          <FilterSection title="Критичність">
+            <div className="space-y-1">
+              {SEV_FILTERS.map((item) => (
+                <FilterOption
+                  key={item.key}
+                  active={filters.severities.has(item.key)}
+                  onClick={() => onToggleSev(item.key)}
+                  marker={
                     <span
-                      className="size-2 rounded-full"
-                      style={{ background: 'var(--accent)' }}
+                      className="block h-2.5 w-2.5 rounded-full"
+                      style={{
+                        backgroundColor: SEVERITY_TONES[item.key].dot,
+                      }}
                     />
-                  )}
-                </span>
-                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {label}
-                </span>
-              </label>
-            ))}
-          </div>
+                  }
+                  label={item.label}
+                  suffix={formatNumber(item.count)}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          <FilterSection title="Статус">
+            <div className="space-y-1">
+              {STATUS_OPTIONS.map((option) => (
+                <FilterOption
+                  key={option.value}
+                  active={filters.statusFilter === option.value}
+                  onClick={() => onStatus(option.value)}
+                  label={option.label}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          <FilterSection title="Тип розбіжності" className="md:col-span-2 xl:col-span-1">
+            <div className="space-y-0.5">
+              {RULES.map((rule) => (
+                <FilterOption
+                  key={rule.code}
+                  active={filters.rules.has(rule.code)}
+                  onClick={() => onToggleRule(rule.code)}
+                  label={
+                    <span className="flex min-w-0 items-start gap-2.5">
+                      <span className="pt-0.5 font-mono text-[11px] text-[var(--accent)]">{rule.code}</span>
+                      <span className="min-w-0 text-sm leading-5 text-landing-ink">{rule.name}</span>
+                    </span>
+                  }
+                  suffix={formatNumber(rule.count)}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          <FilterSection title="Пошук" className="md:col-span-2 xl:col-span-1">
+            <div className="relative">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-landing-muted" />
+              <input
+                type="search"
+                placeholder="ІПН, ім’я, опис кейсу..."
+                value={filters.search}
+                onChange={(event) => onSearch(event.target.value)}
+                className="w-full rounded-lg border border-landing-border bg-white py-2.5 pl-9 pr-3 text-sm text-landing-ink outline-none transition-colors placeholder:text-landing-muted focus:border-landing-ink"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={onReset}
+              className="mt-4 text-sm text-landing-ink-soft transition-colors hover:text-landing-ink"
+            >
+              Скинути фільтри
+            </button>
+          </FilterSection>
         </div>
-
-        <div className="my-3 h-px" style={{ background: 'var(--border)' }} />
-
-        {/* Search */}
-        <div>
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Пошук
-          </p>
-          <div className="relative">
-            <Search
-              size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: 'var(--text-muted)' }}
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="ІПН, ім'я, адреса..."
-              value={filters.search}
-              onChange={(e) => onSearch(e.target.value)}
-              className="w-full rounded-lg border pl-8 pr-3 py-1.5 text-sm outline-none transition-colors"
-              style={{
-                borderColor: 'var(--border)',
-                background: 'var(--surface)',
-                color: 'var(--text-primary)',
-              }}
-              aria-label="Пошук по ІПН, імені або адресі"
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--accent)')
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--border)')
-              }
-            />
-          </div>
-        </div>
-
-        {/* Reset */}
-        <button
-          type="button"
-          onClick={onReset}
-          className="mt-4 text-xs font-medium transition-colors text-left"
-          style={{ color: 'var(--accent)' }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = 'var(--accent-hover)')
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = 'var(--accent)')
-          }
-        >
-          Скинути фільтри
-        </button>
       </div>
     </aside>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Section 5 - Discrepancies table
-// ---------------------------------------------------------------------------
-
 interface TableProps {
   rows: GeneratedRow[]
   totalCount: number
   page: number
-  onPageChange: (p: number) => void
+  onPageChange: (page: number) => void
 }
 
 function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps) {
@@ -841,11 +669,11 @@ function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps
   const start = (page - 1) * PAGE_SIZE + 1
   const end = Math.min(page * PAGE_SIZE, totalCount)
 
-  // Pagination buttons: [<] [1] [2] [3] [...] [81] [>]
   const pageButtons = useMemo<(number | '...')[]>(() => {
     if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1)
+      return Array.from({ length: totalPages }, (_, index) => index + 1)
     }
+
     return [1, 2, 3, '...', totalPages]
   }, [totalPages])
 
@@ -854,175 +682,109 @@ function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps
     [navigate],
   )
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>, id: number) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
+  const handleRowKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>, id: number) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
         handleRow(id)
       }
     },
     [handleRow],
   )
 
-  const gridCols = '32px 60px 140px 2fr 180px 3fr 110px 40px'
-
   return (
-    <div className="flex flex-1 flex-col min-w-0">
-      {/* Toolbar */}
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Знайдено{' '}
-            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {formatNumber(totalCount)}
-            </span>{' '}
-            кейсів
-          </p>
-          <span
-            className="text-xs"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Сортування: за критичністю
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-secondary)',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-muted)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface)')}
-          >
-            <Download size={12} aria-hidden="true" />
-            Експорт CSV
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-secondary)',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-muted)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface)')}
-          >
-            <Download size={12} aria-hidden="true" />
-            Експорт PDF
-          </button>
+    <section className="min-w-0 flex-1 overflow-hidden border border-landing-border bg-landing-paper">
+      <div className="border-b border-landing-border px-5 py-5 md:px-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <SectionLabel>Cases for review</SectionLabel>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-landing-ink">
+              Робоча черга кейсів
+            </h2>
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-landing-ink-soft">
+              <span>
+                Знайдено <strong className="font-semibold text-landing-ink">{formatNumber(totalCount)}</strong> кейсів
+              </span>
+              <span>Сортування: за критичністю</span>
+              <span>
+                Показано {formatNumber(start)}-{formatNumber(end)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <QuietButton>
+              <Download size={14} />
+              Експорт CSV
+            </QuietButton>
+            <QuietButton>
+              <Download size={14} />
+              Експорт PDF
+            </QuietButton>
+          </div>
         </div>
       </div>
 
-      {/* Table container */}
-      <div
-        className="overflow-hidden rounded-lg border"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        {/* Header */}
-        <div
-          className="grid items-center border-b px-3 py-2.5"
-          style={{
-            gridTemplateColumns: gridCols,
-            borderColor: 'var(--border)',
-            background: 'var(--surface-muted)',
-          }}
-        >
-          <div />
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            #ID
-          </span>
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Критичність
-          </span>
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Власник
-          </span>
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Правило
-          </span>
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Опис
-          </span>
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Статус
-          </span>
-          <div />
-        </div>
-
-        {/* Rows */}
+      <div className="md:hidden">
         {rows.map((row) => (
-          <RowItem
-            key={row.id}
-            row={row}
-            gridCols={gridCols}
-            onClick={() => handleRow(row.id)}
-            onKeyDown={(e) => handleKeyDown(e, row.id)}
-          />
+          <MobileCaseCard key={row.id} row={row} onOpen={() => handleRow(row.id)} />
         ))}
       </div>
 
-      {/* Pagination */}
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+      <div className="hidden md:block xl:hidden">
+        {rows.map((row) => (
+          <TabletCaseRow key={row.id} row={row} onOpen={() => handleRow(row.id)} />
+        ))}
+      </div>
+
+      <div className="hidden xl:block">
+        <div className="overflow-x-auto">
+          <div className="min-w-[920px]">
+            <div
+              className="grid border-b border-landing-border bg-landing-surface px-6 py-3.5"
+              style={{ gridTemplateColumns: DESKTOP_TABLE_GRID }}
+            >
+              {['Кейс', 'Власник', 'Правило', 'Опис', 'Статус'].map((label) => (
+                <div key={label} className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            {rows.map((row) => (
+              <DesktopCaseRow
+                key={row.id}
+                row={row}
+                onOpen={() => handleRow(row.id)}
+                onKeyDown={(event) => handleRowKeyDown(event, row.id)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-landing-border px-5 py-4 text-sm text-landing-ink-soft md:flex-row md:items-center md:justify-between md:px-6">
+        <p>
           Показано {formatNumber(start)}-{formatNumber(end)} з {formatNumber(totalCount)}
         </p>
-
         <nav className="flex items-center gap-1" aria-label="Пагінація">
           <button
             type="button"
             disabled={page === 1}
             onClick={() => onPageChange(Math.max(1, page - 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-landing-border bg-landing-paper text-landing-ink-soft transition-colors hover:bg-landing-surface disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Попередня сторінка"
-            className="flex items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            style={{
-              width: 32,
-              height: 32,
-              borderColor: 'var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-muted)',
-            }}
           >
-            <ChevronLeft size={13} aria-hidden="true" />
+            <ChevronLeft size={14} />
           </button>
 
-          {pageButtons.map((btn, idx) =>
-            btn === '...' ? (
-              <span
-                key={`ellipsis-${idx}`}
-                className="flex items-center justify-center text-xs"
-                style={{ width: 32, height: 32, color: 'var(--text-muted)' }}
-              >
+          {pageButtons.map((item, index) =>
+            item === '...' ? (
+              <span key={`ellipsis-${index}`} className="flex h-8 w-8 items-center justify-center text-xs text-landing-muted">
                 ...
               </span>
             ) : (
-              <PageButton
-                key={btn}
-                num={btn}
-                active={btn === page}
-                onClick={() => onPageChange(btn)}
-              />
+              <PageButton key={item} num={item} active={item === page} onClick={() => onPageChange(item)} />
             ),
           )}
 
@@ -1030,131 +792,175 @@ function DiscrepanciesTable({ rows, totalCount, page, onPageChange }: TableProps
             type="button"
             disabled={page === totalPages}
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-landing-border bg-landing-paper text-landing-ink-soft transition-colors hover:bg-landing-surface disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Наступна сторінка"
-            className="flex items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            style={{
-              width: 32,
-              height: 32,
-              borderColor: 'var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-muted)',
-            }}
           >
-            <ChevronRight size={13} aria-hidden="true" />
+            <ChevronRight size={14} />
           </button>
         </nav>
       </div>
-    </div>
+    </section>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Row item (extracted to avoid re-render issues)
-// ---------------------------------------------------------------------------
-
-interface RowItemProps {
+function TabletCaseRow({
+  row,
+  onOpen,
+}: {
   row: GeneratedRow
-  gridCols: string
-  onClick: () => void
-  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-}
-
-function RowItem({ row, gridCols, onClick, onKeyDown }: RowItemProps) {
-  const [hovered, setHovered] = useState(false)
+  onOpen: () => void
+}) {
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Відкрити кейс ${row.id}: ${row.ownerName}`}
-      onClick={onClick}
-      onKeyDown={onKeyDown}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="grid items-center border-b px-3 py-2.5 cursor-pointer transition-colors last:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset"
-      style={{
-        gridTemplateColumns: gridCols,
-        borderColor: 'var(--border)',
-        background: hovered ? 'var(--surface-muted)' : 'transparent',
-        '--tw-ring-color': 'var(--accent)',
-      } as React.CSSProperties}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen()
+        }
+      }}
+      className="cursor-pointer border-b border-landing-border px-6 py-4 transition-colors hover:bg-landing-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset last:border-b-0"
     >
-      {/* Checkbox placeholder */}
-      <div className="flex items-center justify-center">
-        <span
-          className="size-3.5 rounded border"
-          style={{ borderColor: 'var(--border-strong)' }}
-        />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="pt-0.5">
+            <div className="font-mono text-xs text-landing-ink">#{row.id}</div>
+            <div className="mt-2.5">
+              <SeverityChip severity={row.severity} />
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-landing-ink">{row.ownerName}</div>
+            <div className="mt-1.5 font-mono text-[11px] text-landing-muted">
+              {row.taxId || 'ІПН відсутній'}
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 pt-0.5">
+          <StatusChip status={row.status} />
+        </div>
       </div>
 
-      {/* ID */}
-      <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-        #{row.id}
-      </span>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.2fr)]">
+        <div className="min-w-0">
+          <div className="inline-flex rounded-md border border-[var(--accent-subtle)] bg-landing-surface px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--accent)]">
+            {row.ruleCode}
+          </div>
+          <div className="mt-2 text-sm leading-5 text-landing-ink-soft">{row.ruleName}</div>
+        </div>
 
-      {/* Severity */}
-      <div>
-        <SevChip severity={row.severity} />
-      </div>
-
-      {/* Owner */}
-      <div className="min-w-0 pr-2">
-        <p
-          className="truncate text-sm font-medium"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {row.ownerName}
-        </p>
-        {row.taxId && (
-          <p className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-            {row.taxId}
-          </p>
-        )}
-      </div>
-
-      {/* Rule */}
-      <div className="min-w-0 pr-2">
-        <span
-          className="inline-block rounded font-mono text-[11px] font-medium px-1.5 py-0.5"
-          style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
-        >
-          {row.ruleCode}
-        </span>
-        <p
-          className="mt-0.5 truncate text-xs"
-          style={{ color: 'var(--text-muted)' }}
-          title={row.ruleName}
-        >
-          {row.ruleName}
-        </p>
-      </div>
-
-      {/* Description */}
-      <div className="min-w-0 pr-2">
-        <p
-          className="truncate text-sm"
-          style={{ color: 'var(--text-secondary)' }}
-          title={row.description}
-        >
-          {row.description}
-        </p>
-      </div>
-
-      {/* Status */}
-      <div>
-        <StatusChip status={row.status} />
-      </div>
-
-      {/* Chevron */}
-      <div className="flex items-center justify-center" aria-hidden="true">
-        <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
+        <div className="min-w-0 border-t border-landing-border pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+            Опис кейсу
+          </div>
+          <div className="mt-2 text-sm leading-6 text-landing-ink-soft">{row.description}</div>
+        </div>
       </div>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Page button
-// ---------------------------------------------------------------------------
+function DesktopCaseRow({
+  row,
+  onOpen,
+  onKeyDown,
+}: {
+  row: GeneratedRow
+  onOpen: () => void
+  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={onKeyDown}
+      className="grid cursor-pointer items-stretch border-b border-landing-border px-6 py-4 transition-colors hover:bg-landing-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset last:border-b-0"
+      style={{ gridTemplateColumns: DESKTOP_TABLE_GRID }}
+    >
+      <div className="flex min-h-[56px] flex-col justify-center">
+        <div className="font-mono text-xs text-landing-ink">#{row.id}</div>
+        <div className="mt-2.5">
+          <SeverityChip severity={row.severity} />
+        </div>
+      </div>
+
+      <div className="flex min-h-[56px] min-w-0 flex-col justify-center pr-5">
+        <div className="text-sm font-medium text-landing-ink">{row.ownerName}</div>
+        <div className="mt-1.5 font-mono text-[11px] text-landing-muted">
+          {row.taxId || 'ІПН відсутній'}
+        </div>
+      </div>
+
+      <div className="flex min-h-[56px] min-w-0 flex-col justify-center pr-5">
+        <div className="inline-flex rounded-md border border-[var(--accent-subtle)] bg-landing-surface px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--accent)]">
+          {row.ruleCode}
+        </div>
+        <div className="mt-2 text-sm leading-5 text-landing-ink-soft">{row.ruleName}</div>
+      </div>
+
+      <div className="flex min-h-[56px] min-w-0 flex-col justify-center pr-5">
+        <div className="break-words text-sm leading-5 text-landing-ink-soft">
+          {row.description}
+        </div>
+      </div>
+
+      <div className="flex min-h-[56px] items-center">
+        <StatusChip status={row.status} />
+      </div>
+    </div>
+  )
+}
+
+function MobileCaseCard({
+  row,
+  onOpen,
+}: {
+  row: GeneratedRow
+  onOpen: () => void
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen()
+        }
+      }}
+      className="cursor-pointer border-b border-landing-border px-5 py-4 transition-colors hover:bg-landing-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset last:border-b-0"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-mono text-xs text-landing-ink">#{row.id}</div>
+          <div className="mt-2.5">
+            <SeverityChip severity={row.severity} />
+          </div>
+        </div>
+        <StatusChip status={row.status} />
+      </div>
+
+      <div className="mt-4 text-sm font-medium leading-6 text-landing-ink">{row.ownerName}</div>
+      <div className="mt-1.5 font-mono text-[11px] text-landing-muted">{row.taxId || 'ІПН відсутній'}</div>
+
+      <div className="mt-4 flex items-start gap-3">
+        <div className="inline-flex rounded-md border border-[var(--accent-subtle)] bg-landing-surface px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--accent)]">
+          {row.ruleCode}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm leading-6 text-landing-ink">{row.ruleName}</div>
+          <div className="mt-2 text-sm leading-6 text-landing-ink-soft">{row.description}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function PageButton({
   num,
@@ -1165,52 +971,36 @@ function PageButton({
   active: boolean
   onClick: () => void
 }) {
-  const ref = useRef<HTMLButtonElement>(null)
   return (
     <button
-      ref={ref}
       type="button"
       onClick={onClick}
-      aria-label={`Сторінка ${num}`}
       aria-current={active ? 'page' : undefined}
-      className="flex items-center justify-center rounded-md border text-xs font-medium transition-colors"
-      style={{
-        width: 32,
-        height: 32,
-        borderColor: active ? 'var(--accent)' : 'var(--border)',
-        background: active ? 'var(--accent)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-secondary)',
-      }}
-      onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = 'var(--surface-muted)'
-      }}
-      onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.background = 'var(--surface)'
-      }}
+      className={`flex h-8 w-8 items-center justify-center rounded-md border text-xs font-medium transition-colors ${
+        active
+          ? 'border-landing-ink bg-landing-ink text-landing-paper'
+          : 'border-landing-border bg-landing-paper text-landing-ink hover:bg-landing-surface'
+      }`}
     >
       {num}
     </button>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Main page
-// ---------------------------------------------------------------------------
-
 export default function DashboardPage() {
   const [filters, setFilters] = useState<FilterState>(() => ({
     severities: new Set<Severity>(['HIGH', 'MEDIUM', 'LOW']),
-    rules: new Set(RULES.map((r) => r.code)),
-    statusFilter: 'ALL' as StatusFilter,
+    rules: new Set(RULES.map((rule) => rule.code)),
+    statusFilter: 'ALL',
     search: '',
   }))
   const [page, setPage] = useState(1)
 
-  const handleToggleSev = useCallback((s: Severity) => {
+  const handleToggleSev = useCallback((severity: Severity) => {
     setFilters((prev) => {
       const next = new Set(prev.severities)
-      if (next.has(s)) next.delete(s)
-      else next.add(s)
+      if (next.has(severity)) next.delete(severity)
+      else next.add(severity)
       return { ...prev, severities: next }
     })
     setPage(1)
@@ -1239,29 +1029,30 @@ export default function DashboardPage() {
   const handleReset = useCallback(() => {
     setFilters({
       severities: new Set<Severity>(['HIGH', 'MEDIUM', 'LOW']),
-      rules: new Set(RULES.map((r) => r.code)),
+      rules: new Set(RULES.map((rule) => rule.code)),
       statusFilter: 'ALL',
       search: '',
     })
     setPage(1)
   }, [])
 
-  // Client-side filtering of the 50 generated rows
   const filtered = useMemo<GeneratedRow[]>(() => {
-    const q = filters.search.trim().toLowerCase()
+    const query = filters.search.trim().toLowerCase()
+
     return GENERATED_ROWS.filter((row) => {
       if (!filters.severities.has(row.severity)) return false
       if (!filters.rules.has(row.ruleCode)) return false
       if (filters.statusFilter !== 'ALL' && row.status !== filters.statusFilter) return false
-      if (q) {
-        const hay = `${row.ownerName} ${row.taxId} ${row.description}`.toLowerCase()
-        if (!hay.includes(q)) return false
+
+      if (query) {
+        const haystack = `${row.ownerName} ${row.taxId} ${row.description}`.toLowerCase()
+        if (!haystack.includes(query)) return false
       }
+
       return true
     })
   }, [filters])
 
-  // Show full 4027 count when no filters applied; otherwise show filtered count
   const isDefault =
     filters.severities.size === 3 &&
     filters.rules.size === RULES.length &&
@@ -1274,26 +1065,25 @@ export default function DashboardPage() {
     [filtered, page],
   )
 
+  const activeFilterCount = [
+    filters.severities.size !== 3,
+    filters.rules.size !== RULES.length,
+    filters.statusFilter !== 'ALL',
+    filters.search.trim() !== '',
+  ].filter(Boolean).length
+
   return (
-    <main
-      className="min-h-screen px-6 py-8"
-      style={{ background: 'var(--background)' }}
-    >
-      <div className="mx-auto w-full max-w-[1440px]">
-        {/* Task header */}
-        <TaskHeader />
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto max-w-[1400px] px-6 py-10 md:px-10 md:py-12">
+        <div className="space-y-8">
+          <TaskHeader />
+          <SummaryMetrics />
+          <RuleBreakdown />
 
-        {/* Stats */}
-        <StatsRow />
-
-        {/* Rule breakdown */}
-        <RuleBreakdown />
-
-        {/* Filter + Table */}
-        <section className="mt-6" aria-label="Таблиця розбіжностей">
-          <div className="flex flex-col items-start gap-5 lg:flex-row">
+          <section className="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,1fr)]" aria-label="Аналітична робоча зона">
             <FilterRail
               filters={filters}
+              activeFilterCount={activeFilterCount}
               onToggleSev={handleToggleSev}
               onToggleRule={handleToggleRule}
               onStatus={handleStatus}
@@ -1306,8 +1096,8 @@ export default function DashboardPage() {
               page={page}
               onPageChange={setPage}
             />
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   )
