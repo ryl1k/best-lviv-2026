@@ -1,4 +1,4 @@
-const fallbackApiBaseUrl = 'http://ec2-13-48-249-248.eu-north-1.compute.amazonaws.com:8080';
+const fallbackApiBaseUrl = 'https://api.logisync.systems';
 
 function normalizeBaseUrl(value: string): string {
   const trimmed = value.trim();
