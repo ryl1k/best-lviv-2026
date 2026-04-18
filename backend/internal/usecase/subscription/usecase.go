@@ -1,3 +1,4 @@
+// Package subscription manages subscription tiers, purchases, and usage tracking.
 package subscription
 
 import (
@@ -8,21 +9,36 @@ import (
 	"time"
 
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
-	"github.com/ryl1k/best-lviv-2026/internal/repo"
 )
+
+type subscriptionRepo interface {
+	List(ctx context.Context) ([]entity.Subscription, error)
+	GetByID(ctx context.Context, id int64) (entity.Subscription, error)
+}
+
+type userSubscriptionRepo interface {
+	GetActive(ctx context.Context, userID int) (entity.UserSubscription, error)
+	Create(ctx context.Context, sub entity.UserSubscription) (entity.UserSubscription, error)
+	IncrementSatelliteTries(ctx context.Context, id int64) error
+	IncrementCSVTries(ctx context.Context, id int64) error
+}
+
+type subscriptionTransactionRepo interface {
+	Create(ctx context.Context, tx entity.SubscriptionTransaction) (entity.SubscriptionTransaction, error)
+}
 
 type UseCase struct {
 	logger      *slog.Logger
-	subRepo     repo.SubscriptionRepo
-	userSubRepo repo.UserSubscriptionRepo
-	txRepo      repo.SubscriptionTransactionRepo
+	subRepo     subscriptionRepo
+	userSubRepo userSubscriptionRepo
+	txRepo      subscriptionTransactionRepo
 }
 
 func New(
 	logger *slog.Logger,
-	subRepo repo.SubscriptionRepo,
-	userSubRepo repo.UserSubscriptionRepo,
-	txRepo repo.SubscriptionTransactionRepo,
+	subRepo subscriptionRepo,
+	userSubRepo userSubscriptionRepo,
+	txRepo subscriptionTransactionRepo,
 ) *UseCase {
 	return &UseCase{
 		logger:      logger.WithGroup("subscription_usecase"),
