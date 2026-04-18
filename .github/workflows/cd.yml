@@ -10,9 +10,15 @@ jobs:
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
+    environment: Production
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Debug
+        run: echo "Host length = ${#EC2_HOST}"
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
