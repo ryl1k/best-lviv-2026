@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const canSubmit = email.length > 0 && password.length > 0;
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const canSubmit = fullName.length > 0 && email.length > 0 && passwordsMatch;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -18,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate('/home');
+      navigate('/login');
     }, 800);
   };
 
@@ -36,23 +40,23 @@ export default function LoginPage() {
           </div>
 
           <h1 className="mb-5 text-[32px] leading-[1.2] font-bold tracking-[-0.02em]">
-            Робить приховане
+            Підключіть громаду
             <br />
-            видимим
+            за декілька хвилин
           </h1>
           <p className="max-w-[340px] text-[15px] leading-[1.6] opacity-80">
-            Автоматичне зіставлення державних реєстрів для виявлення
-            розбіжностей та оптимізації податкових надходжень громади.
+            Створіть акаунт команди та запускайте автоматичне зіставлення державних
+            реєстрів з першого дня.
           </p>
         </div>
 
         <div className="relative z-[1]">
           <div className="mb-6 rounded-xl bg-white/15 px-6 py-5 backdrop-blur-md">
             <div className="font-mono text-[28px] font-bold">
-              42 038
+              10 хв
             </div>
-            <div className="mt-1 text-[13px] opacity-70">
-              записів оброблено для Острівської ТГ
+            <div className="mt-1 text-[13px] opacity-72">
+              середній час до першого звіту після реєстрації
             </div>
           </div>
 
@@ -75,15 +79,29 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="mb-2 text-2xl font-semibold tracking-[-0.01em] text-[var(--auth-text-primary)]">
-              Вхід в систему
+              Реєстрація
             </h2>
             <p className="text-sm text-[var(--auth-text-muted)]">
-              Увійдіть для доступу до аудиту активів вашої громади
+              Створіть акаунт для доступу до аудиту активів вашої громади
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-5">
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
+                Імʼя та прізвище
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Імʼя Прізвище"
+                autoComplete="name"
+                className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
+              />
+            </div>
+
+            <div className="mb-4">
               <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
                 Електронна пошта
               </label>
@@ -91,13 +109,13 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@ostrivska.gov.ua"
+                placeholder="admin@hromada.gov.ua"
                 autoComplete="email"
                 className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
               />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-4">
               <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
                 Пароль
               </label>
@@ -107,7 +125,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Введіть пароль"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 pr-11 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
                 />
                 <button
@@ -121,15 +139,40 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="mb-7 text-right">
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="cursor-pointer border-none bg-transparent p-0 text-[13px] text-[var(--auth-accent)]"
-              >
-                Забули пароль?
-              </button>
+            <div className="mb-3">
+              <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
+                Підтвердження пароля
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Повторіть пароль"
+                  autoComplete="new-password"
+                  className={cn(
+                    'h-11 w-full rounded-lg border bg-[var(--auth-surface)] px-3.5 pr-11 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)]',
+                    confirmPassword.length > 0 && !passwordsMatch
+                      ? 'border-red-600 focus:border-red-600'
+                      : 'border-[var(--auth-border)] focus:border-[var(--auth-accent)]',
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute top-1/2 right-3 flex -translate-y-1/2 cursor-pointer items-center bg-transparent p-0 text-[var(--auth-text-muted)]"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
+
+            {confirmPassword.length > 0 && !passwordsMatch && (
+              <p className="mb-[18px] text-xs text-red-600">
+                Паролі не співпадають
+              </p>
+            )}
 
             <button
               type="submit"
@@ -145,20 +188,20 @@ export default function LoginPage() {
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  Увійти <ArrowRight size={16} />
+                  Створити акаунт <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-xs text-[var(--auth-text-muted)]">
-            Немає акаунту?{' '}
+            Вже є акаунт?{' '}
             <button
               type="button"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
               className="cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-[var(--auth-accent)]"
             >
-              Створити акаунт
+              Увійти
             </button>
           </p>
         </div>

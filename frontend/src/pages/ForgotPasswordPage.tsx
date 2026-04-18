@@ -1,16 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const canSubmit = email.length > 0 && password.length > 0;
+  const canSubmit = email.length > 0;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -18,7 +16,6 @@ export default function LoginPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate('/home');
     }, 800);
   };
 
@@ -36,26 +33,16 @@ export default function LoginPage() {
           </div>
 
           <h1 className="mb-5 text-[32px] leading-[1.2] font-bold tracking-[-0.02em]">
-            Робить приховане
+            Відновіть доступ
             <br />
-            видимим
+            до кабінету
           </h1>
           <p className="max-w-[340px] text-[15px] leading-[1.6] opacity-80">
-            Автоматичне зіставлення державних реєстрів для виявлення
-            розбіжностей та оптимізації податкових надходжень громади.
+            Вкажіть службову пошту, і система сформує інструкції для зміни пароля.
           </p>
         </div>
 
         <div className="relative z-[1]">
-          <div className="mb-6 rounded-xl bg-white/15 px-6 py-5 backdrop-blur-md">
-            <div className="font-mono text-[28px] font-bold">
-              42 038
-            </div>
-            <div className="mt-1 text-[13px] opacity-70">
-              записів оброблено для Острівської ТГ
-            </div>
-          </div>
-
           <div className="flex gap-6 text-xs opacity-50">
             <span>© 2026 Revela</span>
             <span>·</span>
@@ -66,19 +53,21 @@ export default function LoginPage() {
 
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-[400px]">
-          <div className="mb-10 flex items-center gap-2 lg:hidden">
-            <span className="inline-block h-1.5 w-1.5 rounded-[2px] bg-[var(--auth-accent)]" />
-            <span className="text-lg font-semibold text-[var(--auth-text-primary)]">
-              Revela
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="mb-8 flex cursor-pointer items-center gap-2 border-none bg-transparent p-0 text-sm text-[var(--auth-text-muted)] transition-colors hover:text-[var(--auth-text-secondary)]"
+          >
+            <ArrowLeft size={16} />
+            Назад до входу
+          </button>
 
           <div className="mb-8">
             <h2 className="mb-2 text-2xl font-semibold tracking-[-0.01em] text-[var(--auth-text-primary)]">
-              Вхід в систему
+              Забули пароль?
             </h2>
             <p className="text-sm text-[var(--auth-text-muted)]">
-              Увійдіть для доступу до аудиту активів вашої громади
+              Ця сторінка демонстраційна. Надсилання листа поки не підключене.
             </p>
           </div>
 
@@ -91,44 +80,10 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@ostrivska.gov.ua"
+                placeholder="admin@hromada.gov.ua"
                 autoComplete="email"
                 className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
               />
-            </div>
-
-            <div className="mb-3">
-              <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
-                Пароль
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Введіть пароль"
-                  autoComplete="current-password"
-                  className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 pr-11 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 right-3 flex -translate-y-1/2 cursor-pointer items-center bg-transparent p-0 text-[var(--auth-text-muted)]"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-7 text-right">
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="cursor-pointer border-none bg-transparent p-0 text-[13px] text-[var(--auth-accent)]"
-              >
-                Забули пароль?
-              </button>
             </div>
 
             <button
@@ -145,22 +100,11 @@ export default function LoginPage() {
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  Увійти <ArrowRight size={16} />
+                  Надіслати інструкцію <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-xs text-[var(--auth-text-muted)]">
-            Немає акаунту?{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/register')}
-              className="cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-[var(--auth-accent)]"
-            >
-              Створити акаунт
-            </button>
-          </p>
         </div>
       </div>
     </div>

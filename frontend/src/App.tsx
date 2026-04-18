@@ -4,6 +4,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Layout } from '@/components/layout/Layout';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import UploadPage from '@/pages/UploadPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ObjectDetailsPage from '@/pages/ObjectDetailsPage';
@@ -22,6 +24,8 @@ function App() {
           {/* Public pages - no layout */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* App pages - with layout */}
 <Route
