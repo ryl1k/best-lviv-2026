@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.1.0...v1.2.0) (2026-04-18)
+
+
+### Features
+
+* Implement batch processing for land and estate records ([8375518](https://github.com/ryl1k/best-lviv-2026/commit/8375518993ac5d909755fae1ce3c7b9793706b9d))
+
 ## [1.1.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.0.0...v1.1.0) (2026-04-18)
 
 
