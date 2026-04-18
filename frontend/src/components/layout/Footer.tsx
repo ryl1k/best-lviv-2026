@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 export function Footer() {
@@ -9,13 +10,13 @@ export function Footer() {
       <span className="text-landing-border-strong">·</span>
       <span>v0.1.0</span>
       <span className="text-landing-border-strong">·</span>
-      <a href="#docs" onClick={(e) => e.preventDefault()} className="text-landing-ink-soft no-underline hover:text-landing-ink">
+      <Link to="/docs" className="text-landing-ink-soft no-underline hover:text-landing-ink">
         {t('footer.docs')}
-      </a>
+      </Link>
       <span className="text-landing-border-strong">·</span>
-      <a href="#support" onClick={(e) => e.preventDefault()} className="text-landing-ink-soft no-underline hover:text-landing-ink">
+      <Link to="/support" className="text-landing-ink-soft no-underline hover:text-landing-ink">
         {t('footer.support')}
-      </a>
+      </Link>
     </footer>
   );
 }

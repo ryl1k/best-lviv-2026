@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Layout } from '@/components/layout/Layout';
 import LandingPage from '@/pages/LandingPage';
@@ -9,6 +10,8 @@ import ObjectDetailsPage from '@/pages/ObjectDetailsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SatelliteAnalysisPage from '@/pages/SatelliteAnalysisPage';
 import PricingPage from '@/pages/PricingPage';
+import DocsPage from '@/pages/DocsPage';
+import SupportPage from '@/pages/SupportPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function App() {
@@ -62,6 +65,22 @@ function App() {
             }
           />
           <Route
+            path="/docs"
+            element={
+              <Layout>
+                <DocsPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <Layout>
+                <SupportPage />
+              </Layout>
+            }
+          />
+          <Route
             path="/profile"
             element={
               <Layout>
@@ -72,6 +91,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </TooltipProvider>
+      <Toaster position="top-center" richColors />
     </BrowserRouter>
   );
 }

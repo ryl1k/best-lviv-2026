@@ -76,8 +76,8 @@ export function Navbar() {
           <span className="font-landing-display text-3xl leading-none text-landing-ink">
             Revela
           </span>
-          <span className="ml-1 hidden font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted sm:inline" aria-hidden="true">
-            {t('hero.subtitle')}
+          <span className="ml-1 hidden font-mono text-[13px] uppercase tracking-[0.18em] text-landing-muted sm:inline" aria-hidden="true">
+            {t('nav.tagline')}
           </span>
         </Link>
 
