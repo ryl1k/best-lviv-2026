@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.1...v1.5.2) (2026-04-18)
+
+
+### Bug Fixes
+
+* update fallback API base URL to use secure HTTPS endpoint ([8af4d8f](https://github.com/ryl1k/best-lviv-2026/commit/8af4d8f663b954d2a2f4fc410ebfbd8124052e04))
+
 ## [1.5.1](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.0...v1.5.1) (2026-04-18)
 
 
