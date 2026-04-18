@@ -2,12 +2,24 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, User, LogOut, Settings, LayoutDashboard, Globe, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { authApi } from '@/api';
+import { authApi, getAccessToken, getStoredUser } from '@/api';
 
 const LANGUAGES = [
   { code: 'uk', label: 'Українська', flag: '🇺🇦' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
 ];
+
+function toInitials(value: string): string {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
 
 export function Navbar() {
   const location = useLocation();
@@ -17,6 +29,9 @@ export function Navbar() {
   const [langOpen, setLangOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAccessToken()));
+  const [currentUserName, setCurrentUserName] = useState(() => getStoredUser()?.username ?? 'Користувач');
+  const [currentUserEmail, setCurrentUserEmail] = useState(() => getStoredUser()?.email ?? '');
   const profileRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +53,19 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const user = getStoredUser();
+      setIsAuthenticated(Boolean(getAccessToken()));
+      setCurrentUserName(user?.username ?? 'Користувач');
+      setCurrentUserEmail(user?.email ?? '');
+    };
+
+    syncAuthState();
+    window.addEventListener('storage', syncAuthState);
+    return () => window.removeEventListener('storage', syncAuthState);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -63,6 +91,9 @@ export function Navbar() {
     authApi.logout();
     setProfileOpen(false);
     setMobileOpen(false);
+    setIsAuthenticated(false);
+    setCurrentUserName('Користувач');
+    setCurrentUserEmail('');
     navigate('/login');
   };
 
@@ -151,76 +182,84 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Profile dropdown */}
-          <div ref={profileRef} className="relative hidden md:block">
-            <button
-              onClick={() => setProfileOpen(!profileOpen)}
-              aria-expanded={profileOpen}
-              aria-haspopup="true"
-              aria-label="Profile menu"
-              className="flex items-center gap-2 rounded-full"
-              style={{
-                padding: '4px 8px 4px 4px',
-                border: profileOpen ? '1px solid oklch(0 0 0 / 10%)' : '1px solid transparent',
-                background: profileOpen ? 'oklch(0 0 0 / 4%)' : 'transparent',
-                cursor: 'pointer',
-                transition: 'background-color 150ms, border-color 150ms',
-              }}
-              onMouseEnter={(e) => { if (!profileOpen) e.currentTarget.style.background = 'oklch(0 0 0 / 4%)'; }}
-              onMouseLeave={(e) => { if (!profileOpen) e.currentTarget.style.background = 'transparent'; }}
-            >
-              <div
-                className="flex items-center justify-center rounded-full text-[11px] font-semibold"
-                style={{ width: 30, height: 30, background: 'var(--landing-signal)', color: 'white' }}
-                aria-hidden="true"
+          {isAuthenticated ? (
+            <div ref={profileRef} className="relative hidden md:block">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+                aria-label="Profile menu"
+                className="flex items-center gap-2 rounded-full"
+                style={{
+                  padding: '4px 8px 4px 4px',
+                  border: profileOpen ? '1px solid oklch(0 0 0 / 10%)' : '1px solid transparent',
+                  background: profileOpen ? 'oklch(0 0 0 / 4%)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'background-color 150ms, border-color 150ms',
+                }}
+                onMouseEnter={(e) => { if (!profileOpen) e.currentTarget.style.background = 'oklch(0 0 0 / 4%)'; }}
+                onMouseLeave={(e) => { if (!profileOpen) e.currentTarget.style.background = 'transparent'; }}
               >
-                ОК
-              </div>
-              <ChevronDown size={12} className="text-landing-ink-soft" aria-hidden="true" style={{ transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
-            </button>
-
-            {profileOpen && (
-              <div className="absolute right-0 z-[100] mt-1.5 w-56 overflow-hidden rounded-lg border border-landing-border bg-landing-paper" role="menu" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}>
-                <div className="border-b border-landing-border px-3.5 py-3">
-                  <div className="text-sm font-semibold text-landing-ink">Олексій Коваленко</div>
-                  <div className="mt-0.5 text-xs text-landing-muted">o.kovalenko@ostrivska.gov.ua</div>
+                <div
+                  className="flex items-center justify-center rounded-full text-[11px] font-semibold"
+                  style={{ width: 30, height: 30, background: 'var(--landing-signal)', color: 'white' }}
+                  aria-hidden="true"
+                >
+                  {toInitials(currentUserName)}
                 </div>
-                <div className="p-1">
-                  {[
-                    { icon: LayoutDashboard, labelKey: 'nav.home', path: '/' },
-                    { icon: User, labelKey: 'nav.profile', path: '/profile' },
-                    { icon: Settings, labelKey: 'nav.settings', path: '/profile' },
-                  ].map((item) => (
+                <ChevronDown size={12} className="text-landing-ink-soft" aria-hidden="true" style={{ transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
+              </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 z-[100] mt-1.5 w-56 overflow-hidden rounded-lg border border-landing-border bg-landing-paper" role="menu" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div className="border-b border-landing-border px-3.5 py-3">
+                    <div className="text-sm font-semibold text-landing-ink">{currentUserName}</div>
+                    <div className="mt-0.5 text-xs text-landing-muted">{currentUserEmail}</div>
+                  </div>
+                  <div className="p-1">
+                    {[
+                      { icon: LayoutDashboard, labelKey: 'nav.home', path: '/' },
+                      { icon: User, labelKey: 'nav.profile', path: '/profile' },
+                      { icon: Settings, labelKey: 'nav.settings', path: '/profile' },
+                    ].map((item) => (
+                      <button
+                        key={item.labelKey}
+                        role="menuitem"
+                        className="flex w-full items-center gap-2.5 rounded border-none px-2.5 py-2 text-left text-sm text-landing-ink-soft transition-colors duration-100"
+                        style={{ background: 'none', cursor: 'pointer' }}
+                        onClick={() => { navigate(item.path); setProfileOpen(false); }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0 0 0 / 4%)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <item.icon size={15} aria-hidden="true" />
+                        {t(item.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t border-landing-border p-1">
                     <button
-                      key={item.labelKey}
                       role="menuitem"
-                      className="flex w-full items-center gap-2.5 rounded border-none px-2.5 py-2 text-left text-sm text-landing-ink-soft transition-colors duration-100"
-                      style={{ background: 'none', cursor: 'pointer' }}
-                      onClick={() => { navigate(item.path); setProfileOpen(false); }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0 0 0 / 4%)')}
+                      className="flex w-full items-center gap-2.5 rounded border-none px-2.5 py-2 text-left text-sm transition-colors duration-100"
+                      style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
+                      onClick={handleLogout}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--danger-subtle)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <item.icon size={15} aria-hidden="true" />
-                      {t(item.labelKey)}
+                      <LogOut size={15} aria-hidden="true" />
+                      {t('nav.logout')}
                     </button>
-                  ))}
+                  </div>
                 </div>
-                <div className="border-t border-landing-border p-1">
-                  <button
-                    role="menuitem"
-                    className="flex w-full items-center gap-2.5 rounded border-none px-2.5 py-2 text-left text-sm transition-colors duration-100"
-                    style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
-                    onClick={handleLogout}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--danger-subtle)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <LogOut size={15} aria-hidden="true" />
-                    {t('nav.logout')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="hidden cursor-pointer rounded-full border border-landing-border bg-transparent px-3 py-1.5 text-sm font-medium text-landing-ink-soft transition-colors hover:text-landing-ink md:inline-flex"
+            >
+              {t('hero.signIn')}
+            </button>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -253,18 +292,28 @@ export function Navbar() {
             ))}
           </div>
           <div className="mt-4 border-t border-landing-border pt-4">
-            <div className="flex flex-col gap-1">
-              <Link to="/profile" className="rounded-lg px-3 py-2.5 text-sm text-landing-ink-soft no-underline transition-colors hover:text-landing-ink">
-                {t('nav.profile')}
-              </Link>
+            {isAuthenticated ? (
+              <div className="flex flex-col gap-1">
+                <Link to="/profile" className="rounded-lg px-3 py-2.5 text-sm text-landing-ink-soft no-underline transition-colors hover:text-landing-ink">
+                  {t('nav.profile')}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg border-none px-3 py-2.5 text-left text-sm transition-colors"
+                  style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
+                >
+                  {t('nav.logout')}
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={handleLogout}
-                className="rounded-lg border-none px-3 py-2.5 text-left text-sm transition-colors"
-                style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
+                onClick={() => { navigate('/login'); setMobileOpen(false); }}
+                className="w-full rounded-lg border-none px-3 py-2.5 text-left text-sm text-landing-ink-soft transition-colors hover:text-landing-ink"
+                style={{ background: 'none', cursor: 'pointer' }}
               >
-                {t('nav.logout')}
+                {t('hero.signIn')}
               </button>
-            </div>
+            )}
           </div>
         </nav>
       )}

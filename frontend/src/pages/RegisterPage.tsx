@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authApi, getApiErrorMessage } from '@/api';
+import { AuthLanguageSwitcher } from '@/components/auth/AuthLanguageSwitcher';
 
 function buildUsername(fullName: string, email: string): string {
   const normalizedName = fullName
@@ -54,6 +55,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex bg-[var(--auth-bg)] [--auth-bg:#F5F5F4] [--auth-surface:#FFFFFF] [--auth-surface-muted:#F5F5F4] [--auth-border:#D6D3D1] [--auth-border-strong:#A8A29E] [--auth-text-primary:#171717] [--auth-text-secondary:#292524] [--auth-text-muted:#78716C] [--auth-text-disabled:#A8A29E] [--auth-accent:#D97706] [--auth-accent-hover:#B45309] [--auth-accent-panel:#B45309]">
+      <AuthLanguageSwitcher />
       <div className="relative hidden w-[480px] flex-col justify-between overflow-hidden bg-[var(--auth-accent-panel)] px-12 pt-12 pb-8 text-white lg:flex">
         <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:40px_40px]" />
 
