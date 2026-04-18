@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, User, LogOut, Settings, LayoutDashboard, Globe, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { authApi } from '@/api';
 
 const LANGUAGES = [
   { code: 'uk', label: 'Українська', flag: '🇺🇦' },
@@ -58,6 +59,12 @@ export function Navbar() {
   };
 
   const currentLang = LANGUAGES.find((l) => l.code === i18n.language) ?? LANGUAGES[0];
+  const handleLogout = () => {
+    authApi.logout();
+    setProfileOpen(false);
+    setMobileOpen(false);
+    navigate('/login');
+  };
 
   return (
     <header
@@ -203,7 +210,7 @@ export function Navbar() {
                     role="menuitem"
                     className="flex w-full items-center gap-2.5 rounded border-none px-2.5 py-2 text-left text-sm transition-colors duration-100"
                     style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
-                    onClick={() => { navigate('/'); setProfileOpen(false); }}
+                    onClick={handleLogout}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--danger-subtle)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
@@ -251,7 +258,7 @@ export function Navbar() {
                 {t('nav.profile')}
               </Link>
               <button
-                onClick={() => { navigate('/'); setMobileOpen(false); }}
+                onClick={handleLogout}
                 className="rounded-lg border-none px-3 py-2.5 text-left text-sm transition-colors"
                 style={{ color: 'var(--danger)', background: 'none', cursor: 'pointer' }}
               >

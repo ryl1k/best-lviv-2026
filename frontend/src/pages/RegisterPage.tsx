@@ -2,6 +2,21 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authApi, getApiErrorMessage } from '@/api';
+
+function buildUsername(fullName: string, email: string): string {
+  const normalizedName = fullName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '');
+
+  if (normalizedName.length > 0) {
+    return normalizedName;
+  }
+
+  return email.split('@')[0].toLowerCase();
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -12,18 +27,29 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
-  const canSubmit = fullName.length > 0 && email.length > 0 && passwordsMatch;
+  const canSubmit = fullName.trim().length > 0 && email.trim().length > 0 && passwordsMatch;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+
+    setSubmitError(null);
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await authApi.signup({
+        username: buildUsername(fullName, email),
+        email: email.trim(),
+        password,
+      });
+      navigate('/login', { state: { registered: true } });
+    } catch (error) {
+      setSubmitError(getApiErrorMessage(error, 'Не вдалося створити акаунт. Спробуйте ще раз.'));
+    } finally {
       setLoading(false);
-      navigate('/login');
-    }, 800);
+    }
   };
 
   return (
@@ -94,7 +120,10 @@ export default function RegisterPage() {
               <input
                 type="text"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  if (submitError) setSubmitError(null);
+                }}
                 placeholder="Імʼя Прізвище"
                 autoComplete="name"
                 className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
@@ -108,7 +137,10 @@ export default function RegisterPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (submitError) setSubmitError(null);
+                }}
                 placeholder="admin@hromada.gov.ua"
                 autoComplete="email"
                 className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
@@ -123,7 +155,10 @@ export default function RegisterPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (submitError) setSubmitError(null);
+                  }}
                   placeholder="Введіть пароль"
                   autoComplete="new-password"
                   className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 pr-11 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
@@ -147,7 +182,10 @@ export default function RegisterPage() {
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (submitError) setSubmitError(null);
+                  }}
                   placeholder="Повторіть пароль"
                   autoComplete="new-password"
                   className={cn(
@@ -171,6 +209,12 @@ export default function RegisterPage() {
             {confirmPassword.length > 0 && !passwordsMatch && (
               <p className="mb-[18px] text-xs text-red-600">
                 Паролі не співпадають
+              </p>
+            )}
+
+            {submitError && (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {submitError}
               </p>
             )}
 

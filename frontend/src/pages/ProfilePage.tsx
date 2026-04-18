@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { User, Building2, Mail, Phone, Shield, Key, LogOut, Save } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { authApi } from '@/api';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [name, setName] = useState('Олексій Коваленко');
   const [email, setEmail] = useState('o.kovalenko@ostrivska.gov.ua');
   const [phone, setPhone] = useState('+380 67 123 45 67');
@@ -11,6 +14,10 @@ export default function ProfilePage() {
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+  const handleLogout = () => {
+    authApi.logout();
+    navigate('/login');
   };
 
   return (
@@ -74,6 +81,7 @@ export default function ProfilePage() {
 
           <button
             className="flex items-center gap-3 w-full"
+            onClick={handleLogout}
             style={{
               padding: '12px 16px',
               fontSize: 13,

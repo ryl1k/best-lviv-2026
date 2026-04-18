@@ -1,25 +1,42 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { authApi, getApiErrorMessage } from '@/api';
+
+interface LoginLocationState {
+  registered?: boolean;
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = (location.state as LoginLocationState | null) ?? null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const canSubmit = email.length > 0 && password.length > 0;
+  const canSubmit = email.trim().length > 0 && password.length > 0;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+
+    setSubmitError(null);
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await authApi.loginAndLoadUser({
+        email: email.trim(),
+        password,
+      });
+      navigate('/upload');
+    } catch (error) {
+      setSubmitError(getApiErrorMessage(error, 'Не вдалося виконати вхід. Перевірте дані та спробуйте ще раз.'));
+    } finally {
       setLoading(false);
-      navigate('/home');
-    }, 800);
+    }
   };
 
   return (
@@ -82,6 +99,12 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {locationState?.registered && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+              Акаунт створено. Тепер увійдіть у систему.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="mb-5">
               <label className="mb-1.5 block text-[13px] font-medium text-[var(--auth-text-secondary)]">
@@ -90,7 +113,10 @@ export default function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (submitError) setSubmitError(null);
+                }}
                 placeholder="admin@ostrivska.gov.ua"
                 autoComplete="email"
                 className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
@@ -105,7 +131,10 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (submitError) setSubmitError(null);
+                  }}
                   placeholder="Введіть пароль"
                   autoComplete="current-password"
                   className="h-11 w-full rounded-lg border border-[var(--auth-border)] bg-[var(--auth-surface)] px-3.5 pr-11 text-sm text-[var(--auth-text-primary)] outline-none transition-colors placeholder:text-[var(--auth-text-muted)] focus:border-[var(--auth-accent)]"
@@ -130,6 +159,12 @@ export default function LoginPage() {
                 Забули пароль?
               </button>
             </div>
+
+            {submitError && (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {submitError}
+              </p>
+            )}
 
             <button
               type="submit"
