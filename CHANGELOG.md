@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.2.0...v1.3.0) (2026-04-18)
+
+
+### Features
+
+* add subscription management functionality ([595e4f3](https://github.com/ryl1k/best-lviv-2026/commit/595e4f3b91ea390e957a794f0ae4554e451d0b13))
+* add subscription management functionality ([21cbc76](https://github.com/ryl1k/best-lviv-2026/commit/21cbc76dc71b511cd77e4fe150995d9626bf88cd))
+* algorithm ([4e20866](https://github.com/ryl1k/best-lviv-2026/commit/4e20866db3972ec03763a7d34429f95abdc5c03d))
+* algorithm ([479709c](https://github.com/ryl1k/best-lviv-2026/commit/479709ccaa2a40973215d030e43a457f795a8234))
+
+
+### Bug Fixes
+
+* remove unnecessary fields from GetById query in UserRepo ([84dfff4](https://github.com/ryl1k/best-lviv-2026/commit/84dfff4edfc1e5698be002da384816d5a3e2f2f3))
+* remove unnecessary fields from GetById query in UserRepo ([d273d06](https://github.com/ryl1k/best-lviv-2026/commit/d273d069f2859d6243e8355031fee3daeda865a7))
+
 ## [1.2.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.1.0...v1.2.0) (2026-04-18)
 
 
