@@ -1,1 +1,10 @@
-DROP TABLE users;
+DROP TABLE IF EXISTS discrepancies;
+DROP TABLE IF EXISTS estate_records;
+DROP TABLE IF EXISTS land_records;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS rule_code;
+DROP TYPE IF EXISTS severity;
+DROP TYPE IF EXISTS resolution_status;
+DROP TYPE IF EXISTS task_status;

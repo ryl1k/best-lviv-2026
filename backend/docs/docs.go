@@ -15,109 +15,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/v1/ai/run": {
+        "/v1/audits/upload": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "consumes": [
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "AI"
+                    "audits"
                 ],
-                "summary": "Manually trigger the prediction run (admin)",
+                "summary": "Upload registry files for audit",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Land registry file (.xlsx or .csv)",
+                        "name": "land_file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Estate registry file (.xlsx or .csv)",
+                        "name": "estate_file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/allocations": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "List allocations",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Filter by request",
-                        "name": "request_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to return",
-                        "name": "page",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to skip",
-                        "name": "pageSize",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/allocations/{id}/approve": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Approve a planned allocation (DISPATCHER)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Allocation ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
                             "allOf": [
                                 {
                                     "$ref": "#/definitions/httpresponse.Response"
@@ -125,215 +54,16 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.Allocation"
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.UploadTaskResponse"
                                         }
                                     }
                                 }
                             ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/allocations/{id}/dispatch": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Mark an allocation as dispatched (WORKER at source warehouse)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Allocation ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.Allocation"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/allocations/{id}/reject": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Reject an allocation (DISPATCHER)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Allocation ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/httprequest.RejectAllocationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/audit-log": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Get audit log (ADMIN only)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Filter by actor",
-                        "name": "actor_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by action",
-                        "name": "action",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by entity type",
-                        "name": "entity_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to return",
-                        "name": "page",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to skip",
-                        "name": "pageSize",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/auth/create": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a new user account in the system. Only users with the Admin role can perform this action.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Create a new user",
-                "parameters": [
-                    {
-                        "description": "User details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/httprequest.CreateUser"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Successfully created new user",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
                         }
                     },
                     "400": {
-                        "description": "Bad Request - Invalid input data or validation error",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - Missing or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - User does not have Admin privileges",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
@@ -457,331 +187,105 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/delivery-requests": {
+        "/v1/tasks/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Delivery"
+                    "tasks"
                 ],
-                "summary": "List delivery requests",
+                "summary": "Get task status and stats",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by priority",
-                        "name": "priority",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page size",
-                        "name": "pageSize",
-                        "in": "query"
+                        "description": "Task UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpresponse.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.TaskResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/tasks/{id}/discrepancies/{disc_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get a single discrepancy detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Discrepancy ID",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpresponse.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.DiscrepancyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
                     }
                 }
             },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "WORKER creates a multi-item delivery request. Urgent requests are auto-allocated immediately.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Create a delivery request",
-                "parameters": [
-                    {
-                        "description": "Request body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/httprequest.CreateDeliveryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.DeliveryRequest"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/allocate": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Run allocation algorithm on all pending requests (DISPATCHER)",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Get a delivery request with items and allocations",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Request ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.DeliveryRequest"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}/approve-all": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Approve all planned allocations for a request (DISPATCHER)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Request ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}/cancel": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Cancel a delivery request",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Request ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}/deliver": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Confirm delivery of a request",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Request ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}/escalate": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Escalate request priority one level up",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Request ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.DeliveryRequest"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/delivery-requests/{id}/items": {
             "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -789,253 +293,54 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Delivery"
+                    "tasks"
                 ],
-                "summary": "Update quantity for one item in a pending request",
+                "summary": "Update resolution status of a discrepancy",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Request ID",
+                        "type": "string",
+                        "description": "Task UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Body",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/httprequest.UpdateItemQuantityRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/demand-readings": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Stores a new demand data point for a delivery point + resource pair. Triggers background analysis.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Record a demand reading",
-                "parameters": [
-                    {
-                        "description": "Demand reading",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/httprequest.RecordDemand"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.DemandReading"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/demand-readings/{point_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Get demand readings for a delivery point",
-                "parameters": [
-                    {
                         "type": "integer",
-                        "description": "Customer/delivery point ID",
-                        "name": "point_id",
+                        "description": "Discrepancy ID",
+                        "name": "disc_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page size",
-                        "name": "pageSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                        "description": "New status",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/inventory/{location_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieves a paginated list of inventory resources for a specific location. Supports filtering by resource name and category.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Inventory"
-                ],
-                "summary": "Get all inventory units by location",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Location ID",
-                        "name": "location_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by resource name (partial match)",
-                        "name": "resource_name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by resource category",
-                        "name": "resource_category",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to return",
-                        "name": "page",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records to skip",
-                        "name": "pageSize",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved inventory units",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/dto.GetAllInventoryResponse"
-                                        }
-                                    }
+                            "type": "object",
+                            "properties": {
+                                "resolution_status": {
+                                    "type": "string"
                                 }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request - Invalid parameters or validation error",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/map/points": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns all warehouses and delivery points with status and coordinates",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "map"
-                ],
-                "summary": "Get all map points",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entity.MapPoint"
                             }
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpresponse.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
@@ -1043,31 +348,63 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/predictive-alerts": {
+        "/v1/tasks/{id}/results": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "AI"
+                    "tasks"
                 ],
-                "summary": "List open predictive alerts",
+                "summary": "Get paginated discrepancies for a task",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Task UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by severity (LOW|MEDIUM|HIGH)",
+                        "name": "severity",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by rule code",
+                        "name": "rule_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by resolution status",
+                        "name": "resolution_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by tax ID",
+                        "name": "tax_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search in owner name or description",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
-                        "description": "Page",
+                        "description": "Page number (default 1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
-                        "name": "pageSize",
+                        "description": "Page size (default 50)",
+                        "name": "page_size",
                         "in": "query"
                     }
                 ],
@@ -1075,38 +412,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpresponse.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.PaginatedDiscrepanciesResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
-                    }
-                }
-            }
-        },
-        "/v1/predictive-alerts/{alert_id}/dismiss": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Dismiss a predictive alert",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Alert ID",
-                        "name": "alert_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
@@ -1114,58 +436,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/predictive-alerts/{point_id}": {
+        "/v1/tasks/{id}/results/summary": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "AI"
+                    "tasks"
                 ],
-                "summary": "Get all alerts for a delivery point",
+                "summary": "Get discrepancy summary for a task",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Delivery point ID",
-                        "name": "point_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/rebalancing-proposals/{proposal_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Get a rebalancing proposal with its transfers",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Proposal ID",
-                        "name": "proposal_id",
+                        "type": "string",
+                        "description": "Task UUID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1181,134 +465,16 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.RebalancingProposal"
+                                        "data": {
+                                            "$ref": "#/definitions/httpresponse.SummaryResponse"
                                         }
                                     }
                                 }
                             ]
                         }
-                    }
-                }
-            }
-        },
-        "/v1/rebalancing-proposals/{proposal_id}/approve": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Approve a rebalancing proposal (one-tap confirm)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Proposal ID",
-                        "name": "proposal_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/httpresponse.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/entity.RebalancingProposal"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/rebalancing-proposals/{proposal_id}/dismiss": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Dismiss a rebalancing proposal",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Proposal ID",
-                        "name": "proposal_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/httpresponse.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/stock/nearest": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Delivery"
-                ],
-                "summary": "Find nearest warehouses with surplus stock for a resource",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Resource ID",
-                        "name": "resource_id",
-                        "in": "query",
-                        "required": true
                     },
-                    {
-                        "type": "integer",
-                        "description": "Destination customer ID",
-                        "name": "point_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "number",
-                        "description": "Required quantity (optional)",
-                        "name": "quantity",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpresponse.Response"
                         }
@@ -1318,369 +484,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.GetAllInventoryResponse": {
-            "type": "object",
-            "properties": {
-                "inventory_units": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.InventoryUnit"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.InventoryUnit": {
-            "type": "object",
-            "properties": {
-                "inventory": {
-                    "$ref": "#/definitions/entity.Inventory"
-                },
-                "resource": {
-                    "$ref": "#/definitions/entity.Resource"
-                }
-            }
-        },
-        "entity.Allocation": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "dispatched_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "request_id": {
-                    "type": "integer"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "source_warehouse_id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/entity.AllocationStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "entity.AllocationStatus": {
-            "type": "string",
-            "enum": [
-                "planned",
-                "approved",
-                "in_transit",
-                "delivered",
-                "cancelled"
-            ],
-            "x-enum-varnames": [
-                "AllocationStatusPlanned",
-                "AllocationStatusApproved",
-                "AllocationStatusInTransit",
-                "AllocationStatusDelivered",
-                "AllocationStatusCancelled"
-            ]
-        },
-        "entity.DeliveryPriority": {
-            "type": "string",
-            "enum": [
-                "normal",
-                "elevated",
-                "critical",
-                "urgent"
-            ],
-            "x-enum-varnames": [
-                "PriorityNormal",
-                "PriorityElevated",
-                "PriorityCritical",
-                "PriorityUrgent"
-            ]
-        },
-        "entity.DeliveryRequest": {
-            "type": "object",
-            "properties": {
-                "allocations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/entity.Allocation"
-                    }
-                },
-                "arrive_till": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "destination_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/entity.DeliveryRequestItem"
-                    }
-                },
-                "priority": {
-                    "$ref": "#/definitions/entity.DeliveryPriority"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/entity.DeliveryStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "entity.DeliveryRequestItem": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "request_id": {
-                    "type": "integer"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "entity.DeliveryStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "allocated",
-                "in_transit",
-                "delivered",
-                "cancelled"
-            ],
-            "x-enum-varnames": [
-                "StatusPending",
-                "StatusAllocated",
-                "StatusInTransit",
-                "StatusDelivered",
-                "StatusCancelled"
-            ]
-        },
-        "entity.DemandReading": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "point_id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "recorded_at": {
-                    "type": "string"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "source": {
-                    "$ref": "#/definitions/entity.DemandSource"
-                }
-            }
-        },
-        "entity.DemandSource": {
-            "type": "string",
-            "enum": [
-                "manual",
-                "sensor",
-                "predicted"
-            ],
-            "x-enum-varnames": [
-                "DemandSourceManual",
-                "DemandSourceSensor",
-                "DemandSourcePredicted"
-            ]
-        },
-        "entity.Inventory": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "location_id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "entity.MapPoint": {
-            "type": "object",
-            "properties": {
-                "alert_count": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lat": {
-                    "type": "number"
-                },
-                "lng": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "\"normal\" | \"elevated\" | \"critical\" | \"predictive\"",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "\"warehouse\" | \"customer\"",
-                    "type": "string"
-                }
-            }
-        },
-        "entity.ProposalStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "approved",
-                "dismissed"
-            ],
-            "x-enum-varnames": [
-                "ProposalStatusPending",
-                "ProposalStatusApproved",
-                "ProposalStatusDismissed"
-            ]
-        },
-        "entity.RebalancingProposal": {
-            "type": "object",
-            "properties": {
-                "confidence": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "resource_id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/entity.ProposalStatus"
-                },
-                "target_point_id": {
-                    "type": "integer"
-                },
-                "transfers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/entity.RebalancingTransfer"
-                    }
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "urgency": {
-                    "type": "string"
-                }
-            }
-        },
-        "entity.RebalancingTransfer": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "estimated_arrival_hours": {
-                    "type": "number"
-                },
-                "from_warehouse_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "proposal_id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                }
-            }
-        },
-        "entity.Resource": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "logo_uri": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "integer"
-                },
-                "unit_measure": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
         "entity.User": {
             "type": "object",
             "properties": {
@@ -1690,111 +493,11 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "location_id": {
-                    "type": "integer"
-                },
-                "role": {
-                    "$ref": "#/definitions/entity.UserRole"
-                },
                 "updated_at": {
                     "type": "string"
                 },
                 "username": {
                     "type": "string"
-                }
-            }
-        },
-        "entity.UserRole": {
-            "type": "string",
-            "enum": [
-                "worker",
-                "dispatcher",
-                "admin"
-            ],
-            "x-enum-varnames": [
-                "UserRoleWorker",
-                "UserRoleDispatcher",
-                "UserRoleAdmin"
-            ]
-        },
-        "httprequest.CreateDeliveryRequest": {
-            "type": "object",
-            "required": [
-                "destination_id",
-                "items",
-                "priority"
-            ],
-            "properties": {
-                "arrive_till": {
-                    "type": "string"
-                },
-                "destination_id": {
-                    "type": "integer"
-                },
-                "items": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/httprequest.DeliveryItemRequest"
-                    }
-                },
-                "priority": {
-                    "enum": [
-                        "normal",
-                        "elevated",
-                        "critical",
-                        "urgent"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.DeliveryPriority"
-                        }
-                    ]
-                }
-            }
-        },
-        "httprequest.CreateUser": {
-            "type": "object",
-            "required": [
-                "required",
-                "role",
-                "username"
-            ],
-            "properties": {
-                "required": {
-                    "type": "string"
-                },
-                "role": {
-                    "enum": [
-                        "worker",
-                        "dispatcher"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.UserRole"
-                        }
-                    ]
-                },
-                "username": {
-                    "type": "string"
-                },
-                "warehouse_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "httprequest.DeliveryItemRequest": {
-            "type": "object",
-            "required": [
-                "quantity",
-                "resource_id"
-            ],
-            "properties": {
-                "quantity": {
-                    "type": "number"
-                },
-                "resource_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -1813,62 +516,58 @@ const docTemplate = `{
                 }
             }
         },
-        "httprequest.RecordDemand": {
+        "httpresponse.DiscrepancyResponse": {
             "type": "object",
-            "required": [
-                "point_id",
-                "quantity",
-                "resource_id"
-            ],
             "properties": {
-                "point_id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "recorded_at": {
+                "description": {
                     "type": "string"
                 },
-                "resource_id": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "id": {
                     "type": "integer"
                 },
-                "source": {
-                    "enum": [
-                        "manual",
-                        "sensor",
-                        "predicted"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.DemandSource"
-                        }
-                    ]
-                }
-            }
-        },
-        "httprequest.RejectAllocationRequest": {
-            "type": "object",
-            "required": [
-                "reason"
-            ],
-            "properties": {
-                "reason": {
+                "owner_name": {
+                    "type": "string"
+                },
+                "resolution_status": {
+                    "type": "string"
+                },
+                "risk_score": {
+                    "type": "integer"
+                },
+                "rule_code": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                },
+                "task_id": {
+                    "type": "string"
+                },
+                "tax_id": {
                     "type": "string"
                 }
             }
         },
-        "httprequest.UpdateItemQuantityRequest": {
+        "httpresponse.PaginatedDiscrepanciesResponse": {
             "type": "object",
-            "required": [
-                "quantity",
-                "resource_id"
-            ],
             "properties": {
-                "quantity": {
-                    "type": "number"
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpresponse.DiscrepancyResponse"
+                    }
                 },
-                "resource_id": {
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
                     "type": "integer"
                 }
             }
@@ -1895,6 +594,74 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpresponse.SummaryResponse": {
+            "type": "object",
+            "properties": {
+                "by_rule": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "by_severity": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httpresponse.TaskResponse": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/httpresponse.TaskStatsResponse"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpresponse.TaskStatsResponse": {
+            "type": "object",
+            "properties": {
+                "discrepancies_count": {
+                    "type": "integer"
+                },
+                "matched": {
+                    "type": "integer"
+                },
+                "total_estate": {
+                    "type": "integer"
+                },
+                "total_land": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httpresponse.UploadTaskResponse": {
+            "type": "object",
+            "properties": {
+                "task_id": {
                     "type": "string"
                 }
             }

@@ -19,6 +19,7 @@ import (
 	"github.com/ryl1k/best-lviv-2026/internal/controller/http/v1/middleware"
 	"github.com/ryl1k/best-lviv-2026/internal/dto/httprequest"
 	"github.com/ryl1k/best-lviv-2026/internal/repo/persistent"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/audit"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/auth"
 )
 
@@ -70,12 +71,18 @@ func newApp(ctx context.Context) (*app, error) {
 
 	// Repos
 	userRepo := persistent.NewUserRepo(pool)
+	taskRepo := persistent.NewTaskRepo(pool)
+	landRecordRepo := persistent.NewLandRecordRepo(pool)
+	estateRecordRepo := persistent.NewEstateRecordRepo(pool)
+	discrepancyRepo := persistent.NewDiscrepancyRepo(pool)
 
 	// Use cases
 	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
+	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, logger)
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)
+	auditController := v1.NewAuditController(logger, auditUseCase)
 
 	mw := middleware.NewMiddleware(logger, authUseCase)
 	validator, err := httprequest.NewCustomValidator()
@@ -83,7 +90,7 @@ func newApp(ctx context.Context) (*app, error) {
 		return nil, fmt.Errorf("failed to create new custom validator: %w", err)
 	}
 
-	router := httprouter.NewRouter(e, mw, authController, validator)
+	router := httprouter.NewRouter(e, mw, authController, auditController, validator)
 	router.RegisterRoutes()
 
 	appCtx, cancel := context.WithCancel(ctx)
