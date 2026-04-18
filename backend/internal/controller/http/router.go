@@ -91,7 +91,8 @@ func (r *Router) RegisterRoutes() {
 
 	// Tasks
 	{
-		tasks := v1.Group("/tasks")
+		tasks := v1.Group("/tasks", withJWT)
+		tasks.GET("", r.auditController.ListTasks)
 		tasks.GET("/:id", r.auditController.GetTask)
 		tasks.GET("/:id/results", r.auditController.GetResults)
 		tasks.GET("/:id/results/summary", r.auditController.GetSummary)

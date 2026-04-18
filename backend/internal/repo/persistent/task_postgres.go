@@ -23,8 +23,8 @@ func NewTaskRepo(pool *pgxpool.Pool) *TaskRepo {
 
 func (r *TaskRepo) Create(ctx context.Context, task entity.Task) error {
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO tasks (id, status, created_at) VALUES ($1, $2, $3)`,
-		task.ID, string(task.Status), task.CreatedAt,
+		`INSERT INTO tasks (id, user_id, status, created_at) VALUES ($1, $2, $3, $4)`,
+		task.ID, task.UserID, string(task.Status), task.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("task create: %w", err)
@@ -61,7 +61,7 @@ func (r *TaskRepo) UpdateCompleted(ctx context.Context, id uuid.UUID, stats enti
 
 func (r *TaskRepo) GetByID(ctx context.Context, id uuid.UUID) (entity.Task, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT id, status, created_at, completed_at, error_message, stats FROM tasks WHERE id = $1`,
+		`SELECT id, user_id, status, created_at, completed_at, error_message, stats FROM tasks WHERE id = $1`,
 		id,
 	)
 
@@ -69,7 +69,7 @@ func (r *TaskRepo) GetByID(ctx context.Context, id uuid.UUID) (entity.Task, erro
 	var status string
 	var statsJSON []byte
 
-	err := row.Scan(&t.ID, &status, &t.CreatedAt, &t.CompletedAt, &t.ErrorMessage, &statsJSON)
+	err := row.Scan(&t.ID, &t.UserID, &status, &t.CreatedAt, &t.CompletedAt, &t.ErrorMessage, &statsJSON)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.Task{}, entity.ErrTaskNotFound
@@ -88,4 +88,35 @@ func (r *TaskRepo) GetByID(ctx context.Context, id uuid.UUID) (entity.Task, erro
 	}
 
 	return t, nil
+}
+
+func (r *TaskRepo) ListByUserID(ctx context.Context, userID int64) ([]entity.Task, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, user_id, status, created_at, completed_at, error_message, stats FROM tasks WHERE user_id = $1 ORDER BY created_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("task list by user: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []entity.Task
+	for rows.Next() {
+		var t entity.Task
+		var status string
+		var statsJSON []byte
+		if err := rows.Scan(&t.ID, &t.UserID, &status, &t.CreatedAt, &t.CompletedAt, &t.ErrorMessage, &statsJSON); err != nil {
+			return nil, fmt.Errorf("task list scan: %w", err)
+		}
+		t.Status = entity.TaskStatus(status)
+		if statsJSON != nil {
+			var stats entity.TaskStats
+			if err := json.Unmarshal(statsJSON, &stats); err != nil {
+				return nil, fmt.Errorf("unmarshal stats: %w", err)
+			}
+			t.Stats = &stats
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, rows.Err()
 }

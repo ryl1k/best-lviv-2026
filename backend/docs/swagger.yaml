@@ -564,6 +564,31 @@ paths:
       summary: Get my active subscription
       tags:
       - Subscriptions
+  /v1/tasks:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpresponse.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/httpresponse.TaskResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpresponse.Response'
+      security:
+      - BearerAuth: []
+      summary: List all tasks for the authenticated user
+      tags:
+      - tasks
   /v1/tasks/{id}:
     get:
       parameters:

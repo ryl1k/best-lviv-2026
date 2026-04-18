@@ -18,8 +18,9 @@ type SubscriptionUseCase interface {
 }
 
 type AuditUseCase interface {
-	Upload(ctx context.Context, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error)
-	UploadFromRecords(ctx context.Context, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error)
+	Upload(ctx context.Context, userID int64, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error)
+	UploadFromRecords(ctx context.Context, userID int64, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error)
+	ListTasks(ctx context.Context, userID int64) ([]entity.Task, error)
 	GetTask(ctx context.Context, taskID uuid.UUID) (entity.Task, error)
 	GetResults(ctx context.Context, taskID uuid.UUID, filter repo.DiscrepancyFilter) ([]entity.Discrepancy, int, error)
 	GetSummary(ctx context.Context, taskID uuid.UUID) (repo.DiscrepancySummary, error)

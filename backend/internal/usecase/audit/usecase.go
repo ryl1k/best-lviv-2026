@@ -35,10 +35,11 @@ func New(
 	}
 }
 
-func (u *UseCase) Upload(ctx context.Context, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error) {
+func (u *UseCase) Upload(ctx context.Context, userID int64, landData []byte, estateData []byte, landExt string, estateExt string) (uuid.UUID, error) {
 	taskID := uuid.New()
 	task := entity.Task{
 		ID:        taskID,
+		UserID:    userID,
 		Status:    entity.TaskStatusPending,
 		CreatedAt: time.Now(),
 	}
@@ -135,10 +136,15 @@ func (u *UseCase) process(ctx context.Context, taskID uuid.UUID, landData, estat
 	log.Info("task completed", "stats", stats)
 }
 
-func (u *UseCase) UploadFromRecords(ctx context.Context, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error) {
+func (u *UseCase) ListTasks(ctx context.Context, userID int64) ([]entity.Task, error) {
+	return u.taskRepo.ListByUserID(ctx, userID)
+}
+
+func (u *UseCase) UploadFromRecords(ctx context.Context, userID int64, landRecords []entity.LandRecord, estateRecords []entity.EstateRecord) (uuid.UUID, error) {
 	taskID := uuid.New()
 	task := entity.Task{
 		ID:        taskID,
+		UserID:    userID,
 		Status:    entity.TaskStatusPending,
 		CreatedAt: time.Now(),
 	}
