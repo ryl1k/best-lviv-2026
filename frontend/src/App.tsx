@@ -3,12 +3,13 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Layout } from '@/components/layout/Layout';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
-import HomePage from '@/pages/HomePage';
 import UploadPage from '@/pages/UploadPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ObjectDetailsPage from '@/pages/ObjectDetailsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SatelliteAnalysisPage from '@/pages/SatelliteAnalysisPage';
+import PricingPage from '@/pages/PricingPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 function App() {
   return (
@@ -20,15 +21,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* App pages - with layout */}
-          <Route
-            path="/home"
-            element={
-              <Layout>
-                <HomePage />
-              </Layout>
-            }
-          />
-          <Route
+<Route
             path="/upload"
             element={
               <Layout>
@@ -61,6 +54,14 @@ function App() {
             }
           />
           <Route
+            path="/pricing"
+            element={
+              <Layout>
+                <PricingPage />
+              </Layout>
+            }
+          />
+          <Route
             path="/profile"
             element={
               <Layout>
@@ -68,6 +69,7 @@ function App() {
               </Layout>
             }
           />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </TooltipProvider>
     </BrowserRouter>

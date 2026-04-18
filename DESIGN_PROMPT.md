@@ -1,6 +1,6 @@
 # Design Prompt - Revela Frontend Mockups
 
-> Single prompt for generating the complete Revela frontend. Feed this to v0.dev, Lovable, Bolt, Claude Artifacts, or any React+Tailwind+shadcn generator. It produces three fully designed pages in a consistent "Nordic GovTech" visual language.
+> Single prompt for generating the complete Revela frontend. Feed this to v0.dev, Lovable, Bolt, Claude Artifacts, or any React+Tailwind+shadcn generator. It produces a fully designed app in a consistent "editorial Nordic GovTech" visual language.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Copy everything between the `--- PROMPT START ---` and `--- PROMPT END ---` markers into your tool of choice. For best results with v0.dev, submit it as a single message - do not split.
 
-If the tool hits length limits, generate in this order: (1) shared design tokens + layout shell, (2) Upload page, (3) Dashboard, (4) Object Details. Paste the design tokens section at the top of each follow-up.
+If the tool hits length limits, generate in this order: (1) shared design tokens + layout shell, (2) Landing page, (3) Upload + Dashboard, (4) Object Details + Satellite. Paste the design tokens section at the top of each follow-up.
 
 ---
 
@@ -16,288 +16,210 @@ If the tool hits length limits, generate in this order: (1) shared design tokens
 
 # Build: Revela - a GovTech SaaS frontend for Ukrainian municipalities
 
-I need you to design and build a complete React + TypeScript + Tailwind + shadcn/ui frontend for a product called **Revela**. Revela is a GovTech SaaS that compares two Ukrainian state registries (Land Registry and Real Estate Registry) and reveals discrepancies that cost municipalities tax revenue. The user is a civil servant in a Ukrainian ОТГ (united territorial community) land management department.
+I need you to design and build a complete React + TypeScript + Tailwind + Framer Motion frontend for a product called **Revela**. Revela is a GovTech SaaS that compares two Ukrainian state registries (Land Registry and Real Estate Registry), reveals discrepancies that cost municipalities tax revenue, and uses satellite imagery to detect unregistered structures on land parcels. The user is a civil servant in a Ukrainian ОТГ (united territorial community) land management department.
 
-The product must look like a serious analytical tool - Linear / Vercel / Stripe dashboard tier - not a government portal from 2010. Every screen must communicate trust, precision, and calm authority. All UI copy is in Ukrainian. Use hyphens, never em dashes.
+The product must look like a premium editorial publication crossed with a serious analytical tool - think architecture portfolio meets Linear dashboard. Not a government portal from 2010. Every screen must communicate trust, precision, and calm authority. All UI copy is in Ukrainian. Use hyphens, never em dashes.
 
-## Visual language - Nordic GovTech with Ukrainian navy accent
+## Visual language - editorial Nordic with warm accent
 
 This is non-negotiable. Match it exactly.
 
-### Color tokens (use these Tailwind CSS variables)
+### Color palette (OKLCH-based)
+
+The design uses a warm paper-based palette, not cold SaaS grays. All colors defined via OKLCH for perceptual uniformity.
 
 ```css
+.landing-page {
+  /* Core palette */
+  --landing-paper: oklch(0.985 0.005 80);        /* warm off-white background */
+  --landing-ink: oklch(0.14 0.015 250);           /* near-black text */
+  --landing-ink-soft: oklch(0.32 0.015 250);      /* secondary text */
+  --landing-surface: oklch(0.965 0.006 80);       /* card backgrounds */
+  --landing-surface-elevated: oklch(1 0 0);       /* elevated cards (pure white) */
+  --landing-border: oklch(0.9 0.008 80);          /* subtle borders */
+  --landing-border-strong: oklch(0.82 0.01 80);   /* stronger borders */
+  --landing-signal: oklch(0.62 0.16 45);          /* warm amber accent - logo dot, avatar, brand highlight */
+  --landing-success: oklch(0.55 0.13 155);        /* green confirmations */
+  --landing-secondary: oklch(0.94 0.008 80);      /* secondary backgrounds */
+  --landing-muted: oklch(0.5 0.012 250);          /* muted text, labels */
+
+  /* Shadows (OKLCH-based, not rgba black) */
+  --landing-shadow-md: 0 4px 16px -4px oklch(0.18 0.015 250 / 8%);
+  --landing-shadow-lg: 0 24px 48px -16px oklch(0.18 0.015 250 / 12%);
+  --landing-shadow-xl: 0 40px 80px -24px oklch(0.18 0.015 250 / 16%);
+
+  /* Easing */
+  --landing-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+```
+
+For functional UI (severity badges, CTAs, status indicators), use the GovTech accent tokens:
+```css
 :root {
-  --background: #FAFAFA;
-  --surface: #FFFFFF;
-  --surface-muted: #F4F4F5;
-  --border: #E4E4E7;
-  --border-strong: #D4D4D8;
-  
-  --text-primary: #0A0A0A;
-  --text-secondary: #3F3F46;
-  --text-muted: #71717A;
-  --text-disabled: #A1A1AA;
-  
   --accent: #0050B5;           /* Ukrainian navy - primary CTA, links, focus rings */
   --accent-hover: #003D8A;
-  --accent-subtle: #E6EEF8;    /* accent backgrounds, selected states */
-  
-  --success: #16A34A;
-  --success-subtle: #DCFCE7;
-  --warning: #F59E0B;
-  --warning-subtle: #FEF3C7;
-  --danger: #DC2626;
-  --danger-subtle: #FEE2E2;
-  --info: #0284C7;
-  --info-subtle: #E0F2FE;
+  --accent-subtle: #E6EEF8;
+  --danger: #DC2626;    --danger-subtle: #FEE2E2;
+  --warning: #F59E0B;   --warning-subtle: #FEF3C7;
+  --success: #16A34A;   --success-subtle: #DCFCE7;
+  --info: #0284C7;      --info-subtle: #E0F2FE;
 }
 ```
 
 ### Typography
 
-- **UI font**: Inter (weights 400, 500, 600, 700)
-- **Monospace**: JetBrains Mono (for tax IDs, cadastral numbers, dates in tables, code)
-- **Sizes**:
-  - Display: 32-40px / 700 weight / tight tracking (-0.02em)
-  - H1: 24px / 600 / -0.01em
-  - H2: 18px / 600
-  - Body: 14px / 400 / 1.5 line-height
-  - Small/caption: 12px / 500 / uppercase for labels and chips
+Four font families, each with a specific role:
 
-### Spacing and geometry
+| Role | Font | Weight | Usage |
+|---|---|---|---|
+| **Display / wordmark** | Instrument Serif | 400, 400-italic | Logo "Revela" text, section display headers |
+| **Headings + hero** | Inter | 600 (semibold) | Hero title (14vw/8.2rem, tracking -0.035em), page titles, card headers |
+| **Body + UI** | Inter | 400, 500 | Navigation links, body text (14px, 1.5 lh), button labels |
+| **Mono labels** | JetBrains Mono | 400-500 | Uppercase tracking (10-12px, 0.16-0.18em), tax IDs, cadastral numbers, status tags |
 
-- Base unit: 4px (Tailwind default). Use spacing-scale strictly (p-2, p-3, p-4, p-6, p-8).
-- Border radius: 6px for buttons/inputs, 8px for cards, 4px for chips, 12px for large panels
-- Borders: 1px solid, always `--border`. No hairline shadows instead of borders.
-- Shadows: minimal. Use `shadow-sm` for cards on hover only. No glows, no colored shadows.
+Key typography rules:
+- Hero title uses Inter semibold (NOT Instrument Serif) for readability at large sizes
+- Instrument Serif reserved for wordmark and editorial accents only
+- Mono labels always uppercase with wide tracking
+- Numbers in tables always in JetBrains Mono
 
-### Interactive states
+### Spacing, geometry, textures
 
-- Focus: 2px ring with `--accent` color, 2px offset, always visible on keyboard
-- Hover on buttons: darken by 10% (use `--accent-hover`)
-- Hover on rows: `--surface-muted` background, no transform, no shadow
-- Transitions: 150ms ease-out maximum. No bounces, no springs.
-- Disabled: opacity 0.5, cursor not-allowed
+- **Max content width**: 1400px, centered, `px-6 md:px-10`
+- **Border radius**: 2xl (16px) for large cards, lg (8px) for small cards, full for chips/avatars
+- **Borders**: 1px solid `--landing-border`, never shadows-instead-of-borders
+- **Shadows**: minimal, OKLCH-based (see shadow tokens above), never rgba black
+- **Paper grain**: `radial-gradient(oklch(0.18 0.015 250 / 4%) 1px, transparent 1px)` at 24px grid — use on hero sections
+- **Rule grid**: vertical + horizontal lines at 56px intervals — use for background sections
+
+### Interactive states and animations
+
+- **Header entrance**: Framer Motion `initial={{ y: -20, opacity: 0 }}` → `animate={{ y: 0, opacity: 1 }}`, 700ms, expo ease `[0.16, 1, 0.3, 1]`
+- **Scroll-aware header**: backdrop blur + border appears after 12px scroll, background transitions to `oklch(0.985 0.005 80 / 80%)`
+- **Link underline**: CSS `background-image` trick, `background-size: 0% 1px → 100% 1px` on hover, 400ms expo ease
+- **Signal dot pulse**: opacity 1 → 0.4 → 1, 2.4s ease-in-out infinite
+- **Hero parallax**: `useScroll` + `useTransform` for title Y offset (0 → 80px) and opacity fade (1 → 0)
+- **Section entrances**: Framer Motion `y: 20-40 → 0`, `opacity: 0 → 1`, staggered delays
+- **Interactive state transitions**: 150ms max, ease-out. No bounces, no springs.
+- **Hover on interactive elements**: `oklch(0 0 0 / 4%)` background, not gray variables
 
 ### Iconography
 
-Use Lucide React. Icon sizes: 16px inline, 20px in buttons, 24px in headers. Stroke width 1.5. Never use emoji in production UI except for severity dots (🟢🟡🔴) which are acceptable.
+Use Lucide React. Icon sizes: 14-16px inline, 18-20px in buttons, 24px in headers. Stroke width 1.5. Never use emoji in production UI.
 
-## Layout shell (all pages share this)
+## Unified Header (all pages share this)
 
-Top navigation bar, 56px tall, sticky, `--surface` background with 1px bottom border:
+Single `Navbar` component, `fixed` position, `h-16` (64px), `z-50`. Same component on landing and app pages.
 
-- Left: wordmark "**Revela**" in Inter 600, 18px, `--text-primary`. Next to it, a 1px vertical divider and text "Аудит активів громади" in 13px `--text-muted`.
-- Center: breadcrumbs showing current task context (e.g. "Завдання #a4f2 / Розбіжності")
-- Right: OTG selector chip ("Острівська ТГ" with ChevronDown icon), notification bell, user avatar with initials on a `--accent-subtle` background
+**Structure**:
+```
+[Signal dot + "Revela" wordmark + subtitle] .... [Nav links] .... [Language + Profile]
+```
 
-Main content area: max-width 1440px, centered, padding 32px horizontal / 24px vertical.
+**Left group**:
+- Signal dot: 6px warm amber circle (`--landing-signal`) with 4px glow ring (`oklch(0.62 0.16 45 / 12%)`)
+- "Revela" in Instrument Serif, `text-3xl`, `text-landing-ink`
+- "/ Cross-Registry Audit" in JetBrains Mono, 10px, uppercase, wide tracking, `text-landing-muted`
 
-Footer: tiny, 40px tall, `--text-muted`, single line: "Revela - робить приховане видимим · v0.1.0 · Документація · Підтримка"
+**Center nav** (gap-9):
+- Links: Головна (`/`), Новий аналіз (`/upload`), Супутник (`/satellite`), Pricing (`/pricing`)
+- Style: Inter 500, 14px, `landing-link-underline` animated underline
+- Active: `text-landing-ink`, inactive: `text-landing-ink-soft hover:text-landing-ink`
 
-## Page 1 - Upload (/)
+**Right group** (gap-3):
+- Language selector: Globe icon + current language code (UK/EN), dropdown with flag + language name, `oklch(0 0 0 / 4%)` hover bg
+- Profile avatar: 30px circle with `--landing-signal` background, white initials, ChevronDown. Dropdown: user info, navigation shortcuts (Головна, Профіль, Налаштування), logout in danger color
 
-**Purpose**: user lands here, drags two Excel files, starts analysis.
+**Scroll behavior**: transparent bg → `oklch(0.985 0.005 80 / 80%)` with `backdrop-blur-xl` after 12px scroll. Border transitions from transparent to `--landing-border`.
 
-**Layout**: centered single-column, max-width 960px.
+## Layout wrapper
 
-**Sections top to bottom**:
+All app pages (non-landing) wrapped in `Layout` component:
+```
+<div class="landing-page relative min-h-screen flex flex-col overflow-x-hidden bg-landing-paper text-landing-ink">
+  <Navbar />
+  <main class="flex-1 w-full pt-16">{children}</main>
+  <Footer />
+</div>
+```
 
-1. **Hero block** (pt-16, pb-12, centered):
-   - Small chip above title: "ХАКАТОН INNOVATE 2026" in 11px uppercase tracking-wide on `--accent-subtle` background
-   - H1 display: "Завантажте два реєстри - ми знайдемо що не сходиться"
-   - Subtitle, 16px, `--text-secondary`, max-width 640px, centered: "Revela автоматично зіставляє земельний реєстр і реєстр нерухомості, виявляє розбіжності та формує перелік об'єктів для перевірки."
+Landing page (`/`) has its own wrapper with same classes but no `pt-16` (hero goes under header).
 
-2. **Two drop zones side by side** (grid grid-cols-2 gap-4):
-   
-   Each drop zone is a card, 280px tall, border 2px dashed `--border-strong`, radius 12px, `--surface` background. On drag-over: border becomes solid `--accent`, background becomes `--accent-subtle`. On file selected: border solid `--success`, show FileText icon, filename, size, and a small X to remove.
-   
-   Left zone:
-   - Icon: FileSpreadsheet, 32px, `--text-muted`
-   - Label: "Реєстр нерухомості" (16px, 600)
-   - Caption: "ДРПП - файл з власниками будівель"
-   - Format hint: ".xlsx, .xls, .csv · до 50 МБ"
-   
-   Right zone:
-   - Icon: Map, 32px, `--text-muted`
-   - Label: "Земельний реєстр" (16px, 600)
-   - Caption: "ДЗК - файл з кадастровими даними"
-   - Format hint: ".xlsx, .xls, .csv · до 50 МБ"
+## Page 1 - Landing / Home (/)
 
-3. **Primary CTA** (below dropzones, centered):
-   - Button "Запустити аналіз" - 48px tall, `--accent` background, white text, 14px 600, 6px radius, with ArrowRight icon
-   - Disabled state when either file is missing, with helper text below: "Завантажте обидва файли, щоб продовжити"
+**Purpose**: first impression. Communicate what Revela does, build trust, drive to signup.
 
-4. **"How it works" strip** (mt-16): three columns, minimal icons, two lines each:
-   - "1. Завантаження" / "Excel або CSV. Обидва реєстри одночасно."
-   - "2. Аналіз" / "Нормалізація, зіставлення, 7 правил перевірки."
-   - "3. Результат" / "Перелік розбіжностей з пріоритетами для перевірки."
-   
-   Style: 13px text, icons 20px `--text-muted`, numbers in JetBrains Mono `--accent`.
+**Sections** (full-width, stacked):
 
-5. **Trust strip** (small, bottom): "Дані не покидають ваш сервер · Аудит-лог всіх операцій · Сумісно з Trembita"
+1. **Hero** (`pt-32 md:pt-40`):
+   - Top bar: mono 11px status line "Now auditing · 21,656 records · 14 communities" with pulsing signal dot
+   - Main title: Inter semibold, massive (14vw mobile / 8.2rem desktop), tight tracking (-0.035em):
+     Line 1: "Two registries."
+     Line 2: "*One* source of truth." (One in italic, softer color)
+   - Staggered entrance: each line delays 150ms
+   - Parallax: title moves up 80px and fades as you scroll
+   - Description: 18-20px, `text-landing-ink-soft`, max-width ~5 cols
+   - Two CTA buttons: primary (filled dark "See how it works" with ↓) + secondary (outline "Explore the interface")
+   - Below hero: animated registry merge scene showing data flowing between two registry cards
 
-**When upload starts**: transition to a full-screen overlay with a centered card showing:
-- Spinning indicator (not a progress bar - we don't know progress yet)
-- Text: "Обробляємо 21,656 записів землі та 20,382 об'єкти нерухомості..."
-- Sub-text changes every 3s: "Нормалізація даних..." → "Зіставлення за податковими номерами..." → "Виявлення розбіжностей..." → "Формування звіту..."
-- Cancel link at bottom
+2. **How it works**: step-by-step process visualization with scroll-linked animation
 
-## Page 2 - Dashboard (/tasks/:id)
+3. **Capabilities**: feature grid showing registry audit + satellite analysis capabilities
 
-**Purpose**: show analysis results. This is where the judge spends most time during demo.
+4. **Social proof / evidence**: statistics and trust signals
 
-**Layout**: two-column with fixed left rail filters (280px) and scrollable main area.
+5. **Interface preview**: screenshots/mockups of the dashboard
 
-**Top section - Stats row** (4 cards, grid-cols-4 gap-4):
+6. **CTA**: final call to action with signup prompt
 
-Each card: `--surface` background, 1px border, 8px radius, p-5.
+7. **Footer facts**: mono uppercase grid showing Approach, Method, For, Status
 
-Card 1 - "Оброблено записів":
-- Tiny label (11px uppercase `--text-muted`): "ОБРОБЛЕНО"
-- Big number (28px 700 monospace): "42,038"
-- Sub-text (12px `--text-muted`): "21,656 землі · 20,382 нерухомості"
+## Page 2 - Upload (/upload)
 
-Card 2 - "Зіставлено власників":
-- Label: "ЗІСТАВЛЕНО ВЛАСНИКІВ"
-- Number: "10,936" (monospace)
-- Sub-text: "зі 100% покриттям по ЄДРПОУ"
-- Tiny success chip: "✓ Високе покриття"
+Single screen, centered `max-w-960`, two file drop zones side by side (land + estate), "Запустити аналіз" button. After upload: poll task status with animated progress text.
 
-Card 3 - "Знайдено розбіжностей":
-- Label: "РОЗБІЖНОСТЕЙ"
-- Number: "4,027" (monospace, use `--danger` color for impact)
-- Sub-text: "3,708 високої критичності"
-- TrendUp icon next to sub-text
+## Page 3 - Dashboard (/tasks/:id)
 
-Card 4 - "Потенційні втрати":
-- Label: "ПОТЕНЦІЙНІ ВТРАТИ"
-- Number: "~2.4 млн ₴" (monospace, bold, use `--accent` for gravity)
-- Sub-text: "річні податкові надходження"
-- Small InfoIcon with tooltip explaining calculation
+**Stats row** (4 cards): records processed, owners matched, discrepancies found, estimated losses. Numbers in JetBrains Mono.
 
-**Second section - Rule breakdown** (horizontal bar chart, full width, card):
+**Rule breakdown**: horizontal bar chart (Recharts), bars colored by severity.
 
-Card title: "Розбіжності за типами"
-Chart: horizontal bars using Recharts. Each bar:
-- Rule code chip on the left (R01, R02... in monospace `--accent-subtle` background)
-- Rule name as bar label
-- Bar color reflects severity (red for HIGH, amber for MEDIUM, green-muted for LOW)
-- Count on the right, in monospace
+**Discrepancies table**: TanStack Table with left filter rail (280px), severity/rule/status/search filters. Row click → Object Details.
 
-Rules to show in order:
-- R01 · Припинене право, активний землекористувач — 3,708 — HIGH
-- R02 · Невідповідність призначення землі — 177 — HIGH
-- R03 · Земля без нерухомості — 470 — MEDIUM
-- R04 · Невалідний податковий номер — 2,673 — LOW
-- R05 · Дублікати записів — 1 — MEDIUM
-- R06 · Розбіжність імен — 16 — MEDIUM
-- R07 · Неповний запис — 44 — LOW
+## Page 4 - Object Details (/tasks/:id/discrepancies/:discId)
 
-**Third section - Discrepancies table** (main work area):
+Side-by-side land vs estate records comparison. Rule explanation banner. Timeline. Notes section. Status action buttons.
 
-Left filter rail (280px, sticky):
+## Page 5 - Satellite Analysis (/satellite)
 
-- Section "Критичність": three checkboxes with severity dots (🔴 Висока 3,885 / 🟡 Середня 487 / 🟢 Низька 2,717)
-- Section "Тип розбіжності": checkbox list of all 7 rules with counts
-- Section "Статус": radio (Всі / Нові / В роботі / Підтверджені / Відхилені)
-- Section "Пошук": input with SearchIcon, placeholder "ІПН, ім'я, адреса..."
-- "Скинути фільтри" text button at bottom
+Map-based interface using Leaflet + OpenStreetMap:
+- Full-width interactive map centered on OTG territory
+- Cadastral parcel polygon overlays, color-coded by detection status
+- Detected structures highlighted with confidence percentage badges
+- Side panel: property info (owner, tax ID, cadastral number, land purpose, area)
+- Detected vs registered structures comparison
+- Filter controls: confidence threshold, registration status, parcel type
 
-Main table area:
+## Page 6 - Pricing (/pricing)
 
-- Toolbar above table: "Знайдено 4,027 кейсів" on left, two buttons on right: "Експорт CSV" (secondary with Download icon) and "Експорт звіту PDF" (secondary)
-- Table: TanStack Table style, 1px borders, zebra-free (we use hover instead), row height 52px
+Three-tier grid (max-w-4xl, centered):
+- **Pilot** (free): 5,000 records, 1 user, registry cross-check, CSV export
+- **Standard** (₴4,900/mo, featured with border-2): 50,000 records, 5 users, satellite analysis, priority support
+- **Enterprise** (custom): unlimited everything, API access, on-premise option
 
-Columns:
-1. Checkbox (32px)
-2. ID (60px, monospace 12px `--text-muted`, e.g. "#1847")
-3. Критичність (100px, severity dot + label chip)
-4. Власник (flex-1):
-   - Line 1: owner name, 14px 500
-   - Line 2: tax ID in JetBrains Mono 12px `--text-muted`, e.g. "3556083731"
-5. Правило (160px): rule code chip + short name
-6. Опис (flex-2): one-line description, truncated with ellipsis, e.g. "Право припинено 07.04.2015, але активний землекористувач на 2 ділянках"
-7. Статус (100px): chip with status color
-8. "" (40px): ChevronRight icon, whole row is clickable
-
-Pagination below table: "Показано 1-50 з 4,027" on left, page buttons on right. Standard shadcn pagination.
-
-**Empty/loading states**: skeleton rows with pulsing muted blocks, never spinners in the middle of tables.
-
-## Page 3 - Object Details (/tasks/:id/discrepancies/:discId)
-
-**Purpose**: deep dive into one case. User decides: real problem or false positive.
-
-**Layout**: full width, back button at top.
-
-**Sections**:
-
-1. **Header** (py-6, border-bottom):
-   - "< Назад до списку" link with ChevronLeft
-   - H1: "Кейс #1847 · Висока критичність" (severity dot inline)
-   - Sub-info row: "Власник: Грицина Іван Іванович · ІПН: 3556083731 · 2 ділянки, 1 будівля"
-   - Actions on the right: button group "В роботу" (primary) / "Підтвердити проблему" (success outline) / "Відхилити" (ghost)
-
-2. **Rule explanation banner** (red-subtle background, left accent border 3px `--danger`, radius 8px, p-4):
-   - Icon: AlertTriangle, 20px, `--danger`
-   - Bold line: "R01 · Припинене право власності на нерухомість, але активний землекористувач"
-   - Explanation in 13px: "За ДРПП право власності на квартиру припинено 07.04.2015. За ДЗК особа досі числиться землекористувачем двох ділянок, найпізніший запис - 18.01.2024. Вірогідність систематичної помилки або податкового розриву - висока."
-
-3. **Side-by-side comparison** (grid grid-cols-2 gap-4):
-
-Left card: "Земельний реєстр (ДЗК)" header with Map icon
-- List of fields, each row: label (12px uppercase `--text-muted`) + value (14px mono for numbers, 14px regular for text)
-- Fields: Кадастровий номер, Цільове призначення, Місцерозташування, Площа (га), Нормативна оцінка, Дата реєстрації, Землекористувач
-- If owner has multiple plots, show a sub-tabs switcher at top "Ділянка 1 · Ділянка 2"
-
-Right card: "Реєстр нерухомості (ДРПП)" header with Building icon
-- Same pattern
-- Fields: Тип об'єкта, Адреса, Площа (м²), Дата реєстрації, **Дата припинення права**, Власник, Частка володіння
-- The "Дата припинення права" field must be highlighted: `--danger-subtle` background, `--danger` text, AlertCircle icon next to it
-
-When a field conflicts between cards (e.g. name spelled differently), add a yellow dot next to both and a tiny "різниця" badge.
-
-4. **Timeline** (below cards, card, p-6):
-   - Title: "Хронологія по власнику"
-   - Vertical timeline with dots and connecting lines
-   - Events: "14.02.2013 - реєстрація права на квартиру (ДРПП)", "07.04.2015 - припинення права на квартиру", "18.01.2024 - реєстрація права на землю (ДЗК)"
-   - Last event marked with pulsing `--danger` dot
-
-5. **Notes section** (bottom, card):
-   - Title: "Нотатки посадовця"
-   - Textarea, "Опишіть результати перевірки..."
-   - Below: list of past notes with timestamp and user initials
-   - Save button: "Додати нотатку" (secondary)
-
-6. **Footer bar sticky at bottom of viewport** (only on this page):
-   - Left: "Кейс створено 18.04.2026 о 14:32"
-   - Right: button group same as header actions
-   - This gives the user the status-change shortcut without scrolling back up
-
-## Micro-interactions (all pages)
-
-- Hover over a rule chip anywhere → tooltip with full rule description and formula
-- Hover over tax ID anywhere → tooltip "Натисніть щоб скопіювати", click copies to clipboard with toast "ІПН скопійовано"
-- Ctrl/Cmd + K → open command palette (шукати кейс за ІПН, власником, ID)
-- Severity dots are actual colored circles with a thin `--border` outline, not emojis in production
-
-## Responsive behavior
-
-- Desktop (1280+): layouts as described above
-- Tablet (768-1279): filter rail collapses into a Sheet component triggered by "Фільтри" button; stats row becomes 2x2
-- Mobile (<768): not primary target, but must not break - stack everything, hide Timeline, keep table scrollable horizontally
+Use landing design tokens. Cards with `rounded-2xl border border-landing-border`. Mono uppercase for tier names. Instrument Serif for prices.
 
 ## Key don'ts
 
 - No gradients. Flat colors only.
 - No decorative illustrations or generic "data" stock imagery
-- No animations longer than 150ms. No entrance animations on page load.
-- No emoji in UI copy except severity dots
-- No rounded-full buttons, no pill-shaped anything except chips/badges
-- No purple, no teal, no pastels. Stick to the tokens above.
+- No animations longer than 150ms for interactive states (hero parallax is an exception)
+- No emoji in UI copy
+- No rounded-full buttons except chips/badges and nav elements
 - No em dashes ever. Hyphens only.
+- No purple, no teal, no pastels. Stick to the tokens above.
+- No rgba shadows. Use OKLCH shadows only.
+- No cold grays for backgrounds. Use warm paper tones (oklch with hue 80).
 
 ## Realistic demo data (use exactly these values)
 
@@ -321,16 +243,20 @@ When populating the dashboard for screenshots, use these numbers from the actual
 ## Technical requirements
 
 - React 18 + TypeScript (strict)
-- Tailwind CSS with custom theme mapping the tokens above
-- shadcn/ui components: Button, Card, Input, Table, Checkbox, Badge, Dialog, Sheet, Tooltip, Toast, Separator, ScrollArea, Tabs, Progress
+- Tailwind CSS with OKLCH custom properties (see color palette above)
+- Framer Motion for page transitions, header animation, hero parallax
+- shadcn/ui components: Button, Card, Input, Table, Checkbox, Badge, Dialog, Sheet, Tooltip, Toast
 - TanStack Table for the discrepancy list
 - Recharts for the rule-breakdown chart
+- Leaflet + react-leaflet for satellite analysis map
 - lucide-react for all icons
-- React Router for navigation (/ → /tasks/:id → /tasks/:id/discrepancies/:discId)
+- i18next for internationalization (Ukrainian default, English available)
+- React Router for navigation
+- Instrument Serif + Inter + JetBrains Mono (via @fontsource)
 - No state management library - useState and URL params are enough for MVP
 - All text in Ukrainian (uk-UA), date format DD.MM.YYYY, number format with non-breaking space thousand separator
 
-Deliver all three pages with realistic data wired in, navigation working, and visual consistency across screens. Prioritize polish on Upload and Dashboard - those carry the demo.
+Deliver all pages with realistic data wired in, navigation working, and visual consistency across screens. Prioritize polish on Landing and Dashboard - those carry the demo.
 
 --- PROMPT END ---
 
@@ -338,20 +264,23 @@ Deliver all three pages with realistic data wired in, navigation working, and vi
 
 ## Additional tips
 
-**For v0.dev**: start with "Build the Dashboard first" (most visual weight for hackathon demo), then ask it to add Upload, then Object Details as follow-ups.
+**For v0.dev**: start with "Build the Landing page and Dashboard first" (most visual weight for hackathon demo), then ask it to add Upload, Object Details, Satellite as follow-ups.
 
-**For Claude Artifacts**: paste the whole thing and ask "Build the complete app in one artifact" - works well if the artifact is a single-page React app with all three routes.
+**For Claude Artifacts**: paste the whole thing and ask "Build the complete app in one artifact" - works well if the artifact is a single-page React app with all routes.
 
 **For Lovable / Bolt**: the prompt above is already in the right format. These tools handle project-level generation well.
 
-**Iteration tactic**: first pass will get 70% right. Then give surgical follow-ups like "on the Dashboard, make the Stats card for 'Потенційні втрати' more prominent - bigger number, use --accent color", rather than regenerating everything.
+**Iteration tactic**: first pass will get 70% right. Then give surgical follow-ups like "make the hero title use Inter semibold not Instrument Serif" or "add the signal dot pulse animation", rather than regenerating everything.
 
 **Verification checklist after generation**:
-- [ ] Wordmark "Revela" visible on every page
-- [ ] Ukrainian navy #0050B5 used consistently for CTAs and accents
-- [ ] Inter for UI, JetBrains Mono for tax IDs and cadastral numbers
-- [ ] Severity dots are colored circles with borders, not emoji
+- [ ] Wordmark "Revela" in Instrument Serif visible on every page
+- [ ] Warm paper background (oklch hue 80), not cold gray
+- [ ] Signal dot (warm amber) on logo and avatar
+- [ ] Inter for UI text and hero, JetBrains Mono for labels and numbers
+- [ ] Animated link underlines in header
+- [ ] Language selector with globe icon
 - [ ] No em dashes anywhere - only hyphens
 - [ ] Demo data matches Sokalsky district numbers
-- [ ] Table has filter rail on left, not top
-- [ ] Object Details page shows termination date highlighted in red
+- [ ] Satellite page has working Leaflet map
+- [ ] OKLCH shadows, not rgba
+- [ ] Backdrop blur header on scroll

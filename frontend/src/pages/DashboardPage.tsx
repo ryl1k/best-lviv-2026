@@ -326,7 +326,7 @@ function TaskHeader() {
 
 function StatsRow() {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Card 1 */}
       <div
         className="rounded-lg border p-5"
@@ -481,7 +481,7 @@ function RuleBreakdown() {
 
               {/* Rule name */}
               <span
-                className="shrink-0 truncate text-sm"
+                className="hidden shrink-0 truncate text-sm md:block"
                 style={{ width: 280, color: 'var(--text-secondary)' }}
                 title={rule.name}
               >
@@ -559,9 +559,8 @@ function FilterRail({
 }: FilterRailProps) {
   return (
     <aside
-      className="shrink-0 rounded-lg border"
+      className="w-full shrink-0 rounded-lg border lg:w-[280px]"
       style={{
-        width: 280,
         position: 'sticky',
         top: 80,
         alignSelf: 'flex-start',
@@ -1292,7 +1291,7 @@ export default function DashboardPage() {
 
         {/* Filter + Table */}
         <section className="mt-6" aria-label="Таблиця розбіжностей">
-          <div className="flex items-start gap-5">
+          <div className="flex flex-col items-start gap-5 lg:flex-row">
             <FilterRail
               filters={filters}
               onToggleSev={handleToggleSev}

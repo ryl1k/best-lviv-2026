@@ -1,11 +1,31 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { landingHeroScene } from '@/data/landing';
+const LEFT_RECORDS = [
+  { id: 'ID-4429', label: 'Land · Кадастр 32:01:2200', ok: true },
+  { id: 'ID-4431', label: 'Land · Кадастр 32:01:2201', ok: true },
+  { id: 'ID-4434', label: 'Land · Кадастр 32:01:2204', ok: false },
+  { id: 'ID-4438', label: 'Land · Кадастр 32:01:2207', ok: true },
+];
+
+const RIGHT_RECORDS = [
+  { id: 'RE-9120', label: 'RE · ЄДРПОУ 38291', ok: true },
+  { id: 'RE-9121', label: 'RE · ЄДРПОУ 38291', ok: false },
+  { id: 'RE-9123', label: 'RE · ЄДРПОУ 38294', ok: true },
+  { id: 'RE-9128', label: 'RE · ЄДРПОУ 38299', ok: true },
+];
+
+const FLAGGED_CASES = [
+  { code: 'R01', labelKey: 'scene.r01', risk: 92 },
+  { code: 'R02', labelKey: 'scene.r02', risk: 78 },
+  { code: 'R05', labelKey: 'scene.r05', risk: 64 },
+];
 
 export function RegistryMergeScene() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-15%' });
+  const { t } = useTranslation();
 
   return (
     <div
@@ -15,12 +35,12 @@ export function RegistryMergeScene() {
       <div className="flex items-center justify-between border-b border-landing-border px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
         <div className="flex items-center gap-2">
           <span className="landing-signal-dot landing-animate-pulse-soft" />
-          {landingHeroScene.liveAudit}
+          {t('scene.liveAudit')}
         </div>
         <div className="hidden gap-6 md:flex">
-          <span>{landingHeroScene.sourceA}</span>
-          <span>{landingHeroScene.sourceB}</span>
-          <span className="text-landing-signal">{landingHeroScene.output}</span>
+          <span>{t('scene.sourceA')}</span>
+          <span>{t('scene.sourceB')}</span>
+          <span className="text-landing-signal">{t('scene.output')}</span>
         </div>
       </div>
 
@@ -28,12 +48,12 @@ export function RegistryMergeScene() {
         <div className="col-span-4 border-r border-landing-border p-6">
           <div className="mb-4 flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-              {landingHeroScene.leftLabel}
+              {t('scene.leftLabel')}
             </span>
-            <span className="font-mono text-[10px] text-landing-muted">{landingHeroScene.fileType}</span>
+            <span className="font-mono text-[10px] text-landing-muted">.xlsx</span>
           </div>
           <div className="space-y-2">
-            {landingHeroScene.leftRecords.map((record, index) => (
+            {LEFT_RECORDS.map((record, index) => (
               <motion.div
                 key={record.id}
                 initial={{ opacity: 0, x: -12 }}
@@ -99,10 +119,10 @@ export function RegistryMergeScene() {
               transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="landing-shadow-lg relative z-10 flex h-32 w-32 flex-col items-center justify-center rounded-full border border-landing-border-strong bg-landing-paper text-center"
             >
-              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-landing-muted">Audit</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-landing-muted">{t('scene.audit')}</div>
               <div className="font-landing-display text-2xl leading-none text-landing-ink">Revela</div>
               <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-landing-signal">
-                7 rules
+                {t('scene.rules')}
               </div>
             </motion.div>
           </div>
@@ -111,12 +131,12 @@ export function RegistryMergeScene() {
         <div className="col-span-4 border-l border-landing-border p-6">
           <div className="mb-4 flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-              {landingHeroScene.rightLabel}
+              {t('scene.rightLabel')}
             </span>
-            <span className="font-mono text-[10px] text-landing-muted">{landingHeroScene.fileType}</span>
+            <span className="font-mono text-[10px] text-landing-muted">.xlsx</span>
           </div>
           <div className="space-y-2">
-            {landingHeroScene.rightRecords.map((record, index) => (
+            {RIGHT_RECORDS.map((record, index) => (
               <motion.div
                 key={record.id}
                 initial={{ opacity: 0, x: 12 }}
@@ -138,12 +158,12 @@ export function RegistryMergeScene() {
       <div className="border-t border-landing-border bg-landing-paper px-6 py-5">
         <div className="mb-3 flex items-center justify-between">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-ink-soft">
-            {landingHeroScene.bottomLabel}
+            {t('scene.bottomLabel')}
           </span>
-          <span className="font-mono text-[10px] text-landing-signal">{landingHeroScene.bottomSummary}</span>
+          <span className="font-mono text-[10px] text-landing-signal">{t('scene.bottomSummary')}</span>
         </div>
         <div className="grid gap-2 md:grid-cols-3">
-          {landingHeroScene.flaggedCases.map((item, index) => (
+          {FLAGGED_CASES.map((item, index) => (
             <motion.div
               key={item.code}
               initial={{ opacity: 0, y: 10 }}
@@ -155,7 +175,7 @@ export function RegistryMergeScene() {
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-landing-signal">
                   {item.code}
                 </div>
-                <div className="text-[12px] text-landing-ink">{item.label}</div>
+                <div className="text-[12px] text-landing-ink">{t(item.labelKey)}</div>
               </div>
               <div className="font-mono text-sm font-medium text-landing-ink">{item.risk}</div>
             </motion.div>
