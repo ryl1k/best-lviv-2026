@@ -1,0 +1,29 @@
+name: CD — Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /app/backend
+            git pull origin main
+            # install deps and restart — adjust commands for your stack
+            # e.g. for Node:   npm ci && pm2 restart backend
+            # e.g. for Python: pip install -r requirements.txt && sudo systemctl restart backend
+            echo "Deployed successfully"
