@@ -8,7 +8,12 @@ import (
 )
 
 // normalizeTaxID strips spaces and ensures exactly 10 or 8 digits.
+// Excel often stores numeric cells as floats ("1234567890.0"), so we truncate
+// at the decimal point before extracting digits.
 func normalizeTaxID(raw string) string {
+	if idx := strings.Index(raw, "."); idx != -1 {
+		raw = raw[:idx]
+	}
 	var b strings.Builder
 	for _, r := range raw {
 		if unicode.IsDigit(r) {

@@ -222,6 +222,63 @@ func (r *DiscrepancyRepo) SummaryByTaskID(ctx context.Context, taskID uuid.UUID)
 	return summary, nil
 }
 
+func (r *DiscrepancyRepo) ListPersonsByTaskID(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error) {
+	if pageSize <= 0 {
+		pageSize = 50
+	}
+	if page <= 0 {
+		page = 1
+	}
+	offset := (page - 1) * pageSize
+
+	var total int
+	if err := r.pool.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT tax_id) FROM discrepancies WHERE task_id = $1 AND tax_id != ''`, taskID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("persons count: %w", err)
+	}
+
+	rows, err := r.pool.Query(ctx, `
+		SELECT
+			tax_id,
+			COALESCE(MAX(owner_name) FILTER (WHERE owner_name != ''), '') AS owner_name,
+			SUM(rule_score)        AS total_risk_score,
+			CASE MAX(sev_rank) WHEN 3 THEN 'HIGH' WHEN 2 THEN 'MEDIUM' ELSE 'LOW' END AS max_severity,
+			SUM(rule_count)        AS discrepancy_count,
+			array_agg(rule_code ORDER BY rule_code) AS rule_codes
+		FROM (
+			SELECT
+				tax_id,
+				MAX(owner_name)  AS owner_name,
+				rule_code,
+				MAX(risk_score)  AS rule_score,
+				MAX(CASE severity WHEN 'HIGH' THEN 3 WHEN 'MEDIUM' THEN 2 ELSE 1 END) AS sev_rank,
+				COUNT(*)         AS rule_count
+			FROM discrepancies
+			WHERE task_id = $1 AND tax_id != ''
+			GROUP BY tax_id, rule_code
+		) sub
+		GROUP BY tax_id
+		ORDER BY total_risk_score DESC
+		LIMIT $2 OFFSET $3`,
+		taskID, pageSize, offset,
+	)
+	if err != nil {
+		return nil, 0, fmt.Errorf("persons list: %w", err)
+	}
+	defer rows.Close()
+
+	var result []repo.PersonRisk
+	for rows.Next() {
+		var p repo.PersonRisk
+		if err := rows.Scan(&p.TaxID, &p.OwnerName, &p.TotalRiskScore, &p.MaxSeverity, &p.DiscrepancyCount, &p.RuleCodes); err != nil {
+			return nil, 0, fmt.Errorf("persons scan: %w", err)
+		}
+		result = append(result, p)
+	}
+	return result, total, nil
+}
+
 type scanner interface {
 	Scan(dest ...any) error
 }

@@ -17,4 +17,6 @@ type AuditUseCase interface {
 	GetSummary(ctx context.Context, taskID uuid.UUID) (repo.DiscrepancySummary, error)
 	GetDiscrepancy(ctx context.Context, taskID uuid.UUID, discID int64) (entity.Discrepancy, error)
 	UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error
+	Export(ctx context.Context, taskID uuid.UUID) ([]entity.Discrepancy, error)
+	GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSize int) ([]repo.PersonRisk, int, error)
 }

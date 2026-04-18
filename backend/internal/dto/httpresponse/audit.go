@@ -82,6 +82,22 @@ type PaginatedDiscrepanciesResponse struct {
 	PageSize int                   `json:"page_size"`
 }
 
+type PersonRiskResponse struct {
+	TaxID            string   `json:"tax_id"`
+	OwnerName        string   `json:"owner_name"`
+	TotalRiskScore   int      `json:"total_risk_score"`
+	MaxSeverity      string   `json:"max_severity"`
+	DiscrepancyCount int      `json:"discrepancy_count"`
+	RuleCodes        []string `json:"rule_codes"`
+}
+
+type PaginatedPersonsResponse struct {
+	Items    []PersonRiskResponse `json:"items"`
+	Total    int                  `json:"total"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"page_size"`
+}
+
 type SummaryResponse struct {
 	TotalCount int            `json:"total_count"`
 	BySeverity map[string]int `json:"by_severity"`

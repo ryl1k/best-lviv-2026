@@ -1,0 +1,100 @@
+@baseUrl = http://localhost:8080
+@taskId = <paste task UUID here>
+@discId = 1
+
+### Upload land + estate files for analysis
+# Replace file paths with actual paths to your xlsx files
+POST {{baseUrl}}/v1/audits/upload
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="land_file"; filename="land.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< /Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП_земля.xlsx
+------Boundary
+Content-Disposition: form-data; name="estate_file"; filename="estate.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< /Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП_нерухомість.xlsx
+------Boundary--
+
+###
+
+### Get task status (poll until status = COMPLETED)
+GET {{baseUrl}}/v1/tasks/{{taskId}}
+
+###
+
+### Get all discrepancies (paginated)
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?page=1&page_size=50
+
+###
+
+### Filter by HIGH severity only
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?severity=HIGH&page=1&page_size=50
+
+###
+
+### Filter by rule R01
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?rule_code=R01_TERMINATED_STILL_HAS_LAND&page=1&page_size=50
+
+###
+
+### Filter by rule R02
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?rule_code=R02_PURPOSE_MISMATCH&page=1&page_size=50
+
+###
+
+### Filter by rule R05 (duplicates)
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?rule_code=R05_DUPLICATE_RECORD&page=1&page_size=50
+
+###
+
+### Search by owner name
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results?search=Іваненко&page=1&page_size=20
+
+###
+
+### Get summary (counts per rule + severity for dashboard)
+GET {{baseUrl}}/v1/tasks/{{taskId}}/results/summary
+
+###
+
+### Get single discrepancy detail
+GET {{baseUrl}}/v1/tasks/{{taskId}}/discrepancies/{{discId}}
+
+###
+
+### Mark discrepancy as IN_REVIEW
+PATCH {{baseUrl}}/v1/tasks/{{taskId}}/discrepancies/{{discId}}
+Content-Type: application/json
+
+{
+  "resolution_status": "IN_REVIEW"
+}
+
+###
+
+### Mark discrepancy as CONFIRMED
+PATCH {{baseUrl}}/v1/tasks/{{taskId}}/discrepancies/{{discId}}
+Content-Type: application/json
+
+{
+  "resolution_status": "CONFIRMED"
+}
+
+###
+
+### Mark discrepancy as DISMISSED
+PATCH {{baseUrl}}/v1/tasks/{{taskId}}/discrepancies/{{discId}}
+Content-Type: application/json
+
+{
+  "resolution_status": "DISMISSED"
+}
+
+###
+
+### Export all discrepancies as CSV
+GET {{baseUrl}}/v1/tasks/{{taskId}}/export
