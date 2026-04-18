@@ -1,17 +1,38 @@
 import { motion } from 'framer-motion';
-
-import { landingCapabilitiesItems, landingCapabilitiesSection } from '@/data/landing';
+import { useTranslation } from 'react-i18next';
 
 import { SectionHeader } from './SectionHeader';
 
+interface LandingCapabilityItem {
+  n: string;
+  title: string;
+  body: string;
+  visual: 'compare' | 'detect' | 'rank' | 'review' | 'export';
+}
+
 export function LandingCapabilities() {
+  const { t } = useTranslation();
+  const section = {
+    eyebrow: t('landingCapabilities.section.eyebrow'),
+    titleStart: t('landingCapabilities.section.titleStart'),
+    titleEmphasis: t('landingCapabilities.section.titleEmphasis'),
+    titleEnd: t('landingCapabilities.section.titleEnd'),
+  };
+  const items: LandingCapabilityItem[] = [
+    { n: 'i.', title: t('landingCapabilities.items.0.title'), body: t('landingCapabilities.items.0.body'), visual: 'compare' },
+    { n: 'ii.', title: t('landingCapabilities.items.1.title'), body: t('landingCapabilities.items.1.body'), visual: 'detect' },
+    { n: 'iii.', title: t('landingCapabilities.items.2.title'), body: t('landingCapabilities.items.2.body'), visual: 'rank' },
+    { n: 'iv.', title: t('landingCapabilities.items.3.title'), body: t('landingCapabilities.items.3.body'), visual: 'review' },
+    { n: 'v.', title: t('landingCapabilities.items.4.title'), body: t('landingCapabilities.items.4.body'), visual: 'export' },
+  ];
+
   return (
     <section id="features" className="relative bg-landing-surface py-32 md:py-44">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-        <SectionHeader {...landingCapabilitiesSection} />
+        <SectionHeader {...section} />
 
         <div className="mt-20 grid gap-px overflow-hidden rounded-xl bg-landing-border md:grid-cols-2">
-          {landingCapabilitiesItems.map((item, index) => (
+          {items.map((item, index) => (
             <motion.article
               key={item.n}
               initial={{ opacity: 0, y: 24 }}
@@ -23,7 +44,7 @@ export function LandingCapabilities() {
               <div className="flex items-baseline justify-between">
                 <span className="font-landing-display text-3xl italic text-landing-signal">{item.n}</span>
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-                  Feature
+                  {t('landingVisuals.feature')}
                 </span>
               </div>
 
@@ -49,14 +70,16 @@ function CapabilityVisual({
 }: {
   kind: 'compare' | 'detect' | 'rank' | 'review' | 'export';
 }) {
+  const { t } = useTranslation();
+
   if (kind === 'compare') {
     return (
       <div className="grid h-full grid-cols-2 gap-px bg-landing-border">
         {(['A', 'B'] as const).map((side, index) => (
-          <div key={side} className="bg-landing-paper p-4">
-            <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-landing-muted">
-              Source {side}
-            </div>
+            <div key={side} className="bg-landing-paper p-4">
+              <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-landing-muted">
+                {t('landingVisuals.sourceLabel', { letter: side })}
+              </div>
             {[0, 1, 2, 3].map((row) => (
               <motion.div
                 key={row}
@@ -125,23 +148,23 @@ function CapabilityVisual({
       <div className="grid h-full grid-cols-2 gap-px bg-landing-border">
         {(['A', 'B'] as const).map((source, index) => (
           <div key={source} className="bg-landing-paper p-4 font-mono text-[10px] text-landing-ink">
-            <div className="mb-2 uppercase tracking-[0.16em] text-landing-muted">Source {source}</div>
+            <div className="mb-2 uppercase tracking-[0.16em] text-landing-muted">{t('landingVisuals.sourceLabel', { letter: source })}</div>
             <div className="space-y-1">
               <div>
-                cad. <span className="text-landing-ink-soft">32:01:2204</span>
+                {t('landingVisuals.review.cadastral')} <span className="text-landing-ink-soft">32:01:2204</span>
               </div>
               <div>
-                owner{' '}
-                <span className={index === 1 ? 'bg-landing-signal/30' : ''}>ТОВ «Зелений лан»</span>
+                {t('landingVisuals.review.owner')}{' '}
+                <span className={index === 1 ? 'bg-landing-signal/30' : ''}>{t('landingVisuals.review.ownerValue')}</span>
               </div>
               <div>
-                status{' '}
+                {t('landingVisuals.review.status')}{' '}
                 <span className={index === 1 ? 'bg-landing-signal/30' : ''}>
-                  {index === 0 ? 'active' : 'terminated'}
+                  {index === 0 ? t('landingVisuals.review.active') : t('landingVisuals.review.terminated')}
                 </span>
               </div>
               <div>
-                area <span className="text-landing-ink-soft">2.40 ha</span>
+                {t('landingVisuals.review.area')} <span className="text-landing-ink-soft">{t('landingVisuals.review.areaValue')}</span>
               </div>
             </div>
           </div>

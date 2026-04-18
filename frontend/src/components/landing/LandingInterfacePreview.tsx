@@ -1,23 +1,31 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
-import {
-  landingInterfaceContent,
-  landingInterfaceSection,
-  landingInterfaceStates,
-  type LandingInterfaceState,
-} from '@/data/landing';
+import { useTranslation } from 'react-i18next';
 
 import { SectionHeader } from './SectionHeader';
 
-const stateOrder = landingInterfaceStates.map((state) => state.key);
+type LandingInterfaceState = 'upload' | 'dashboard' | 'table' | 'case';
+const STATE_ORDER: LandingInterfaceState[] = ['upload', 'dashboard', 'table', 'case'];
 
 export function LandingInterfacePreview() {
+  const { t } = useTranslation();
+  const states = [
+    { key: 'upload' as const, label: t('landingInterface.states.upload') },
+    { key: 'dashboard' as const, label: t('landingInterface.states.dashboard') },
+    { key: 'table' as const, label: t('landingInterface.states.table') },
+    { key: 'case' as const, label: t('landingInterface.states.case') },
+  ];
+  const section = {
+    eyebrow: t('landingInterface.section.eyebrow'),
+    titleStart: t('landingInterface.section.titleStart'),
+    titleEmphasis: t('landingInterface.section.titleEmphasis'),
+    titleEnd: t('landingInterface.section.titleEnd'),
+  };
   const [state, setState] = useState<LandingInterfaceState>('upload');
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setState((current) => stateOrder[(stateOrder.indexOf(current) + 1) % stateOrder.length]);
+      setState((current) => STATE_ORDER[(STATE_ORDER.indexOf(current) + 1) % STATE_ORDER.length]);
     }, 4200);
 
     return () => window.clearInterval(intervalId);
@@ -26,12 +34,12 @@ export function LandingInterfacePreview() {
   return (
     <section id="interface" className="relative bg-landing-surface py-32 md:py-44">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-        <SectionHeader {...landingInterfaceSection} />
+        <SectionHeader {...section} />
 
         <div className="mt-16 grid gap-12 md:grid-cols-12">
           <div className="md:col-span-3">
             <ul className="space-y-1">
-              {landingInterfaceStates.map((item) => (
+              {states.map((item) => (
                 <li key={item.key}>
                   <button
                     type="button"
@@ -90,7 +98,17 @@ export function LandingInterfacePreview() {
 }
 
 function UploadView() {
-  const { upload } = landingInterfaceContent;
+  const { t } = useTranslation();
+  const upload = {
+    title: t('landingInterface.upload.title'),
+    description: t('landingInterface.upload.description'),
+    files: [
+      { label: t('landingInterface.upload.files.land.label'), file: 'land_registry.xlsx', meta: t('landingInterface.upload.files.land.meta') },
+      { label: t('landingInterface.upload.files.estate.label'), file: 'real_estate.xlsx', meta: t('landingInterface.upload.files.estate.meta') },
+    ],
+    footer: t('landingInterface.upload.footer'),
+    cta: t('landingInterface.upload.cta'),
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -122,7 +140,27 @@ function UploadView() {
 }
 
 function DashboardView() {
-  const { dashboard } = landingInterfaceContent;
+  const { t } = useTranslation();
+  const dashboard = {
+    title: t('landingInterface.dashboard.title'),
+    meta: t('landingInterface.dashboard.meta'),
+    cards: [
+      { key: t('landingInterface.dashboard.cards.0.key'), value: '21,656' },
+      { key: t('landingInterface.dashboard.cards.1.key'), value: '3,708' },
+      { key: t('landingInterface.dashboard.cards.2.key'), value: '412' },
+      { key: t('landingInterface.dashboard.cards.3.key'), value: '47.2' },
+    ],
+    chartLabel: t('landingInterface.dashboard.chartLabel'),
+    rules: [
+      { code: 'R01', value: 92 },
+      { code: 'R02', value: 71 },
+      { code: 'R03', value: 22 },
+      { code: 'R04', value: 56 },
+      { code: 'R05', value: 64 },
+      { code: 'R06', value: 38 },
+      { code: 'R07', value: 18 },
+    ],
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -161,7 +199,26 @@ function DashboardView() {
 }
 
 function TableView() {
-  const { table } = landingInterfaceContent;
+  const { t } = useTranslation();
+  const table = {
+    title: t('landingInterface.table.title'),
+    meta: t('landingInterface.table.meta'),
+    columns: [
+      t('landingInterface.table.columns.case'),
+      t('landingInterface.table.columns.rule'),
+      t('landingInterface.table.columns.risk'),
+      t('landingInterface.table.columns.status'),
+    ],
+    rows: [
+      { id: 'C-2841', rule: 'R01', risk: 94, status: t('landingVisuals.status.new') },
+      { id: 'C-2702', rule: 'R05', risk: 88, status: t('landingVisuals.status.new') },
+      { id: 'C-2655', rule: 'R02', risk: 81, status: t('landingVisuals.status.inReview') },
+      { id: 'C-2604', rule: 'R01', risk: 73, status: t('landingVisuals.status.new') },
+      { id: 'C-2541', rule: 'R04', risk: 66, status: t('landingVisuals.status.inReview') },
+      { id: 'C-2488', rule: 'R05', risk: 58, status: t('landingVisuals.status.new') },
+      { id: 'C-2401', rule: 'R02', risk: 51, status: t('tasks.status.confirmed') },
+    ],
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -200,7 +257,21 @@ function TableView() {
 }
 
 function CaseView() {
-  const { case: caseContent } = landingInterfaceContent;
+  const { t } = useTranslation();
+  const caseContent = {
+    title: t('landingInterface.case.title'),
+    meta: t('landingInterface.case.meta'),
+    action: t('landingInterface.case.action'),
+    sources: [t('landingInterface.case.sources.a'), t('landingInterface.case.sources.b')] as const,
+    rows: [
+      { key: t('landingInterface.case.rows.cadastral.key'), values: ['32:01:2204:0034', '32:01:2204:0034'], highlight: false },
+      { key: t('landingInterface.case.rows.taxId.key'), values: ['3429105782', '3429105782'], highlight: false },
+      { key: t('landingInterface.case.rows.status.key'), values: [t('landingInterface.case.rows.status.left'), t('landingInterface.case.rows.status.right')], highlight: true },
+      { key: t('landingInterface.case.rows.useType.key'), values: [t('landingInterface.case.rows.useType.left'), t('landingInterface.case.rows.useType.right')], highlight: true },
+      { key: t('landingInterface.case.rows.area.key'), values: ['2.40', '2.40'], highlight: false },
+      { key: t('landingInterface.case.rows.recorded.key'), values: ['07.06.2021', '12.03.2024'], highlight: false },
+    ],
+  };
 
   return (
     <div className="flex h-full flex-col">

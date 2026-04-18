@@ -1,128 +1,50 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
-  ChevronLeft,
-  AlertTriangle,
   AlertCircle,
-  Map,
+  AlertTriangle,
+  Ban,
   Building2,
   Check,
-  Ban,
+  ChevronLeft,
+  Map,
   Plus,
-} from 'lucide-react'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+} from 'lucide-react';
 
 interface LandRecord {
-  cadastralNumber: string
-  purpose: string
-  location: string
-  areaHa: string
-  normativeValue: string
-  registeredAt: string
-  owner: string
+  cadastralNumber: string;
+  purpose: string;
+  location: string;
+  areaHa: string;
+  normativeValue: string;
+  registeredAt: string;
+  owner: string;
 }
 
 interface EstateRecord {
-  objectType: string
-  address: string
-  areaM2: string
-  registeredAt: string
-  terminatedAt: string
-  owner: string
-  ownershipShare: string
+  objectType: string;
+  address: string;
+  areaM2: string;
+  registeredAt: string;
+  terminatedAt: string;
+  owner: string;
+  ownershipShare: string;
 }
 
 interface TimelineEvent {
-  date: string
-  description: string
-  source: 'ДРПП' | 'ДЗК'
-  type: 'normal' | 'danger' | 'active'
+  date: string;
+  description: string;
+  source: 'drpp' | 'dzk';
+  type: 'normal' | 'danger' | 'active';
 }
 
 interface Note {
-  initials: string
-  author: string
-  date: string
-  text: string
+  initials: string;
+  author: string;
+  date: string;
+  text: string;
 }
-
-// ---------------------------------------------------------------------------
-// Static data (matching the prototype exactly)
-// ---------------------------------------------------------------------------
-
-const LAND_RECORDS: LandRecord[] = [
-  {
-    cadastralNumber: '4624884200:05:000:0009',
-    purpose: 'Для будівництва і обслуговування житлового будинку',
-    location: 'вулиця Коваліва, 45',
-    areaHa: '0.1200',
-    normativeValue: '47 328,00 ₴',
-    registeredAt: '18.01.2024',
-    owner: 'Грицина Іван Іванович',
-  },
-  {
-    cadastralNumber: '4624884200:05:000:0134',
-    purpose: 'Для ведення товарного сільськогосподарського виробництва',
-    location: 'вулиця Коваліва, 45',
-    areaHa: '0.2500',
-    normativeValue: '125 400,00 ₴',
-    registeredAt: '14.02.2013',
-    owner: 'Грицина Іван Іванович',
-  },
-]
-
-const ESTATE_RECORD: EstateRecord = {
-  objectType: 'Квартира',
-  address: 'вулиця Коваліва, будинок 45, квартира 77',
-  areaM2: '68.40',
-  registeredAt: '14.02.2013',
-  terminatedAt: '07.04.2015',
-  owner: 'Грицина І. І.',
-  ownershipShare: '1/1',
-}
-
-const TIMELINE_EVENTS: TimelineEvent[] = [
-  {
-    date: '14.02.2013',
-    description: 'Реєстрація права на квартиру',
-    source: 'ДРПП',
-    type: 'normal',
-  },
-  {
-    date: '07.04.2015',
-    description: 'Припинення права на квартиру',
-    source: 'ДРПП',
-    type: 'danger',
-  },
-  {
-    date: '18.01.2024',
-    description: 'Реєстрація права на землю (ділянка 2)',
-    source: 'ДЗК',
-    type: 'active',
-  },
-]
-
-const NOTES: Note[] = [
-  {
-    initials: 'АК',
-    author: 'Анна Ковальчук',
-    date: '18.04.2026, 14:45',
-    text: 'Запит у ДЗК на уточнення статусу ділянки 4624884200:05:000:0009. Потрібна перевірка на місці.',
-  },
-  {
-    initials: 'МШ',
-    author: 'Михайло Шевченко',
-    date: '17.04.2026, 11:12',
-    text: 'Попередньо виглядає як систематична помилка - право припинено, але запис про землекористування продовжено.',
-  },
-]
-
-// ---------------------------------------------------------------------------
-// Tiny design tokens (inline)
-// ---------------------------------------------------------------------------
 
 const T = {
   accent: '#0050B5',
@@ -136,7 +58,6 @@ const T = {
   info: '#0284C7',
   infoSubtle: '#E0F2FE',
   warning: '#F59E0B',
-  warningSubtle: '#FEF3C7',
   surface: '#FFFFFF',
   surfaceMuted: '#F4F4F5',
   bg: '#FAFAFA',
@@ -146,11 +67,7 @@ const T = {
   textSecondary: '#3F3F46',
   textMuted: '#71717A',
   textDisabled: '#A1A1AA',
-} as const
-
-// ---------------------------------------------------------------------------
-// Chip components
-// ---------------------------------------------------------------------------
+} as const;
 
 function ChipDanger({ children }: { children: React.ReactNode }) {
   return (
@@ -164,7 +81,7 @@ function ChipDanger({ children }: { children: React.ReactNode }) {
         letterSpacing: '0.02em',
         color: T.danger,
         background: T.dangerSubtle,
-        border: `1px solid rgba(220,38,38,0.25)`,
+        border: '1px solid rgba(220,38,38,0.25)',
         borderRadius: 4,
         padding: '2px 7px',
         whiteSpace: 'nowrap',
@@ -172,7 +89,7 @@ function ChipDanger({ children }: { children: React.ReactNode }) {
     >
       {children}
     </span>
-  )
+  );
 }
 
 function ChipInfo({ children }: { children: React.ReactNode }) {
@@ -187,7 +104,7 @@ function ChipInfo({ children }: { children: React.ReactNode }) {
         letterSpacing: '0.02em',
         color: T.info,
         background: T.infoSubtle,
-        border: `1px solid rgba(2,132,199,0.25)`,
+        border: '1px solid rgba(2,132,199,0.25)',
         borderRadius: 4,
         padding: '2px 7px',
         whiteSpace: 'nowrap',
@@ -195,7 +112,7 @@ function ChipInfo({ children }: { children: React.ReactNode }) {
     >
       {children}
     </span>
-  )
+  );
 }
 
 function ChipDangerMono({ children }: { children: React.ReactNode }) {
@@ -217,11 +134,13 @@ function ChipDangerMono({ children }: { children: React.ReactNode }) {
     >
       {children}
     </span>
-  )
+  );
 }
 
-function ChipSource({ source }: { source: 'ДРПП' | 'ДЗК' }) {
-  const isDrpp = source === 'ДРПП'
+function ChipSource({ source }: { source: 'drpp' | 'dzk' }) {
+  const { t } = useTranslation();
+  const isDrpp = source === 'drpp';
+
   return (
     <span
       style={{
@@ -238,12 +157,14 @@ function ChipSource({ source }: { source: 'ДРПП' | 'ДЗК' }) {
         textTransform: 'uppercase',
       }}
     >
-      {source}
+      {isDrpp ? t('objectDetails.sources.drpp') : t('objectDetails.sources.dzk')}
     </span>
-  )
+  );
 }
 
 function ChipConflict() {
+  const { t } = useTranslation();
+
   return (
     <span
       style={{
@@ -260,19 +181,17 @@ function ChipConflict() {
         whiteSpace: 'nowrap',
       }}
     >
-      Різниця
+      {t('objectDetails.conflict')}
     </span>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Conflict dot (yellow, with tooltip)
-// ---------------------------------------------------------------------------
-
 function ConflictDot() {
+  const { t } = useTranslation();
+
   return (
     <span
-      title="Різниця між реєстрами"
+      title={t('objectDetails.conflictTooltip')}
       style={{
         display: 'inline-block',
         width: 8,
@@ -284,19 +203,15 @@ function ConflictDot() {
         flexShrink: 0,
       }}
     />
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Field row (grid layout: 160px label | 1fr value)
-// ---------------------------------------------------------------------------
-
 interface FieldRowProps {
-  label: React.ReactNode
-  value: React.ReactNode
-  mono?: boolean
-  highlight?: boolean
-  conflictChip?: boolean
+  label: React.ReactNode;
+  value: React.ReactNode;
+  mono?: boolean;
+  highlight?: boolean;
+  conflictChip?: boolean;
 }
 
 function FieldRow({ label, value, mono = false, highlight = false, conflictChip = false }: FieldRowProps) {
@@ -311,7 +226,6 @@ function FieldRow({ label, value, mono = false, highlight = false, conflictChip 
         borderBottom: `1px solid ${T.border}`,
       }}
     >
-      {/* Label */}
       <span
         style={{
           fontSize: 11,
@@ -329,13 +243,10 @@ function FieldRow({ label, value, mono = false, highlight = false, conflictChip 
         {label}
       </span>
 
-      {/* Value */}
       <span
         style={{
           fontSize: 13,
-          fontFamily: mono
-            ? "'JetBrains Mono', ui-monospace, monospace"
-            : 'inherit',
+          fontFamily: mono ? "'JetBrains Mono', ui-monospace, monospace" : 'inherit',
           fontWeight: mono ? 500 : 400,
           color: highlight ? T.danger : T.textPrimary,
           background: highlight ? T.dangerSubtle : 'transparent',
@@ -348,27 +259,17 @@ function FieldRow({ label, value, mono = false, highlight = false, conflictChip 
           lineHeight: 1.45,
         }}
       >
-        {highlight && (
-          <AlertCircle
-            size={13}
-            style={{ color: T.danger, flexShrink: 0 }}
-            aria-hidden="true"
-          />
-        )}
+        {highlight ? <AlertCircle size={13} style={{ color: T.danger, flexShrink: 0 }} aria-hidden="true" /> : null}
         {value}
-        {conflictChip && <ChipConflict />}
+        {conflictChip ? <ChipConflict /> : null}
       </span>
     </div>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Card shell
-// ---------------------------------------------------------------------------
-
 interface CardProps {
-  children: React.ReactNode
-  style?: React.CSSProperties
+  children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 function Card({ children, style }: CardProps) {
@@ -384,7 +285,7 @@ function Card({ children, style }: CardProps) {
     >
       {children}
     </div>
-  )
+  );
 }
 
 function CardHeader({ children }: { children: React.ReactNode }) {
@@ -400,7 +301,7 @@ function CardHeader({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
-  )
+  );
 }
 
 function CardBody({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -408,18 +309,11 @@ function CardBody({ children, style }: { children: React.ReactNode; style?: Reac
     <div style={{ padding: '0 20px 20px', ...style }}>
       {children}
     </div>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Actions component (reused in header + sticky footer)
-// ---------------------------------------------------------------------------
-
-interface ActionsProps {
-  compact?: boolean
-}
-
-function Actions({ compact = false }: ActionsProps) {
+function Actions({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const btnBase: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -435,11 +329,10 @@ function Actions({ compact = false }: ActionsProps) {
     fontSize: compact ? 12 : 13,
     padding: compact ? '5px 10px' : '7px 14px',
     lineHeight: 1.4,
-  }
+  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {/* В роботу — primary */}
       <button
         style={{
           ...btnBase,
@@ -448,19 +341,18 @@ function Actions({ compact = false }: ActionsProps) {
           borderColor: T.accent,
         }}
         onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = T.accentHover
-          ;(e.currentTarget as HTMLButtonElement).style.borderColor = T.accentHover
+          e.currentTarget.style.background = T.accentHover;
+          e.currentTarget.style.borderColor = T.accentHover;
         }}
         onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = T.accent
-          ;(e.currentTarget as HTMLButtonElement).style.borderColor = T.accent
+          e.currentTarget.style.background = T.accent;
+          e.currentTarget.style.borderColor = T.accent;
         }}
-        aria-label="Взяти кейс в роботу"
+        aria-label={t('objectDetails.actions.takeCaseAria')}
       >
-        В роботу
+        {t('objectDetails.actions.takeCase')}
       </button>
 
-      {/* Підтвердити проблему — success-outline */}
       <button
         style={{
           ...btnBase,
@@ -469,18 +361,17 @@ function Actions({ compact = false }: ActionsProps) {
           borderColor: T.success,
         }}
         onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = T.successSubtle
+          e.currentTarget.style.background = T.successSubtle;
         }}
         onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = T.surface
+          e.currentTarget.style.background = T.surface;
         }}
-        aria-label="Підтвердити проблему"
+        aria-label={t('objectDetails.actions.confirmIssueAria')}
       >
         <Check size={compact ? 13 : 14} aria-hidden="true" />
-        Підтвердити проблему
+        {t('objectDetails.actions.confirmIssue')}
       </button>
 
-      {/* Відхилити — danger-ghost */}
       <button
         style={{
           ...btnBase,
@@ -489,39 +380,36 @@ function Actions({ compact = false }: ActionsProps) {
           borderColor: 'transparent',
         }}
         onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = T.dangerSubtle
+          e.currentTarget.style.background = T.dangerSubtle;
         }}
         onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+          e.currentTarget.style.background = 'transparent';
         }}
-        aria-label="Відхилити кейс"
+        aria-label={t('objectDetails.actions.rejectCaseAria')}
       >
         <Ban size={compact ? 13 : 14} aria-hidden="true" />
-        Відхилити
+        {t('objectDetails.actions.reject')}
       </button>
     </div>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// IPN with copy tooltip
-// ---------------------------------------------------------------------------
-
 function IpnWithTooltip({ ipn }: { ipn: string }) {
-  const [copied, setCopied] = useState(false)
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
 
   function handleCopy() {
     void navigator.clipboard.writeText(ipn).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
       <button
         onClick={handleCopy}
-        title={copied ? 'Скопійовано!' : 'Натисніть щоб скопіювати'}
+        title={copied ? t('objectDetails.ipn.copied') : t('objectDetails.ipn.copy')}
         style={{
           fontFamily: "'JetBrains Mono', ui-monospace, monospace",
           fontWeight: 500,
@@ -539,34 +427,23 @@ function IpnWithTooltip({ ipn }: { ipn: string }) {
         {ipn}
       </button>
     </span>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Land registry card
-// ---------------------------------------------------------------------------
-
-function LandRegistryCard() {
-  const [activeTab, setActiveTab] = useState(0)
-  const record = LAND_RECORDS[activeTab]
+function LandRegistryCard({ records }: { records: LandRecord[] }) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState(0);
+  const record = records[activeTab];
 
   return (
     <Card>
       <CardHeader>
         <Map size={16} style={{ color: T.accent, flexShrink: 0 }} aria-hidden="true" />
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 14,
-            fontWeight: 600,
-            color: T.textPrimary,
-          }}
-        >
-          Земельний реєстр (ДЗК)
+        <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: T.textPrimary }}>
+          {t('objectDetails.cards.landRegistry')}
         </h2>
       </CardHeader>
 
-      {/* Tabs */}
       <div
         style={{
           display: 'flex',
@@ -575,7 +452,7 @@ function LandRegistryCard() {
           padding: '0 20px',
         }}
       >
-        {LAND_RECORDS.map((_, idx) => (
+        {records.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setActiveTab(idx)}
@@ -593,153 +470,98 @@ function LandRegistryCard() {
               transition: 'color 120ms, border-color 120ms',
             }}
           >
-            Ділянка {idx + 1}
+            {t('objectDetails.cards.parcelTab', { index: idx + 1 })}
           </button>
         ))}
       </div>
 
       <CardBody>
         <div style={{ marginTop: 4 }}>
+          <FieldRow label={t('objectDetails.fields.cadastralNumber')} value={record.cadastralNumber} mono />
+          <FieldRow label={t('objectDetails.fields.purpose')} value={record.purpose} />
+          <FieldRow label={t('objectDetails.fields.location')} value={record.location} />
+          <FieldRow label={t('objectDetails.fields.areaHa')} value={record.areaHa} mono />
+          <FieldRow label={t('objectDetails.fields.normativeValue')} value={record.normativeValue} mono />
+          <FieldRow label={t('objectDetails.fields.registrationDate')} value={record.registeredAt} mono />
           <FieldRow
-            label="Кадастровий номер"
-            value={record.cadastralNumber}
-            mono
-          />
-          <FieldRow
-            label="Цільове призначення"
-            value={record.purpose}
-          />
-          <FieldRow
-            label="Місцерозташування"
-            value={record.location}
-          />
-          <FieldRow
-            label="Площа (га)"
-            value={record.areaHa}
-            mono
-          />
-          <FieldRow
-            label="Нормативна оцінка"
-            value={record.normativeValue}
-            mono
-          />
-          <FieldRow
-            label="Дата реєстрації"
-            value={record.registeredAt}
-            mono
-          />
-          <FieldRow
-            label={
+            label={(
               <>
-                Землекористувач
+                {t('objectDetails.fields.landUser')}
                 <ConflictDot />
               </>
-            }
+            )}
             value={record.owner}
           />
         </div>
       </CardBody>
     </Card>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Estate registry card
-// ---------------------------------------------------------------------------
-
-function EstateRegistryCard() {
-  const r = ESTATE_RECORD
+function EstateRegistryCard({ record }: { record: EstateRecord }) {
+  const { t } = useTranslation();
 
   return (
     <Card>
       <CardHeader>
         <Building2 size={16} style={{ color: T.accent, flexShrink: 0 }} aria-hidden="true" />
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 14,
-            fontWeight: 600,
-            color: T.textPrimary,
-          }}
-        >
-          Реєстр нерухомості (ДРПП)
+        <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: T.textPrimary }}>
+          {t('objectDetails.cards.estateRegistry')}
         </h2>
       </CardHeader>
 
       <CardBody>
         <div style={{ marginTop: 4 }}>
-          <FieldRow label="Тип об'єкта" value={r.objectType} />
-          <FieldRow label="Адреса" value={r.address} />
-          <FieldRow label="Площа (м²)" value={r.areaM2} mono />
-          <FieldRow label="Дата реєстрації" value={r.registeredAt} mono />
+          <FieldRow label={t('objectDetails.fields.objectType')} value={record.objectType} />
+          <FieldRow label={t('objectDetails.fields.address')} value={record.address} />
+          <FieldRow label={t('objectDetails.fields.areaM2')} value={record.areaM2} mono />
+          <FieldRow label={t('objectDetails.fields.registrationDate')} value={record.registeredAt} mono />
+          <FieldRow label={t('objectDetails.fields.terminationDate')} value={record.terminatedAt} mono highlight />
           <FieldRow
-            label="Дата припинення права"
-            value={r.terminatedAt}
-            mono
-            highlight
-          />
-          <FieldRow
-            label={
+            label={(
               <>
-                Власник
+                {t('objectDetails.fields.owner')}
                 <ConflictDot />
               </>
-            }
-            value={r.owner}
+            )}
+            value={record.owner}
             conflictChip
           />
-          <FieldRow label="Частка володіння" value={r.ownershipShare} mono />
+          <FieldRow label={t('objectDetails.fields.ownershipShare')} value={record.ownershipShare} mono />
         </div>
       </CardBody>
     </Card>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Timeline
-// ---------------------------------------------------------------------------
+function TimelineSection({ events }: { events: TimelineEvent[] }) {
+  const { t } = useTranslation();
 
-function TimelineSection() {
   return (
     <Card style={{ marginBottom: 24 }}>
       <div style={{ padding: 20 }}>
-        <h2
-          style={{
-            margin: '0 0 20px',
-            fontSize: 14,
-            fontWeight: 600,
-            color: T.textPrimary,
-          }}
-        >
-          Хронологія по власнику
+        <h2 style={{ margin: '0 0 20px', fontSize: 14, fontWeight: 600, color: T.textPrimary }}>
+          {t('objectDetails.timeline.title')}
         </h2>
 
-        <ol style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label="Хронологія подій">
-          {TIMELINE_EVENTS.map((ev, idx) => {
-            const isLast = idx === TIMELINE_EVENTS.length - 1
+        <ol style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label={t('objectDetails.timeline.aria')}>
+          {events.map((event, idx) => {
+            const isLast = idx === events.length - 1;
 
-            let dotBg: string = T.textDisabled
-            let dotBoxShadow = 'none'
-            let dotAnimation = 'none'
+            let dotBg: string = T.textDisabled;
+            let dotBoxShadow = 'none';
+            let dotAnimation = 'none';
 
-            if (ev.type === 'danger') dotBg = T.danger
-            if (ev.type === 'active') {
-              dotBg = T.accent
-              dotBoxShadow = '0 0 0 4px rgba(0,80,181,0.15)'
-              dotAnimation = 'revela-pulse 2s ease-in-out infinite'
+            if (event.type === 'danger') dotBg = T.danger;
+            if (event.type === 'active') {
+              dotBg = T.accent;
+              dotBoxShadow = '0 0 0 4px rgba(0,80,181,0.15)';
+              dotAnimation = 'revela-pulse 2s ease-in-out infinite';
             }
 
             return (
-              <li
-                key={idx}
-                style={{
-                  display: 'flex',
-                  gap: 16,
-                  position: 'relative',
-                }}
-              >
-                {/* Connector line */}
-                {!isLast && (
+              <li key={`${event.date}-${idx}`} style={{ display: 'flex', gap: 16, position: 'relative' }}>
+                {!isLast ? (
                   <div
                     aria-hidden="true"
                     style={{
@@ -751,9 +573,8 @@ function TimelineSection() {
                       background: T.border,
                     }}
                   />
-                )}
+                ) : null}
 
-                {/* Dot */}
                 <div style={{ paddingTop: 4, flexShrink: 0, position: 'relative', zIndex: 1 }}>
                   <span
                     aria-hidden="true"
@@ -770,74 +591,48 @@ function TimelineSection() {
                   />
                 </div>
 
-                {/* Content */}
                 <div style={{ paddingBottom: isLast ? 0 : 20, flex: 1 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginBottom: 3,
-                    }}
-                  >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                     <span
                       style={{
                         fontFamily: "'JetBrains Mono', ui-monospace, monospace",
                         fontSize: 13,
                         fontWeight: 500,
-                        color: ev.type === 'danger' ? T.danger : T.textSecondary,
+                        color: event.type === 'danger' ? T.danger : T.textSecondary,
                       }}
                     >
-                      {ev.date}
+                      {event.date}
                     </span>
-                    <ChipSource source={ev.source} />
+                    <ChipSource source={event.source} />
                   </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: 14,
-                      color: T.textSecondary,
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {ev.description}
+                  <p style={{ margin: 0, fontSize: 14, color: T.textSecondary, lineHeight: 1.45 }}>
+                    {event.description}
                   </p>
                 </div>
               </li>
-            )
+            );
           })}
         </ol>
       </div>
     </Card>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Notes section
-// ---------------------------------------------------------------------------
-
-function NotesSection() {
-  const [noteText, setNoteText] = useState('')
+function NotesSection({ notes }: { notes: Note[] }) {
+  const { t } = useTranslation();
+  const [noteText, setNoteText] = useState('');
 
   return (
     <Card>
       <div style={{ padding: 20 }}>
-        <h2
-          style={{
-            margin: '0 0 16px',
-            fontSize: 14,
-            fontWeight: 600,
-            color: T.textPrimary,
-          }}
-        >
-          Нотатки посадовця
+        <h2 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: T.textPrimary }}>
+          {t('objectDetails.notes.title')}
         </h2>
 
-        {/* Textarea */}
         <textarea
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Опишіть результати перевірки..."
+          placeholder={t('objectDetails.notes.placeholder')}
           style={{
             width: '100%',
             minHeight: 90,
@@ -855,17 +650,16 @@ function NotesSection() {
             transition: 'border-color 120ms, box-shadow 120ms',
           }}
           onFocus={(e) => {
-            e.currentTarget.style.borderColor = T.accent
-            e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0,80,181,0.12)`
+            e.currentTarget.style.borderColor = T.accent;
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,80,181,0.12)';
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = T.border
-            e.currentTarget.style.boxShadow = 'none'
+            e.currentTarget.style.borderColor = T.border;
+            e.currentTarget.style.boxShadow = 'none';
           }}
-          aria-label="Нотатки посадовця"
+          aria-label={t('objectDetails.notes.aria')}
         />
 
-        {/* Add button */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
           <button
             disabled={noteText.trim().length === 0}
@@ -887,11 +681,10 @@ function NotesSection() {
             }}
           >
             <Plus size={14} aria-hidden="true" />
-            Додати нотатку
+            {t('objectDetails.notes.add')}
           </button>
         </div>
 
-        {/* History label */}
         <div style={{ marginTop: 20, marginBottom: 12 }}>
           <span
             style={{
@@ -902,15 +695,13 @@ function NotesSection() {
               color: T.textMuted,
             }}
           >
-            ІСТОРІЯ · {NOTES.length} ЗАПИСИ
+            {t('objectDetails.notes.history', { count: notes.length })}
           </span>
         </div>
 
-        {/* Notes list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {NOTES.map((note, idx) => (
+          {notes.map((note, idx) => (
             <div key={idx} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              {/* Avatar */}
               <div
                 style={{
                   width: 32,
@@ -932,16 +723,8 @@ function NotesSection() {
                 {note.initials}
               </div>
 
-              {/* Content */}
               <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: 8,
-                    marginBottom: 4,
-                  }}
-                >
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary }}>
                     {note.author}
                   </span>
@@ -949,14 +732,7 @@ function NotesSection() {
                     {note.date}
                   </span>
                 </div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 13,
-                    color: T.textSecondary,
-                    lineHeight: 1.55,
-                  }}
-                >
+                <p style={{ margin: 0, fontSize: 13, color: T.textSecondary, lineHeight: 1.55 }}>
                   {note.text}
                 </p>
               </div>
@@ -965,47 +741,91 @@ function NotesSection() {
         </div>
       </div>
     </Card>
-  )
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default function ObjectDetailsPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const landRecords = useMemo<LandRecord[]>(() => ([
+    {
+      cadastralNumber: '4624884200:05:000:0009',
+      purpose: t('objectDetails.land.records.0.purpose'),
+      location: t('objectDetails.land.records.0.location'),
+      areaHa: '0.1200',
+      normativeValue: '47 328,00 ₴',
+      registeredAt: '18.01.2024',
+      owner: 'Грицина Іван Іванович',
+    },
+    {
+      cadastralNumber: '4624884200:05:000:0134',
+      purpose: t('objectDetails.land.records.1.purpose'),
+      location: t('objectDetails.land.records.1.location'),
+      areaHa: '0.2500',
+      normativeValue: '125 400,00 ₴',
+      registeredAt: '14.02.2013',
+      owner: 'Грицина Іван Іванович',
+    },
+  ]), [t]);
+
+  const estateRecord = useMemo<EstateRecord>(() => ({
+    objectType: t('objectDetails.estate.objectType'),
+    address: t('objectDetails.estate.address'),
+    areaM2: '68.40',
+    registeredAt: '14.02.2013',
+    terminatedAt: '07.04.2015',
+    owner: 'Грицина І. І.',
+    ownershipShare: '1/1',
+  }), [t]);
+
+  const timelineEvents = useMemo<TimelineEvent[]>(() => ([
+    {
+      date: '14.02.2013',
+      description: t('objectDetails.timeline.events.0'),
+      source: 'drpp',
+      type: 'normal',
+    },
+    {
+      date: '07.04.2015',
+      description: t('objectDetails.timeline.events.1'),
+      source: 'drpp',
+      type: 'danger',
+    },
+    {
+      date: '18.01.2024',
+      description: t('objectDetails.timeline.events.2'),
+      source: 'dzk',
+      type: 'active',
+    },
+  ]), [t]);
+
+  const notes = useMemo<Note[]>(() => ([
+    {
+      initials: 'АК',
+      author: 'Анна Ковальчук',
+      date: '18.04.2026, 14:45',
+      text: t('objectDetails.notes.items.0'),
+    },
+    {
+      initials: 'МШ',
+      author: 'Михайло Шевченко',
+      date: '17.04.2026, 11:12',
+      text: t('objectDetails.notes.items.1'),
+    },
+  ]), [t]);
 
   return (
     <>
-      {/* Pulse animation keyframes injected once */}
       <style>{`
         @keyframes revela-pulse {
           0%, 100% { box-shadow: 0 0 0 4px rgba(0,80,181,0.15); }
-          50%       { box-shadow: 0 0 0 8px rgba(0,80,181,0.05); }
+          50% { box-shadow: 0 0 0 8px rgba(0,80,181,0.05); }
         }
       `}</style>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Main scrollable content                                             */}
-      {/* ------------------------------------------------------------------ */}
-      <main
-        style={{
-          minHeight: '100vh',
-          background: T.bg,
-          paddingBottom: 120,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1120,
-            margin: '0 auto',
-            padding: '0 24px',
-          }}
-        >
-
-          {/* -------------------------------------------------------------- */}
-          {/* Back button                                                      */}
-          {/* -------------------------------------------------------------- */}
+      <main style={{ minHeight: '100vh', background: T.bg, paddingBottom: 120 }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ paddingTop: 24 }}>
             <button
               onClick={() => navigate('/tasks/a4f2')}
@@ -1026,23 +846,20 @@ export default function ObjectDetailsPage() {
                 transition: 'color 120ms, background 120ms',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = T.accent
-                e.currentTarget.style.background = T.accentSubtle
+                e.currentTarget.style.color = T.accent;
+                e.currentTarget.style.background = T.accentSubtle;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = T.textMuted
-                e.currentTarget.style.background = 'none'
+                e.currentTarget.style.color = T.textMuted;
+                e.currentTarget.style.background = 'none';
               }}
-              aria-label="Назад до списку"
+              aria-label={t('objectDetails.backAria')}
             >
               <ChevronLeft size={16} aria-hidden="true" />
-              Назад до списку
+              {t('objectDetails.back')}
             </button>
           </div>
 
-          {/* -------------------------------------------------------------- */}
-          {/* Header: title row + actions                                      */}
-          {/* -------------------------------------------------------------- */}
           <header
             style={{
               display: 'flex',
@@ -1056,24 +873,13 @@ export default function ObjectDetailsPage() {
               flexWrap: 'wrap',
             }}
           >
-            {/* Left side */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Title row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: T.textPrimary,
-                    lineHeight: 1.25,
-                  }}
-                >
-                  Кейс #1847
+                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: T.textPrimary, lineHeight: 1.25 }}>
+                  {t('objectDetails.caseTitle', { id: 1847 })}
                 </h1>
-                {/* Severity dot */}
                 <span
-                  aria-label="Висока критичність"
+                  aria-label={t('tasks.severity.high')}
                   style={{
                     display: 'inline-block',
                     width: 10,
@@ -1084,94 +890,57 @@ export default function ObjectDetailsPage() {
                     flexShrink: 0,
                   }}
                 />
-                <ChipDanger>Висока критичність</ChipDanger>
-                <ChipInfo>Нова</ChipInfo>
+                <ChipDanger>{t('tasks.severity.high')}</ChipDanger>
+                <ChipInfo>{t('tasks.status.new')}</ChipInfo>
               </div>
 
-              {/* Sub-info */}
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  color: T.textMuted,
-                  lineHeight: 1.55,
-                  maxWidth: 660,
-                }}
-              >
-                Власник:{' '}
-                <strong style={{ color: T.textSecondary, fontWeight: 600 }}>
-                  Грицина Іван Іванович
-                </strong>
+              <p style={{ margin: 0, fontSize: 13, color: T.textMuted, lineHeight: 1.55, maxWidth: 660 }}>
+                {t('objectDetails.meta.owner')}{' '}
+                <strong style={{ color: T.textSecondary, fontWeight: 600 }}>Грицина Іван Іванович</strong>
                 {' · '}
-                ІПН:{' '}
+                {t('objectDetails.meta.taxId')}{' '}
                 <IpnWithTooltip ipn="3556083731" />
                 {' · '}
-                2 ділянки, 1 будівля
+                {t('objectDetails.meta.assets')}
                 {' · '}
-                Львівська область, Сокальський район, Острівська сільська рада
+                {t('objectDetails.meta.location')}
               </p>
             </div>
 
-            {/* Right side: actions */}
             <div style={{ flexShrink: 0 }}>
               <Actions />
             </div>
           </header>
 
-          {/* -------------------------------------------------------------- */}
-          {/* Rule explanation banner                                          */}
-          {/* -------------------------------------------------------------- */}
           <div
             role="note"
-            aria-label="Пояснення правила"
+            aria-label={t('objectDetails.ruleBanner.aria')}
             style={{
               display: 'flex',
               gap: 12,
               background: T.dangerSubtle,
               borderLeft: `3px solid ${T.danger}`,
               borderRadius: 8,
-              border: `1px solid rgba(220,38,38,0.2)`,
+              border: '1px solid rgba(220,38,38,0.2)',
               borderLeftWidth: 3,
               padding: 16,
               marginBottom: 24,
             }}
           >
-            <AlertTriangle
-              size={20}
-              style={{ color: T.danger, flexShrink: 0, marginTop: 2 }}
-              aria-hidden="true"
-            />
+            <AlertTriangle size={20} style={{ color: T.danger, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <ChipDangerMono>R01</ChipDangerMono>
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: T.dangerDeep,
-                  }}
-                >
-                  Припинене право власності на нерухомість, але активний землекористувач
+                <span style={{ fontSize: 14, fontWeight: 600, color: T.dangerDeep }}>
+                  {t('objectDetails.ruleBanner.title')}
                 </span>
               </div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  color: T.dangerDeep,
-                  lineHeight: 1.55,
-                }}
-              >
-                За ДРПП право власності на квартиру припинено 07.04.2015. За ДЗК особа досі числиться
-                землекористувачем двох ділянок, найпізніший запис — 18.01.2024. Вірогідність
-                систематичної помилки або податкового розриву — висока.
+              <p style={{ margin: 0, fontSize: 13, color: T.dangerDeep, lineHeight: 1.55 }}>
+                {t('objectDetails.ruleBanner.description')}
               </p>
             </div>
           </div>
 
-          {/* -------------------------------------------------------------- */}
-          {/* Side-by-side registry cards                                      */}
-          {/* -------------------------------------------------------------- */}
           <div
             style={{
               display: 'grid',
@@ -1180,28 +949,17 @@ export default function ObjectDetailsPage() {
               marginBottom: 24,
             }}
           >
-            <LandRegistryCard />
-            <EstateRegistryCard />
+            <LandRegistryCard records={landRecords} />
+            <EstateRegistryCard record={estateRecord} />
           </div>
 
-          {/* -------------------------------------------------------------- */}
-          {/* Timeline                                                         */}
-          {/* -------------------------------------------------------------- */}
-          <TimelineSection />
-
-          {/* -------------------------------------------------------------- */}
-          {/* Notes                                                            */}
-          {/* -------------------------------------------------------------- */}
-          <NotesSection />
-
+          <TimelineSection events={timelineEvents} />
+          <NotesSection notes={notes} />
         </div>
       </main>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Sticky footer                                                        */}
-      {/* ------------------------------------------------------------------ */}
       <footer
-        aria-label="Панель дій"
+        aria-label={t('objectDetails.footer.aria')}
         style={{
           position: 'fixed',
           bottom: 0,
@@ -1217,18 +975,11 @@ export default function ObjectDetailsPage() {
           gap: 16,
         }}
       >
-        <p
-          style={{
-            margin: 0,
-            fontSize: 13,
-            color: T.textMuted,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Кейс створено 18.04.2026 о 14:32 · Оновлено 5 хв тому
+        <p style={{ margin: 0, fontSize: 13, color: T.textMuted, whiteSpace: 'nowrap' }}>
+          {t('objectDetails.footer.meta')}
         </p>
         <Actions compact />
       </footer>
     </>
-  )
+  );
 }

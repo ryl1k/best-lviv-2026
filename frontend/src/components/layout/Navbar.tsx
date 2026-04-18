@@ -3,11 +3,6 @@ import { ChevronDown, User, LogOut, Settings, LayoutDashboard, Globe, Menu, X } 
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-const LANGUAGES = [
-  { code: 'uk', label: 'Українська', flag: '🇺🇦' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-];
-
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,11 +20,10 @@ export function Navbar() {
     { label: t('nav.satellite'), path: '/satellite' },
     { label: t('nav.pricing'), path: '/pricing' },
   ];
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+  const languages = [
+    { code: 'uk', label: t('languages.uk'), flag: '🇺🇦' },
+    { code: 'en', label: t('languages.en'), flag: '🇬🇧' },
+  ] as const;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -57,21 +51,22 @@ export function Navbar() {
     return location.pathname === path;
   };
 
-  const currentLang = LANGUAGES.find((l) => l.code === i18n.language) ?? LANGUAGES[0];
+  const currentLang = languages.find((language) => language.code === i18n.language) ?? languages[0];
+  const forceSolidShell = location.pathname === '/satellite';
 
   return (
     <header
       role="banner"
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        scrolled || mobileOpen ? 'border-b border-landing-border backdrop-blur-xl' : 'border-b border-transparent'
+      className={`fixed inset-x-0 top-0 z-[1000] transition-all duration-500 ${
+        scrolled || mobileOpen || forceSolidShell ? 'border-b border-landing-border backdrop-blur-xl' : 'border-b border-transparent'
       }`}
       style={{
-        backgroundColor: scrolled || mobileOpen ? 'oklch(0.985 0.005 80 / 80%)' : 'transparent',
+        backgroundColor: scrolled || mobileOpen || forceSolidShell ? 'oklch(0.985 0.005 80 / 92%)' : 'transparent',
       }}
     >
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6 md:px-10">
         {/* Left: Logo */}
-        <Link to="/" className="flex items-center gap-2.5 no-underline" aria-label="Revela - Home">
+        <Link to="/" className="flex items-center gap-2.5 no-underline" aria-label={t('nav.brandHome')}>
           <span className="landing-signal-dot" aria-hidden="true" />
           <span className="font-landing-display text-3xl leading-none text-landing-ink">
             Revela
@@ -82,7 +77,7 @@ export function Navbar() {
         </Link>
 
         {/* Center: Desktop nav */}
-        <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-9 md:flex" aria-label={t('nav.mainNavigation')}>
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -105,7 +100,7 @@ export function Navbar() {
               onClick={() => setLangOpen(!langOpen)}
               aria-expanded={langOpen}
               aria-haspopup="true"
-              aria-label={`Language: ${currentLang.label}`}
+              aria-label={t('nav.languageLabel', { language: currentLang.label })}
               className="inline-flex items-center gap-1.5 rounded-full border-none px-2.5 py-1.5 text-sm font-medium transition-all duration-150 text-landing-ink-soft hover:text-landing-ink"
               style={{
                 background: langOpen ? 'oklch(0 0 0 / 4%)' : 'transparent',
@@ -121,7 +116,7 @@ export function Navbar() {
 
             {langOpen && (
               <div className="absolute right-0 z-[100] mt-1.5 w-44 overflow-hidden rounded-lg border border-landing-border bg-landing-paper p-1" role="menu" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                {LANGUAGES.map((lang) => (
+                {languages.map((lang) => (
                   <button
                     key={lang.code}
                     role="menuitem"
@@ -150,7 +145,7 @@ export function Navbar() {
               onClick={() => setProfileOpen(!profileOpen)}
               aria-expanded={profileOpen}
               aria-haspopup="true"
-              aria-label="Profile menu"
+              aria-label={t('nav.profileMenu')}
               className="flex items-center gap-2 rounded-full"
               style={{
                 padding: '4px 8px 4px 4px',
@@ -219,7 +214,7 @@ export function Navbar() {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-expanded={mobileOpen}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             className="inline-flex items-center justify-center rounded-lg p-2 text-landing-ink-soft transition-colors hover:text-landing-ink md:hidden"
             style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           >
@@ -230,12 +225,13 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <nav className="border-t border-landing-border px-6 pb-6 pt-4 md:hidden" aria-label="Mobile navigation" style={{ backgroundColor: 'oklch(0.985 0.005 80 / 95%)', backdropFilter: 'blur(16px)' }}>
+        <nav className="border-t border-landing-border px-6 pb-6 pt-4 md:hidden" aria-label={t('nav.mobileNavigation')} style={{ backgroundColor: 'oklch(0.985 0.005 80 / 95%)', backdropFilter: 'blur(16px)' }}>
           <div className="flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => setMobileOpen(false)}
                 className={`rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors ${
                   isActive(item.path) ? 'bg-landing-secondary text-landing-ink' : 'text-landing-ink-soft hover:text-landing-ink'
                 }`}
@@ -247,7 +243,7 @@ export function Navbar() {
           </div>
           <div className="mt-4 border-t border-landing-border pt-4">
             <div className="flex flex-col gap-1">
-              <Link to="/profile" className="rounded-lg px-3 py-2.5 text-sm text-landing-ink-soft no-underline transition-colors hover:text-landing-ink">
+              <Link to="/profile" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm text-landing-ink-soft no-underline transition-colors hover:text-landing-ink">
                 {t('nav.profile')}
               </Link>
               <button

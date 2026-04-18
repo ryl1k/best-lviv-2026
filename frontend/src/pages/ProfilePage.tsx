@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BriefcaseBusiness, LogOut, Mail, MapPin, Phone, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
-  profilePageContent,
+  getProfilePageContent,
   type ProfileField,
   type ProfileFieldId,
   type ProfileNavItem,
@@ -10,13 +11,10 @@ import {
 
 type PersonalValues = Record<ProfileFieldId, string>;
 
-const initialPersonalValues = profilePageContent.personalFields.reduce((acc, field) => {
-  acc[field.id] = field.value;
-  return acc;
-}, {} as PersonalValues);
-
 export default function ProfilePage() {
-  const [personalValues, setPersonalValues] = useState<PersonalValues>(initialPersonalValues);
+  const { t } = useTranslation();
+  const profilePageContent = useMemo(() => getProfilePageContent(t), [t]);
+  const [personalOverrides, setPersonalOverrides] = useState<Partial<PersonalValues>>({});
   const [activeSection, setActiveSection] = useState<string>(
     profilePageContent.navigation[0]?.id ?? 'identity',
   );
@@ -59,7 +57,7 @@ export default function ProfilePage() {
   };
 
   const handleFieldChange = (fieldId: ProfileFieldId, value: string) => {
-    setPersonalValues((current) => ({ ...current, [fieldId]: value }));
+    setPersonalOverrides((current) => ({ ...current, [fieldId]: value }));
   };
 
   return (
@@ -85,16 +83,16 @@ export default function ProfilePage() {
           </div>
 
           <dl className="mt-6 grid gap-4 border-t border-landing-border pt-4 sm:grid-cols-3 sm:gap-6">
-            <HeaderMeta label="Оновлення" value={profilePageContent.hero.reviewStamp} />
-            <HeaderMeta label="Статус доступу" value={profilePageContent.identity.status} />
-            <HeaderMeta label="Робочий простір" value={profilePageContent.identity.organization} />
+            <HeaderMeta label={t('profile.header.updated')} value={profilePageContent.hero.reviewStamp} />
+            <HeaderMeta label={t('profile.header.accessStatus')} value={profilePageContent.identity.status} />
+            <HeaderMeta label={t('profile.header.workspace')} value={profilePageContent.identity.organization} />
           </dl>
         </header>
       </div>
 
       <div className="mt-8 grid items-start gap-10 px-1 sm:px-2 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12 lg:px-0">
         <aside className="max-w-full lg:sticky lg:top-24 lg:h-fit">
-          <nav className="border-y border-landing-border" aria-label="Profile sections">
+          <nav className="border-y border-landing-border" aria-label={t('profile.navigation.aria')}>
             {profilePageContent.navigation.map((item) => (
               <SectionNavButton
                 key={item.id}
@@ -110,7 +108,7 @@ export default function ProfilePage() {
             className="mt-6 inline-flex items-center gap-2 border-none bg-transparent px-0 py-0 text-sm text-landing-ink-soft transition-colors hover:text-landing-ink"
           >
             <LogOut size={15} />
-            Вийти з системи
+            {t('profile.actions.signOut')}
           </button>
         </aside>
 
@@ -125,7 +123,7 @@ export default function ProfilePage() {
 
                   <div className="min-w-0">
                     <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-                      Overview
+                      {t('profile.sections.overview')}
                     </p>
                     <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-landing-ink md:text-4xl">
                       {profilePageContent.identity.name}
@@ -144,12 +142,12 @@ export default function ProfilePage() {
                 <div className="mt-8 grid gap-4 border-t border-landing-border pt-6 md:grid-cols-2">
                   <MetaItem
                     icon={<BriefcaseBusiness size={15} />}
-                    label="Робочий контур"
+                    label={t('profile.meta.workstream')}
                     value={profilePageContent.identityFacts[0]?.value ?? ''}
                   />
                   <MetaItem
                     icon={<MapPin size={15} />}
-                    label="Поточний простір"
+                    label={t('profile.meta.workspace')}
                     value={profilePageContent.identityFacts[2]?.value ?? ''}
                   />
                 </div>
@@ -158,7 +156,7 @@ export default function ProfilePage() {
               <div className="bg-landing-surface">
                 <div className="border-b border-landing-border px-6 py-5 md:px-8">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-                    Operational context
+                    {t('profile.sections.operationalContext')}
                   </p>
                 </div>
                 <dl className="grid gap-px bg-landing-border sm:grid-cols-2 xl:grid-cols-1">
@@ -177,9 +175,9 @@ export default function ProfilePage() {
 
           <section id="personal" className="scroll-mt-28 border-t border-landing-border pt-10">
             <SectionIntro
-              eyebrow="Personal information"
-              title="Персональні дані"
-              description="Базовий статичний профіль оператора. Поля лишаються редагованими лише на рівні інтерфейсу без будь-якої серверної логіки."
+              eyebrow={t('profile.sections.personalInfo')}
+              title={t('profile.personal.title')}
+              description={t('profile.personal.description')}
             />
 
             <div className="mt-8 overflow-hidden border border-landing-border bg-landing-paper">
@@ -187,7 +185,7 @@ export default function ProfilePage() {
                 <EditableField
                   key={field.id}
                   field={field}
-                  value={personalValues[field.id]}
+                  value={personalOverrides[field.id] ?? field.value}
                   onChange={(value) => handleFieldChange(field.id, value)}
                 />
               ))}
@@ -196,7 +194,7 @@ export default function ProfilePage() {
 
           <section id="municipality" className="scroll-mt-28 border-t border-landing-border pt-10">
             <SectionIntro
-              eyebrow="Community context"
+              eyebrow={profilePageContent.municipality.eyebrow}
               title={profilePageContent.municipality.title}
               description={profilePageContent.municipality.description}
             />
@@ -215,7 +213,7 @@ export default function ProfilePage() {
 
               <aside className="border border-landing-border bg-landing-surface p-6">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-                  Service notes
+                  {t('profile.sections.serviceNotes')}
                 </p>
                 <div className="mt-5 space-y-5">
                   {profilePageContent.municipality.operationalNotes.map((note) => (

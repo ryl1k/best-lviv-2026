@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,7 +28,6 @@ export default function LoginPage() {
       className="min-h-screen flex"
       style={{ background: 'var(--background)' }}
     >
-      {/* Left panel - branding */}
       <div
         className="hidden lg:flex flex-col justify-between"
         style={{
@@ -38,7 +39,6 @@ export default function LoginPage() {
           overflow: 'hidden',
         }}
       >
-        {/* Decorative grid */}
         <div
           style={{
             position: 'absolute',
@@ -75,13 +75,12 @@ export default function LoginPage() {
               marginBottom: 20,
             }}
           >
-            Робить приховане
+            {t('login.brandHeadingLineOne')}
             <br />
-            видимим
+            {t('login.brandHeadingLineTwo')}
           </h1>
           <p style={{ fontSize: 15, opacity: 0.8, lineHeight: 1.6, maxWidth: 340 }}>
-            Автоматичне зіставлення державних реєстрів для виявлення
-            розбіжностей та оптимізації податкових надходжень громади.
+            {t('login.brandDescription')}
           </p>
         </div>
 
@@ -99,22 +98,20 @@ export default function LoginPage() {
               42 038
             </div>
             <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
-              записів оброблено для Острівської ТГ
+              {t('login.processedLabel')}
             </div>
           </div>
 
           <div className="flex gap-6" style={{ fontSize: 12, opacity: 0.5 }}>
-            <span>© 2026 Revela</span>
+            <span>{t('login.footerCopyright')}</span>
             <span>·</span>
-            <span>Hackathon Innovate</span>
+            <span>{t('login.footerEvent')}</span>
           </div>
         </div>
       </div>
 
-      {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center" style={{ padding: 32 }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2" style={{ marginBottom: 40 }}>
             <span
               style={{
@@ -140,15 +137,14 @@ export default function LoginPage() {
                 marginBottom: 8,
               }}
             >
-              Вхід в систему
+              {t('login.title')}
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-              Увійдіть для доступу до аудиту активів вашої громади
+              {t('login.subtitle')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Email */}
             <div style={{ marginBottom: 20 }}>
               <label
                 style={{
@@ -159,13 +155,13 @@ export default function LoginPage() {
                   marginBottom: 6,
                 }}
               >
-                Електронна пошта
+                {t('login.emailLabel')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@ostrivska.gov.ua"
+                placeholder={t('login.emailPlaceholder')}
                 autoComplete="email"
                 style={{
                   width: '100%',
@@ -184,7 +180,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div style={{ marginBottom: 12 }}>
               <label
                 style={{
@@ -195,14 +190,14 @@ export default function LoginPage() {
                   marginBottom: 6,
                 }}
               >
-                Пароль
+                {t('login.passwordLabel')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Введіть пароль"
+                  placeholder={t('login.passwordPlaceholder')}
                   autoComplete="current-password"
                   style={{
                     width: '100%',
@@ -222,6 +217,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   style={{
                     position: 'absolute',
                     right: 12,
@@ -241,7 +237,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Forgot password */}
             <div style={{ textAlign: 'right', marginBottom: 28 }}>
               <button
                 type="button"
@@ -254,11 +249,10 @@ export default function LoginPage() {
                   padding: 0,
                 }}
               >
-                Забули пароль?
+                {t('login.forgotPassword')}
               </button>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={!canSubmit || loading}
@@ -298,7 +292,7 @@ export default function LoginPage() {
                 />
               ) : (
                 <>
-                  Увійти <ArrowRight size={16} />
+                  {t('login.submit')} <ArrowRight size={16} />
                 </>
               )}
             </button>
@@ -306,17 +300,15 @@ export default function LoginPage() {
 
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-          {/* Divider */}
           <div
             className="flex items-center gap-3"
             style={{ margin: '28px 0', color: 'var(--text-disabled)', fontSize: 12 }}
           >
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span>або</span>
+            <span>{t('login.or')}</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
-          {/* Trembita SSO */}
           <button
             type="button"
             style={{
@@ -344,11 +336,11 @@ export default function LoginPage() {
               e.currentTarget.style.borderColor = 'var(--border)';
             }}
           >
-            Вхід через Trembita
+            {t('login.trembita')}
           </button>
 
           <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-            Немає акаунту?{' '}
+            {t('login.noAccount')}{' '}
             <button
               type="button"
               style={{
@@ -361,7 +353,7 @@ export default function LoginPage() {
                 fontWeight: 500,
               }}
             >
-              Зверніться до адміністратора
+              {t('login.contactAdmin')}
             </button>
           </p>
         </div>

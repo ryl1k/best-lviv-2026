@@ -1,26 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  AlertTriangle,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  Clock3,
+  ChevronUp,
+  FileText,
+  Loader2,
+  MapPin,
+  Maximize2,
+  PencilLine,
   Satellite,
   Search,
-  AlertTriangle,
-  Building2,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Eye,
-  TrendingUp,
-  Loader2,
+  ShieldAlert,
   User,
-  FileText,
-  Maximize2,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Polygon, Rectangle, Popup, useMap } from 'react-leaflet';
+import { MapContainer, Polygon, Popup, Rectangle, TileLayer, useMap } from 'react-leaflet';
 import type { LatLngBoundsExpression, LatLngTuple } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-/* ── Types ─────────────────────────────────────────────────────── */
 
 interface PropertyInfo {
   owner: string;
@@ -59,8 +58,6 @@ interface TimelineEntry {
   event: string;
   type: 'normal' | 'warning' | 'danger';
 }
-
-/* ── Mock data ─────────────────────────────────────────────────── */
 
 const PARCEL_CENTER: LatLngTuple = [49.3485, 24.6532];
 
@@ -106,20 +103,238 @@ const MOCK_TIMELINE: TimelineEntry[] = [
 ];
 
 const SIGNAL_COLOR = 'oklch(0.62 0.16 45)';
-
-/* ── Map auto-fit ────────────────────────────────────────────── */
+const MAP_TONES = {
+  parcel: SIGNAL_COLOR,
+  registeredStroke: 'oklch(0.57 0.08 155)',
+  registeredFill: 'oklch(0.72 0.04 155 / 0.18)',
+  unregisteredStroke: 'oklch(0.56 0.07 28)',
+  unregisteredFill: 'oklch(0.72 0.03 28 / 0.22)',
+};
 
 function FitBounds({ bounds }: { bounds: LatLngTuple[] }) {
   const map = useMap();
+
   useEffect(() => {
     if (bounds.length > 0) {
       map.fitBounds(bounds as LatLngBoundsExpression, { padding: [40, 40], maxZoom: 18 });
     }
-  }, [map, bounds]);
+  }, [bounds, map]);
+
   return null;
 }
 
-/* ── Page ─────────────────────────────────────────────────────── */
+function SectionLabel({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
+      {children ?? t('satellite.sectionLabel')}
+    </p>
+  );
+}
+
+function WorkspaceCard({
+  title,
+  icon: Icon,
+  meta,
+  children,
+}: {
+  title: string;
+  icon: ComponentType<{ size?: number; className?: string; style?: CSSProperties }>;
+  meta?: ReactNode;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <section className="overflow-hidden rounded-[24px] border border-landing-border bg-landing-paper">
+      <div className="flex flex-col gap-3 border-b border-landing-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-landing-border bg-landing-surface text-landing-ink-soft"
+            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)' }}
+          >
+            <Icon size={16} style={{ color: SIGNAL_COLOR }} />
+          </span>
+          <div>
+            <SectionLabel>{t('satellite.workspaceSection')}</SectionLabel>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-landing-ink">{title}</h2>
+          </div>
+        </div>
+        {meta ? (
+          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+            {meta}
+          </div>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function DataField({
+  label,
+  value,
+  icon: Icon,
+  mono = false,
+}: {
+  label: string;
+  value: ReactNode;
+  icon: ComponentType<{ size?: number; className?: string; style?: CSSProperties }>;
+  mono?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-landing-border bg-landing-surface px-4 py-3.5">
+      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+        <Icon size={11} />
+        <span>{label}</span>
+      </div>
+      <div className={`mt-2 text-sm leading-6 text-landing-ink ${mono ? 'font-mono' : ''}`}>{value}</div>
+    </div>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  note: string;
+  tone: 'default' | 'registered' | 'unregistered' | 'impact';
+}) {
+  const toneStyles = {
+    default: {
+      marker: 'bg-landing-ink',
+      value: 'text-landing-ink',
+    },
+    registered: {
+      marker: 'bg-[var(--success)]',
+      value: 'text-landing-ink',
+    },
+    unregistered: {
+      marker: 'bg-[var(--danger)]',
+      value: 'text-landing-ink',
+    },
+    impact: {
+      marker: '',
+      value: 'text-landing-ink',
+    },
+  } as const;
+
+  return (
+    <div className="rounded-2xl border border-landing-border bg-landing-surface px-4 py-4">
+      <div className="flex items-center gap-2">
+        {tone === 'impact' ? (
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">₴</span>
+        ) : (
+          <span className={`h-2 w-2 rounded-full ${toneStyles[tone].marker}`} aria-hidden="true" />
+        )}
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">{label}</span>
+      </div>
+      <div className={`mt-4 font-mono text-2xl font-semibold tracking-tight ${toneStyles[tone].value}`}>{value}</div>
+      <p className="mt-2 text-sm leading-relaxed text-landing-ink-soft">{note}</p>
+    </div>
+  );
+}
+
+function StatusBadge({
+  registeredInRegistry,
+  children,
+}: {
+  registeredInRegistry: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium"
+      style={{
+        borderColor: registeredInRegistry ? 'color-mix(in oklch, var(--success) 22%, var(--landing-border))' : 'color-mix(in oklch, var(--danger) 22%, var(--landing-border))',
+        background: registeredInRegistry ? 'color-mix(in oklch, var(--success) 7%, white)' : 'color-mix(in oklch, var(--danger) 7%, white)',
+        color: registeredInRegistry ? 'var(--text-secondary)' : 'var(--text-primary)',
+      }}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: registeredInRegistry ? 'var(--success)' : 'var(--danger)' }}
+        aria-hidden="true"
+      />
+      {children}
+    </span>
+  );
+}
+
+function LegendItem({
+  label,
+  borderColor,
+  fill,
+  dashed = false,
+}: {
+  label: string;
+  borderColor: string;
+  fill: string;
+  dashed?: boolean;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-landing-border bg-landing-surface px-3 py-1.5">
+      <span
+        className="inline-block h-3 w-3 rounded-[4px] border"
+        style={{
+          borderColor,
+          background: fill,
+          borderStyle: dashed ? 'dashed' : 'solid',
+          borderWidth: 1.5,
+        }}
+      />
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-landing-muted">{label}</span>
+    </div>
+  );
+}
+
+function TimelineTone({
+  type,
+}: {
+  type: TimelineEntry['type'];
+}) {
+  const { t } = useTranslation();
+  const tones = {
+    normal: {
+      dot: 'var(--success)',
+      bg: 'color-mix(in oklch, var(--success) 6%, white)',
+      text: 'var(--text-secondary)',
+    },
+    warning: {
+      dot: 'var(--warning)',
+      bg: 'color-mix(in oklch, var(--warning) 7%, white)',
+      text: 'var(--text-secondary)',
+    },
+    danger: {
+      dot: 'var(--danger)',
+      bg: 'color-mix(in oklch, var(--danger) 7%, white)',
+      text: 'var(--text-primary)',
+    },
+  } as const;
+
+  return (
+    <span
+      className="inline-flex h-7 items-center rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.14em]"
+      style={{
+        borderColor: 'color-mix(in oklch, var(--landing-border) 82%, transparent)',
+        background: tones[type].bg,
+        color: tones[type].text,
+      }}
+    >
+      <span
+        className="mr-2 h-1.5 w-1.5 rounded-full"
+        style={{ background: tones[type].dot }}
+        aria-hidden="true"
+      />
+      {type === 'danger' ? t('satellite.timelineType.detection') : type === 'warning' ? t('satellite.timelineType.observed') : t('satellite.timelineType.registry')}
+    </span>
+  );
+}
 
 export default function SatelliteAnalysisPage() {
   const { t } = useTranslation();
@@ -127,6 +342,7 @@ export default function SatelliteAnalysisPage() {
   const [address, setAddress] = useState('');
   const [phase, setPhase] = useState<'idle' | 'loading' | 'results'>('idle');
   const [loadingStep, setLoadingStep] = useState(0);
+  const [queryExpanded, setQueryExpanded] = useState(true);
 
   const loadingMessages = [
     t('satellite.loading1'),
@@ -146,332 +362,535 @@ export default function SatelliteAnalysisPage() {
 
   useEffect(() => {
     if (phase !== 'loading') return;
-    if (loadingStep >= loadingMessages.length) {
-      setPhase('results');
-      return;
-    }
-    const timer = setTimeout(() => setLoadingStep((s) => s + 1), 700);
+    const timer = setTimeout(() => {
+      setLoadingStep((step) => {
+        if (step >= loadingMessages.length - 1) {
+          setPhase('results');
+          setQueryExpanded(false);
+          return step;
+        }
+        return step + 1;
+      });
+    }, 700);
     return () => clearTimeout(timer);
-  }, [phase, loadingStep, loadingMessages.length]);
+  }, [loadingMessages.length, loadingStep, phase]);
 
-  const property = MOCK_PROPERTY;
-  const analysis = MOCK_ANALYSIS;
-  const timeline = MOCK_TIMELINE;
+  const property = {
+    ...MOCK_PROPERTY,
+    address: t('satellite.mock.address'),
+    landPurpose: t('satellite.mock.landPurpose'),
+    registeredStructures: [t('satellite.mock.registeredStructure')],
+  };
+  const analysis = {
+    ...MOCK_ANALYSIS,
+    estimatedTaxImpact: t('satellite.mock.estimatedTaxImpact'),
+    detectedStructures: MOCK_ANALYSIS.detectedStructures.map((structure) => ({
+      ...structure,
+      type: t(`satellite.mock.structures.${structure.id}`),
+    })),
+  };
+  const timeline = MOCK_TIMELINE.map((entry, index) => ({
+    ...entry,
+    event: t(`satellite.mock.timeline.${index}`),
+  }));
+  const showQuerySection = phase !== 'results' || queryExpanded;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-6 pb-16 pt-8 md:px-10">
-      {/* Header */}
-      <div className="mb-10">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-landing-muted">
-          {t('satellite.title')}
-        </span>
-        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-landing-ink md:text-4xl">
-          {t('satellite.title')}
-        </h1>
-        <p className="mt-2 max-w-2xl text-base text-landing-ink-soft">
-          {t('satellite.subtitle')}
-        </p>
-      </div>
-
-      {/* Input Section */}
-      <div className="mb-8 rounded-2xl border border-landing-border bg-landing-surface p-6">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-0 flex-1" style={{ minWidth: 280 }}>
-            <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-              {t('satellite.cadastralNumber')}
-            </label>
-            <input
-              type="text"
-              value={cadastralNumber}
-              onChange={(e) => setCadastralNumber(e.target.value)}
-              placeholder="4624884200:05:000:0009"
-              className="w-full rounded-lg border border-landing-border bg-landing-paper px-3 py-2.5 font-mono text-sm text-landing-ink outline-none transition-colors focus:border-landing-border-strong"
-            />
-          </div>
-
-          <div className="min-w-0 flex-1" style={{ minWidth: 240 }}>
-            <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-              {t('satellite.address')}
-            </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="вул. Коваліва, 45, с. Острів"
-              className="w-full rounded-lg border border-landing-border bg-landing-paper px-3 py-2.5 text-sm text-landing-ink outline-none transition-colors focus:border-landing-border-strong"
-            />
-          </div>
-
-          <button
-            onClick={handleAnalyze}
-            disabled={!canAnalyze || phase === 'loading'}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ background: canAnalyze ? SIGNAL_COLOR : 'var(--text-disabled)' }}
-          >
-            {phase === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-            {t('satellite.analyze')}
-          </button>
-        </div>
-      </div>
-
-      {/* Loading */}
-      {phase === 'loading' && (
-        <div className="rounded-2xl border border-landing-border bg-landing-surface py-16 text-center">
-          <Loader2 size={28} className="mx-auto mb-4 animate-spin" style={{ color: SIGNAL_COLOR }} />
-          <div className="text-sm font-medium text-landing-ink">
-            {loadingMessages[loadingStep] ?? loadingMessages[loadingMessages.length - 1]}
-          </div>
-          <div className="mt-1 font-mono text-xs text-landing-muted">
-            {t('satellite.step')} {Math.min(loadingStep + 1, loadingMessages.length)} {t('satellite.of')} {loadingMessages.length}
-          </div>
-          <div className="mx-auto mt-4 h-0.5 w-64 overflow-hidden rounded-full bg-landing-border">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${((loadingStep + 1) / loadingMessages.length) * 100}%`, background: SIGNAL_COLOR }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      {phase === 'results' && (
-        <div className="flex flex-col gap-6">
-          {/* Alert */}
-          {analysis.status === 'unauthorized_found' && (
-            <div className="flex items-start gap-3 rounded-2xl border border-landing-border bg-[var(--danger-subtle)] p-5">
-              <AlertTriangle size={20} className="mt-0.5 shrink-0" style={{ color: 'var(--danger)' }} />
+    <div className="satellite-workspace mx-auto max-w-[1400px] px-6 pb-16 pt-8 md:px-10 md:pb-20">
+      <div className="space-y-6 md:space-y-8">
+        {phase === 'results' && !queryExpanded ? (
+          <section className="rounded-[22px] border border-landing-border bg-landing-paper px-5 py-4 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-semibold" style={{ color: 'var(--danger)' }}>
-                  {t('satellite.alertTitle', { count: analysis.unauthorizedCount })}
-                </div>
-                <div className="mt-1 text-sm text-landing-ink-soft">
-                  {t('satellite.alertDesc', { cadastral: property.cadastralNumber })}{' '}
-                  {t('satellite.taxImpact')}: <strong style={{ color: 'var(--danger)' }}>{analysis.estimatedTaxImpact}</strong>
-                </div>
+                <SectionLabel>{t('satellite.currentQuery')}</SectionLabel>
+                <p className="mt-2 text-sm leading-relaxed text-landing-ink-soft">
+                  {cadastralNumber || property.cadastralNumber}
+                  {address.trim() ? ` · ${address.trim()}` : ''}
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setQueryExpanded(true)}
+                className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-landing-border bg-landing-surface px-4 py-2 text-sm font-medium text-landing-ink transition-colors hover:bg-white"
+              >
+                <PencilLine size={14} />
+                {t('satellite.editParameters')}
+              </button>
             </div>
-          )}
+          </section>
+        ) : null}
 
-          {/* Two columns: Property + Map */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.6fr]">
-            {/* Property Info */}
-            <div className="rounded-2xl border border-landing-border bg-landing-surface p-6">
-              <div className="mb-5 flex items-center gap-2">
-                <Building2 size={16} style={{ color: SIGNAL_COLOR }} />
-                <span className="text-sm font-semibold text-landing-ink">{t('satellite.propertyInfo')}</span>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                {[
-                  { icon: User, label: t('satellite.owner'), value: property.owner },
-                  { icon: FileText, label: t('satellite.taxId'), value: property.taxId, mono: true },
-                  { icon: MapPin, label: t('satellite.addressLabel'), value: property.address },
-                  { icon: FileText, label: t('satellite.cadastralNumber'), value: property.cadastralNumber, mono: true },
-                  { icon: Maximize2, label: t('satellite.area'), value: `${property.areaHa} га` },
-                  { icon: FileText, label: t('satellite.purpose'), value: property.landPurpose },
-                  { icon: Clock, label: t('satellite.regDate'), value: property.registeredAt },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="mb-1 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-                      <item.icon size={10} />
-                      {item.label}
-                    </div>
-                    <div className={`text-sm text-landing-ink ${item.mono ? 'font-mono' : ''}`}>
-                      {item.value}
-                    </div>
+        {showQuerySection ? (
+          <section className="overflow-hidden rounded-[28px] border border-landing-border bg-landing-paper transition-opacity duration-200">
+            <div className="grid gap-px bg-landing-border xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+              <div className="bg-landing-paper p-6 md:p-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <SectionLabel>{t('satellite.workspaceEyebrow')}</SectionLabel>
+                    <h1 className="mt-3 max-w-[760px] text-3xl font-semibold leading-tight tracking-tight text-landing-ink md:text-4xl">
+                      {t('satellite.title')}
+                    </h1>
+                    <p className="mt-3 max-w-[720px] text-base leading-relaxed text-landing-ink-soft">
+                      {t('satellite.subtitle')}
+                    </p>
                   </div>
-                ))}
 
-                <div>
-                  <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-                    {t('satellite.regStructures')}
-                  </div>
-                  {property.registeredStructures.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded-lg bg-[var(--success-subtle)] px-3 py-1.5 text-sm text-landing-ink-soft">
-                      <CheckCircle size={13} style={{ color: 'var(--success)' }} />
-                      {s}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Map */}
-            <div className="overflow-hidden rounded-2xl border border-landing-border bg-landing-surface">
-              <div className="flex items-center justify-between border-b border-landing-border px-5 py-3">
-                <div className="flex items-center gap-2">
-                  <Satellite size={16} style={{ color: SIGNAL_COLOR }} />
-                  <span className="text-sm font-semibold text-landing-ink">{t('satellite.satelliteView')}</span>
-                </div>
-                <span className="font-mono text-[10px] text-landing-muted">
-                  {t('satellite.imageDate')} {analysis.satelliteImageDate}
-                </span>
-              </div>
-
-              <div style={{ height: 420 }}>
-                <MapContainer center={PARCEL_CENTER} zoom={18} style={{ height: '100%', width: '100%' }} scrollWheelZoom zoomControl>
-                  <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution="Esri, Maxar" />
-                  <FitBounds bounds={PARCEL_BOUNDARY} />
-                  <Polygon positions={PARCEL_BOUNDARY} pathOptions={{ color: SIGNAL_COLOR, weight: 2, fillColor: SIGNAL_COLOR, fillOpacity: 0.08, dashArray: '6 4' }} />
-                  {analysis.detectedStructures.map((s) => (
-                    <Rectangle
-                      key={s.id}
-                      bounds={s.bounds}
-                      pathOptions={{
-                        color: s.registeredInRegistry ? '#22C55E' : '#EF4444',
-                        weight: 2,
-                        fillColor: s.registeredInRegistry ? '#22C55E' : '#EF4444',
-                        fillOpacity: s.registeredInRegistry ? 0.15 : 0.25,
-                      }}
+                  {phase === 'results' ? (
+                    <button
+                      type="button"
+                      onClick={() => setQueryExpanded(false)}
+                      className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-landing-border bg-landing-surface px-4 py-2 text-sm font-medium text-landing-ink transition-colors hover:bg-white"
                     >
-                      <Popup>
-                        <div style={{ fontSize: 13 }}>
-                          <strong>{s.type}</strong><br />
-                          {t('satellite.areaCol')}: {s.estimatedAreaM2} м²<br />
-                          {t('satellite.confidence')}: {s.confidence}%<br />
-                          <span style={{ color: s.registeredInRegistry ? '#22C55E' : '#EF4444', fontWeight: 600 }}>
-                            {s.registeredInRegistry ? t('satellite.registered') : t('satellite.unregistered')}
-                          </span>
-                        </div>
-                      </Popup>
-                    </Rectangle>
-                  ))}
-                </MapContainer>
-              </div>
-
-              {/* Legend */}
-              <div className="flex items-center gap-5 border-t border-landing-border px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-landing-muted">
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-sm border-2 border-dashed" style={{ borderColor: SIGNAL_COLOR, background: `color-mix(in oklch, ${SIGNAL_COLOR} 8%, transparent)` }} />
-                  {t('satellite.parcelBoundary')}
+                      <ChevronUp size={14} />
+                      {t('satellite.hideQuery')}
+                    </button>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-sm border-2 border-[#22C55E]" style={{ background: 'rgba(34,197,94,0.15)' }} />
-                  {t('satellite.registered')}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-sm border-2 border-[#EF4444]" style={{ background: 'rgba(239,68,68,0.25)' }} />
-                  {t('satellite.unregistered')}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Analysis Stats + Table */}
-          <div className="overflow-hidden rounded-2xl border border-landing-border bg-landing-surface">
-            <div className="flex items-center justify-between border-b border-landing-border px-6 py-4">
-              <div className="flex items-center gap-2">
-                <Eye size={16} style={{ color: SIGNAL_COLOR }} />
-                <span className="text-sm font-semibold text-landing-ink">{t('satellite.analysisResults')}</span>
-              </div>
-              <div className="flex items-center gap-4 font-mono text-xs text-landing-muted">
-                <span>{t('satellite.confidence')}: <strong className="text-[var(--success)]">{analysis.overallConfidence}%</strong></span>
-                <span>{t('satellite.analysisDate')}: {analysis.analysisDate}</span>
-              </div>
-            </div>
-
-            {/* Stats row */}
-            <div className="grid grid-cols-2 border-b border-landing-border md:grid-cols-4">
-              {[
-                { label: t('satellite.detectedStructures'), value: analysis.detectedStructuresCount, icon: Building2, color: SIGNAL_COLOR },
-                { label: t('satellite.registeredCount'), value: analysis.registeredStructuresCount, icon: CheckCircle, color: 'var(--success)' },
-                { label: t('satellite.unregisteredCount'), value: analysis.unauthorizedCount, icon: XCircle, color: 'var(--danger)' },
-                { label: t('satellite.taxEffect'), value: analysis.estimatedTaxImpact, icon: TrendingUp, color: 'var(--warning)' },
-              ].map((stat) => (
-                <div key={stat.label} className="border-r border-landing-border px-5 py-4 last:border-r-0">
-                  <div className="mb-1.5 flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-landing-muted">
-                    <stat.icon size={11} style={{ color: stat.color }} />
-                    {stat.label}
+                <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-landing-border bg-landing-surface px-4 py-4">
+                    <SectionLabel>{t('satellite.analysisDate')}</SectionLabel>
+                    <dd className="mt-2 font-mono text-sm text-landing-ink">18.04.2026</dd>
                   </div>
-                  <div className="font-mono text-xl font-semibold" style={{ color: stat.color }}>
-                    {stat.value}
+                  <div className="rounded-2xl border border-landing-border bg-landing-surface px-4 py-4">
+                    <SectionLabel>{t('satellite.imageDate')}</SectionLabel>
+                    <dd className="mt-2 font-mono text-sm text-landing-ink">{analysis.satelliteImageDate}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="bg-landing-surface p-6 md:p-8">
+                <div className="space-y-5">
+                  <div>
+                    <SectionLabel>{t('satellite.auditQuery')}</SectionLabel>
+                    <p className="mt-3 text-sm leading-relaxed text-landing-ink-soft">
+                      {t('satellite.auditQueryDescription')}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+                        {t('satellite.cadastralNumber')}
+                      </label>
+                      <div className="rounded-2xl border border-landing-border bg-white px-4 py-3 transition-colors focus-within:border-landing-border-strong">
+                        <input
+                          type="text"
+                          value={cadastralNumber}
+                          onChange={(event) => setCadastralNumber(event.target.value)}
+                          placeholder={t('satellite.cadastralPlaceholder')}
+                          className="w-full border-0 bg-transparent p-0 font-mono text-sm text-landing-ink outline-none placeholder:text-landing-muted"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+                        {t('satellite.address')}
+                      </label>
+                      <div className="rounded-2xl border border-landing-border bg-white px-4 py-3 transition-colors focus-within:border-landing-border-strong">
+                        <input
+                          type="text"
+                          value={address}
+                          onChange={(event) => setAddress(event.target.value)}
+                          placeholder={t('satellite.addressPlaceholder')}
+                          className="w-full border-0 bg-transparent p-0 text-sm text-landing-ink outline-none placeholder:text-landing-muted"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 border-t border-landing-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm leading-relaxed text-landing-ink-soft">
+                      {t('satellite.queryFooter')}
+                    </p>
+                    <button
+                      onClick={handleAnalyze}
+                      disabled={!canAnalyze || phase === 'loading'}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-landing-ink px-5 py-3 text-sm font-medium text-landing-paper transition-colors hover:bg-landing-ink-soft disabled:cursor-not-allowed disabled:bg-[var(--text-disabled)]"
+                    >
+                      {phase === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                      {t('satellite.analyze')}
+                      {phase !== 'loading' ? <ArrowRight size={15} /> : null}
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
+          </section>
+        ) : null}
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr>
-                  {[t('satellite.structure'), t('satellite.areaCol'), t('satellite.status'), t('satellite.confidence')].map((h) => (
-                    <th key={h} className="border-b border-landing-border bg-landing-secondary px-5 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.14em] text-landing-muted">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {analysis.detectedStructures.map((s) => (
-                  <tr key={s.id} style={{ background: s.registeredInRegistry ? 'transparent' : 'var(--danger-subtle)' }}>
-                    <td className="border-b border-landing-border px-5 py-3 text-sm font-medium text-landing-ink">{s.type}</td>
-                    <td className="border-b border-landing-border px-5 py-3 font-mono text-sm text-landing-ink">{s.estimatedAreaM2} м²</td>
-                    <td className="border-b border-landing-border px-5 py-3">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+        {phase === 'loading' ? (
+          <section className="overflow-hidden rounded-[28px] border border-landing-border bg-landing-paper">
+            <div className="grid gap-px bg-landing-border lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)]">
+              <div className="bg-landing-paper px-6 py-8 md:px-8 md:py-10">
+                <SectionLabel>{t('satellite.inProgress')}</SectionLabel>
+                <div className="mt-6 flex items-center gap-4">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-landing-border bg-landing-surface">
+                    <Loader2 size={20} className="animate-spin" style={{ color: SIGNAL_COLOR }} />
+                  </span>
+                  <div>
+                    <div className="text-lg font-semibold tracking-tight text-landing-ink">
+                      {loadingMessages[loadingStep] ?? loadingMessages[loadingMessages.length - 1]}
+                    </div>
+                    <div className="mt-1 text-sm text-landing-ink-soft">
+                      {t('satellite.step')} {Math.min(loadingStep + 1, loadingMessages.length)} {t('satellite.of')} {loadingMessages.length}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 h-1.5 overflow-hidden rounded-full bg-landing-secondary">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${((loadingStep + 1) / loadingMessages.length) * 100}%`,
+                      background: `linear-gradient(90deg, ${SIGNAL_COLOR} 0%, color-mix(in oklch, ${SIGNAL_COLOR} 70%, white) 100%)`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-landing-surface px-6 py-8 md:px-8 md:py-10">
+                <SectionLabel>{t('satellite.pipeline')}</SectionLabel>
+                <div className="mt-5 space-y-3">
+                  {loadingMessages.map((message, index) => {
+                    const isComplete = index < loadingStep;
+                    const isActive = index === loadingStep;
+
+                    return (
+                      <div
+                        key={message}
+                        className="flex items-center gap-3 rounded-2xl border border-landing-border bg-white px-4 py-3"
                         style={{
-                          background: s.registeredInRegistry ? 'var(--success-subtle)' : 'var(--danger-subtle)',
-                          color: s.registeredInRegistry ? 'var(--success)' : 'var(--danger)',
+                          borderColor: isActive ? 'var(--landing-border-strong)' : undefined,
+                          background: isActive ? 'color-mix(in oklch, var(--landing-surface) 58%, white)' : undefined,
                         }}
                       >
-                        {s.registeredInRegistry ? <CheckCircle size={11} /> : <XCircle size={11} />}
-                        {s.registeredInRegistry ? t('satellite.registered') : t('satellite.unregistered')}
-                      </span>
-                    </td>
-                    <td className="border-b border-landing-border px-5 py-3 font-mono text-sm font-semibold" style={{ color: s.confidence >= 90 ? 'var(--success)' : 'var(--warning)' }}>
-                      {s.confidence}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <span
+                          className="flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[11px]"
+                          style={{
+                            borderColor: isComplete || isActive ? SIGNAL_COLOR : 'var(--landing-border)',
+                            color: isComplete || isActive ? 'var(--landing-ink)' : 'var(--landing-muted)',
+                            background: isComplete ? `color-mix(in oklch, ${SIGNAL_COLOR} 12%, white)` : 'transparent',
+                          }}
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="text-sm text-landing-ink-soft">{message}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
+        ) : null}
 
-          {/* Timeline */}
-          <div className="rounded-2xl border border-landing-border bg-landing-surface p-6">
-            <div className="mb-5 flex items-center gap-2">
-              <Clock size={16} style={{ color: SIGNAL_COLOR }} />
-              <span className="text-sm font-semibold text-landing-ink">{t('satellite.timeline')}</span>
-            </div>
-
-            <div className="relative pl-6">
-              <div className="absolute bottom-1 left-[5px] top-1 w-0.5 rounded-full bg-landing-border" />
-
-              {timeline.map((entry, i) => {
-                const dotColor = entry.type === 'danger' ? 'var(--danger)' : entry.type === 'warning' ? 'var(--warning)' : 'var(--success)';
-                return (
-                  <div key={i} className="relative" style={{ paddingBottom: i < timeline.length - 1 ? 20 : 0 }}>
-                    <div
-                      className="absolute rounded-full"
-                      style={{
-                        left: -20,
-                        top: 4,
-                        width: 10,
-                        height: 10,
-                        background: dotColor,
-                        border: '2px solid var(--landing-surface-elevated)',
-                        boxShadow: `0 0 0 2px ${dotColor}`,
-                      }}
-                    />
-                    <div className="font-mono text-xs text-landing-muted">{entry.date}</div>
-                    <div
-                      className="mt-0.5 text-sm"
-                      style={{
-                        color: entry.type === 'danger' ? 'var(--danger)' : 'var(--text-secondary)',
-                        fontWeight: entry.type === 'danger' ? 500 : 400,
-                      }}
+        {phase === 'results' ? (
+          <div className="space-y-6">
+            {analysis.status === 'unauthorized_found' ? (
+              <section className="overflow-hidden rounded-[24px] border border-landing-border bg-landing-paper">
+                <div className="flex flex-col gap-4 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex gap-3">
+                    <span
+                      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-landing-border"
+                      style={{ background: 'color-mix(in oklch, var(--danger) 8%, white)' }}
                     >
-                      {entry.event}
+                      <ShieldAlert size={17} style={{ color: 'var(--danger)' }} />
+                    </span>
+                    <div>
+                      <SectionLabel>{t('satellite.findings')}</SectionLabel>
+                      <h2 className="mt-2 text-lg font-semibold tracking-tight text-landing-ink">
+                        {t('satellite.alertTitle', { count: analysis.unauthorizedCount })}
+                      </h2>
+                      <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-landing-ink-soft">
+                        {t('satellite.alertDesc', { cadastral: property.cadastralNumber })}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full border border-landing-border bg-landing-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
+                      {t('satellite.unregisteredCount')}: {analysis.unauthorizedCount}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-landing-border bg-landing-surface px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-landing-ink">
+                      {t('satellite.taxImpact')}: {analysis.estimatedTaxImpact}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.18fr)]">
+              <WorkspaceCard
+                title={t('satellite.propertyInfo')}
+                icon={Building2}
+                meta={<>{t('satellite.cadastralNumber')} · {property.cadastralNumber}</>}
+              >
+                <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DataField label={t('satellite.owner')} value={property.owner} icon={User} />
+                    <DataField label={t('satellite.taxId')} value={property.taxId} icon={FileText} mono />
+                    <DataField label={t('satellite.addressLabel')} value={property.address} icon={MapPin} />
+                    <DataField label={t('satellite.area')} value={`${property.areaHa} ${t('satellite.hectares')}`} icon={Maximize2} mono />
+                    <DataField label={t('satellite.regDate')} value={property.registeredAt} icon={Clock3} mono />
+                    <DataField label={t('satellite.purpose')} value={property.landPurpose} icon={FileText} />
+                  </div>
+
+                  <div className="rounded-[24px] border border-landing-border bg-landing-surface px-4 py-4">
+                    <SectionLabel>{t('satellite.regStructures')}</SectionLabel>
+                    <div className="mt-4 space-y-2.5">
+                      {property.registeredStructures.map((structure) => (
+                        <div
+                          key={structure}
+                          className="flex items-center gap-3 rounded-2xl border border-landing-border bg-white px-4 py-3 text-sm text-landing-ink"
+                        >
+                          <span
+                            className="flex h-8 w-8 items-center justify-center rounded-full"
+                            style={{ background: 'color-mix(in oklch, var(--success) 10%, white)', color: 'var(--success)' }}
+                          >
+                            <CheckCircle2 size={15} />
+                          </span>
+                          <span>{structure}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </WorkspaceCard>
+
+              <WorkspaceCard
+                title={t('satellite.satelliteView')}
+                icon={Satellite}
+                meta={<>{t('satellite.imageDate')} · {analysis.satelliteImageDate}</>}
+              >
+                <div className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <p className="max-w-[680px] text-sm leading-relaxed text-landing-ink-soft">
+                      {t('satellite.mapDescription')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <LegendItem
+                        label={t('satellite.parcelBoundary')}
+                        borderColor={MAP_TONES.parcel}
+                        fill="color-mix(in oklch, oklch(0.62 0.16 45) 10%, white)"
+                        dashed
+                      />
+                      <LegendItem label={t('satellite.registered')} borderColor={MAP_TONES.registeredStroke} fill={MAP_TONES.registeredFill} />
+                      <LegendItem label={t('satellite.unregistered')} borderColor={MAP_TONES.unregisteredStroke} fill={MAP_TONES.unregisteredFill} />
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-landing-border bg-landing-surface p-3">
+                    <div className="satellite-map-frame relative isolate overflow-hidden rounded-[20px] border border-landing-border bg-[oklch(0.95_0.004_80)]">
+                      <div className="h-[420px] md:h-[480px]">
+                        <MapContainer
+                          center={PARCEL_CENTER}
+                          zoom={18}
+                          scrollWheelZoom
+                          zoomControl
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <TileLayer
+                            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                            attribution="Esri, Maxar"
+                          />
+                          <FitBounds bounds={PARCEL_BOUNDARY} />
+                          <Polygon
+                            positions={PARCEL_BOUNDARY}
+                            pathOptions={{
+                              color: MAP_TONES.parcel,
+                              weight: 2,
+                              fillColor: MAP_TONES.parcel,
+                              fillOpacity: 0.08,
+                              dashArray: '6 4',
+                            }}
+                          />
+                          {analysis.detectedStructures.map((structure) => (
+                            <Rectangle
+                              key={structure.id}
+                              bounds={structure.bounds}
+                              pathOptions={{
+                                color: structure.registeredInRegistry ? MAP_TONES.registeredStroke : MAP_TONES.unregisteredStroke,
+                                weight: 2,
+                                fillColor: structure.registeredInRegistry ? MAP_TONES.registeredStroke : MAP_TONES.unregisteredStroke,
+                                fillOpacity: structure.registeredInRegistry ? 0.15 : 0.22,
+                              }}
+                            >
+                              <Popup>
+                                <div className="space-y-2">
+                                  <div className="text-sm font-semibold text-landing-ink">{structure.type}</div>
+                                  <div className="space-y-1 font-mono text-[11px] text-landing-muted">
+                                    <div>{t('satellite.areaCol')}: {structure.estimatedAreaM2} {t('satellite.squareMeters')}</div>
+                                    <div>{t('satellite.confidence')}: {structure.confidence}%</div>
+                                  </div>
+                                  <StatusBadge registeredInRegistry={structure.registeredInRegistry}>
+                                    {structure.registeredInRegistry ? t('satellite.registered') : t('satellite.unregistered')}
+                                  </StatusBadge>
+                                </div>
+                              </Popup>
+                            </Rectangle>
+                          ))}
+                        </MapContainer>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </WorkspaceCard>
             </div>
+
+            <WorkspaceCard
+              title={t('satellite.analysisResults')}
+              icon={AlertTriangle}
+              meta={<>{t('satellite.analysisDate')} · {analysis.analysisDate}</>}
+            >
+              <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <SectionLabel>{t('satellite.summary')}</SectionLabel>
+                    <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-landing-ink-soft">
+                      {t('satellite.summaryDescription')}
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-landing-border bg-landing-surface px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">
+                    {t('satellite.confidence')}: <span className="text-landing-ink">{analysis.overallConfidence}%</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <SummaryMetric
+                    label={t('satellite.detectedStructures')}
+                    value={analysis.detectedStructuresCount}
+                    note={t('satellite.metricNotes.detected')}
+                    tone="default"
+                  />
+                  <SummaryMetric
+                    label={t('satellite.registeredCount')}
+                    value={analysis.registeredStructuresCount}
+                    note={t('satellite.metricNotes.registered')}
+                    tone="registered"
+                  />
+                  <SummaryMetric
+                    label={t('satellite.unregisteredCount')}
+                    value={analysis.unauthorizedCount}
+                    note={t('satellite.metricNotes.unregistered')}
+                    tone="unregistered"
+                  />
+                  <SummaryMetric
+                    label={t('satellite.taxEffect')}
+                    value={analysis.estimatedTaxImpact}
+                    note={t('satellite.metricNotes.taxEffect')}
+                    tone="impact"
+                  />
+                </div>
+
+                <div className="overflow-hidden rounded-[24px] border border-landing-border bg-landing-surface">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[680px]">
+                      <thead>
+                        <tr>
+                          {[t('satellite.structure'), t('satellite.areaCol'), t('satellite.status'), t('satellite.confidence')].map((heading) => (
+                            <th
+                              key={heading}
+                              className="border-b border-landing-border px-5 py-3 text-left font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted"
+                            >
+                              {heading}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analysis.detectedStructures.map((structure) => (
+                          <tr
+                            key={structure.id}
+                            className="border-b border-landing-border last:border-b-0"
+                            style={{
+                              background: structure.registeredInRegistry ? 'transparent' : 'color-mix(in oklch, var(--danger) 4%, white)',
+                            }}
+                          >
+                            <td className="px-5 py-4">
+                              <div className="flex items-start gap-3">
+                                <span
+                                  className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                                  style={{ background: structure.registeredInRegistry ? 'var(--success)' : 'var(--danger)' }}
+                                />
+                                <div>
+                                  <div className="text-sm font-medium text-landing-ink">{structure.type}</div>
+                                  <div className="mt-1 text-xs text-landing-ink-soft">
+                                    {t('satellite.parcelMatch', { id: String(structure.id).padStart(2, '0') })}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 font-mono text-sm text-landing-ink">{structure.estimatedAreaM2} {t('satellite.squareMeters')}</td>
+                            <td className="px-5 py-4">
+                              <StatusBadge registeredInRegistry={structure.registeredInRegistry}>
+                                {structure.registeredInRegistry ? t('satellite.registered') : t('satellite.unregistered')}
+                              </StatusBadge>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white">
+                                  <div
+                                    className="h-full rounded-full"
+                                    style={{
+                                      width: `${structure.confidence}%`,
+                                      background: structure.confidence >= 90 ? 'var(--success)' : SIGNAL_COLOR,
+                                    }}
+                                  />
+                                </div>
+                                <span className="font-mono text-sm text-landing-ink">{structure.confidence}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </WorkspaceCard>
+
+            <WorkspaceCard title={t('satellite.timeline')} icon={Clock3} meta={<>{t('satellite.timelineMeta', { count: timeline.length })}</>}>
+              <div className="px-5 py-5 sm:px-6 sm:py-6">
+                <div className="relative space-y-4 pl-5 sm:pl-6">
+                  <div className="absolute bottom-3 left-[7px] top-3 w-px bg-landing-border sm:left-[9px]" />
+
+                  {timeline.map((entry, index) => {
+                    const toneColor =
+                      entry.type === 'danger' ? 'var(--danger)' : entry.type === 'warning' ? 'var(--warning)' : 'var(--success)';
+
+                    return (
+                      <article
+                        key={`${entry.date}-${index}`}
+                        className="relative rounded-[22px] border border-landing-border bg-landing-surface px-4 py-4 sm:px-5"
+                      >
+                        <span
+                          className="absolute left-[-18px] top-6 h-3.5 w-3.5 rounded-full border-[3px] border-landing-paper sm:left-[-22px]"
+                          style={{ background: toneColor, boxShadow: `0 0 0 1px ${toneColor}` }}
+                          aria-hidden="true"
+                        />
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-landing-muted">{entry.date}</div>
+                            <p
+                              className="mt-2 text-sm leading-relaxed"
+                              style={{ color: entry.type === 'danger' ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                            >
+                              {entry.event}
+                            </p>
+                          </div>
+                          <TimelineTone type={entry.type} />
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </WorkspaceCard>
           </div>
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }

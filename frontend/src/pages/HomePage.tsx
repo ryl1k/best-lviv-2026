@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   FileText,
@@ -10,59 +11,81 @@ import {
   BarChart3,
 } from 'lucide-react';
 
-const RECENT_TASKS = [
-  {
-    id: 'a4f2',
-    name: 'Аналіз Острівська ТГ',
-    date: '18.04.2026',
-    status: 'completed' as const,
-    discrepancies: 4027,
-    highSeverity: 3885,
-    files: 'ДРПП_ostriv.xlsx + ДЗК_ostriv.xlsx',
-  },
-  {
-    id: 'b7c1',
-    name: 'Аналіз Сокальська ТГ',
-    date: '15.04.2026',
-    status: 'completed' as const,
-    discrepancies: 2841,
-    highSeverity: 1920,
-    files: 'ДРПП_sokal.xlsx + ДЗК_sokal.xlsx',
-  },
-  {
-    id: 'c3e9',
-    name: 'Аналіз Червоноградська ТГ',
-    date: '10.04.2026',
-    status: 'completed' as const,
-    discrepancies: 1563,
-    highSeverity: 890,
-    files: 'ДРПП_chervono.xlsx + ДЗК_chervono.xlsx',
-  },
-];
-
-const QUICK_STATS = [
-  { label: 'Всього аналізів', value: '3', icon: BarChart3, color: 'var(--accent)' },
-  { label: 'Виявлено розбіжностей', value: '8 431', icon: AlertTriangle, color: 'var(--danger)' },
-  { label: 'Підтверджено', value: '1 247', icon: CheckCircle, color: 'var(--success)' },
-  { label: 'В роботі', value: '892', icon: Clock, color: 'var(--warning)' },
-];
-
 export default function HomePage() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage === 'uk' ? 'uk-UA' : 'en-US';
+
+  const recentTasks = [
+    {
+      id: 'a4f2',
+      name: t('home.tasks.ostriv.name'),
+      date: '18.04.2026',
+      status: 'completed' as const,
+      discrepancies: 4027,
+      highSeverity: 3885,
+      files: t('home.tasks.ostriv.files'),
+    },
+    {
+      id: 'b7c1',
+      name: t('home.tasks.sokal.name'),
+      date: '15.04.2026',
+      status: 'completed' as const,
+      discrepancies: 2841,
+      highSeverity: 1920,
+      files: t('home.tasks.sokal.files'),
+    },
+    {
+      id: 'c3e9',
+      name: t('home.tasks.chervonohrad.name'),
+      date: '10.04.2026',
+      status: 'completed' as const,
+      discrepancies: 1563,
+      highSeverity: 890,
+      files: t('home.tasks.chervonohrad.files'),
+    },
+  ];
+
+  const quickStats = [
+    { label: t('home.quickStats.totalAnalyses'), value: '3', icon: BarChart3, color: 'var(--accent)' },
+    { label: t('home.quickStats.discrepanciesDetected'), value: '8 431', icon: AlertTriangle, color: 'var(--danger)' },
+    { label: t('home.quickStats.confirmed'), value: '1 247', icon: CheckCircle, color: 'var(--success)' },
+    { label: t('home.quickStats.inReview'), value: '892', icon: Clock, color: 'var(--warning)' },
+  ];
+
+  const quickActions = [
+    {
+      icon: Plus,
+      title: t('home.actions.newAnalysis.title'),
+      desc: t('home.actions.newAnalysis.desc'),
+      onClick: () => navigate('/upload'),
+    },
+    {
+      icon: TrendingUp,
+      title: t('home.actions.latestReport.title'),
+      desc: t('home.actions.latestReport.desc'),
+      onClick: () => navigate('/tasks/a4f2'),
+    },
+    {
+      icon: FileText,
+      title: t('home.actions.exportData.title'),
+      desc: t('home.actions.exportData.desc'),
+      onClick: () => {},
+    },
+  ];
 
   return (
     <div
       className="max-w-[1440px] mx-auto"
       style={{ padding: '32px 32px 64px' }}
     >
-      {/* Welcome header */}
       <div
         className="flex items-start justify-between"
         style={{ marginBottom: 32 }}
       >
         <div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>
-            Острівська ТГ · Львівська область
+            {t('home.region')}
           </div>
           <h1
             style={{
@@ -73,10 +96,10 @@ export default function HomePage() {
               margin: 0,
             }}
           >
-            Вітаємо, Олексій
+            {t('home.welcome')}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 6 }}>
-            Ваш останній аналіз виявив 4 027 розбіжностей. 3 885 потребують уваги.
+            {t('home.summary')}
           </p>
         </div>
         <button
@@ -99,16 +122,15 @@ export default function HomePage() {
           onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-hover)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent)')}
         >
-          <Plus size={18} /> Новий аналіз
+          <Plus size={18} /> {t('home.newAnalysis')}
         </button>
       </div>
 
-      {/* Quick stats */}
       <div
         className="grid grid-cols-4 gap-4"
         style={{ marginBottom: 32 }}
       >
-        {QUICK_STATS.map((stat) => (
+        {quickStats.map((stat) => (
           <div
             key={stat.label}
             className="card"
@@ -161,7 +183,6 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Recent analyses */}
       <div style={{ marginBottom: 32 }}>
         <div
           className="flex items-center justify-between"
@@ -175,7 +196,7 @@ export default function HomePage() {
               margin: 0,
             }}
           >
-            Останні аналізи
+            {t('home.sections.recentAnalyses')}
           </h2>
           <button
             style={{
@@ -188,7 +209,7 @@ export default function HomePage() {
               padding: 0,
             }}
           >
-            Всі аналізи
+            {t('home.sections.allAnalyses')}
           </button>
         </div>
 
@@ -200,7 +221,7 @@ export default function HomePage() {
             overflow: 'hidden',
           }}
         >
-          {RECENT_TASKS.map((task, idx) => (
+          {recentTasks.map((task, idx) => (
             <div
               key={task.id}
               onClick={() => navigate(`/tasks/${task.id}`)}
@@ -210,7 +231,7 @@ export default function HomePage() {
                 cursor: 'pointer',
                 transition: 'background-color 120ms',
                 borderBottom:
-                  idx < RECENT_TASKS.length - 1 ? '1px solid var(--border)' : 'none',
+                  idx < recentTasks.length - 1 ? '1px solid var(--border)' : 'none',
               }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.background = 'var(--surface-muted)')
@@ -252,7 +273,7 @@ export default function HomePage() {
                       color: '#15803D',
                     }}
                   >
-                    <CheckCircle size={10} /> Завершено
+                    <CheckCircle size={10} /> {t('home.task.completed')}
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -270,12 +291,12 @@ export default function HomePage() {
                       color: 'var(--danger)',
                     }}
                   >
-                    {task.discrepancies.toLocaleString('uk-UA')}
+                    {task.discrepancies.toLocaleString(locale)}
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>розбіжностей</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('home.task.discrepancies')}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {task.highSeverity.toLocaleString('uk-UA')} високої критичності
+                  {t('home.task.highSeverity', { count: task.highSeverity.toLocaleString(locale) })}
                 </div>
               </div>
 
@@ -296,7 +317,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Quick actions */}
       <div>
         <h2
           style={{
@@ -306,29 +326,10 @@ export default function HomePage() {
             margin: '0 0 16px',
           }}
         >
-          Швидкі дії
+          {t('home.sections.quickActions')}
         </h2>
         <div className="grid grid-cols-3 gap-4">
-          {[
-            {
-              icon: Plus,
-              title: 'Новий аналіз',
-              desc: 'Завантажити нові реєстри для перевірки',
-              onClick: () => navigate('/upload'),
-            },
-            {
-              icon: TrendingUp,
-              title: 'Останній звіт',
-              desc: 'Переглянути результати аналізу Острівської ТГ',
-              onClick: () => navigate('/tasks/a4f2'),
-            },
-            {
-              icon: FileText,
-              title: 'Експорт даних',
-              desc: 'Завантажити CSV з усіма розбіжностями',
-              onClick: () => {},
-            },
-          ].map((action) => (
+          {quickActions.map((action) => (
             <button
               key={action.title}
               onClick={action.onClick}

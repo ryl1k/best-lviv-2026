@@ -1,69 +1,73 @@
-export const profilePageContent = {
-  hero: {
-    eyebrow: 'Operator account',
-    title: 'Профіль оператора',
-    description: 'Огляд оператора, ролі та робочого контексту громади.',
-    reviewStamp: 'Оновлено 18.04.2026',
-  },
-  identity: {
-    initials: 'ОК',
-    name: 'Олексій Коваленко',
-    role: 'Начальник відділу земельних ресурсів',
-    organization: 'Острівська територіальна громада',
-    accessLevel: 'Адміністратор простору',
-    status: 'Операційний доступ активний',
-    summary:
-      'Відповідає за земельний реєстр, валідацію інцидентів та міжвідомче погодження по кадастрових кейсах.',
-  },
-  navigation: [
-    { id: 'identity', label: 'Огляд', detail: 'Оператор та роль' },
-    { id: 'personal', label: 'Персональні дані', detail: 'Контактний профіль' },
-    { id: 'municipality', label: 'Громада', detail: 'Контекст простору' },
-  ],
-  identityFacts: [
-    { label: 'Робочий контур', value: 'Земельні ресурси' },
-    { label: 'Рівень доступу', value: 'Повний операційний доступ' },
-    { label: 'Поточний простір', value: 'Lviv Oblast / Ostrivska TG' },
-    { label: 'Час у системі', value: '2 роки 4 місяці' },
-  ],
-  personalFields: [
-    { id: 'name', label: "Повне ім'я", value: 'Олексій Коваленко', type: 'text' },
-    {
-      id: 'role',
-      label: 'Посада',
-      value: 'Начальник відділу земельних ресурсів',
-      type: 'text',
-    },
-    {
-      id: 'email',
-      label: 'Електронна пошта',
-      value: 'o.kovalenko@ostrivska.gov.ua',
-      type: 'email',
-    },
-    { id: 'phone', label: 'Телефон', value: '+380 67 123 45 67', type: 'tel' },
-  ],
-  municipality: {
-    eyebrow: 'Municipality context',
-    title: 'Операційний контекст громади',
-    description:
-      'Цей блок лишається статичним і показує, як профіль вбудовується в простір роботи громади без окремого дашбордного шуму.',
-    records: [
-      { label: 'Назва громади', value: 'Острівська територіальна громада' },
-      { label: 'Область', value: 'Львівська' },
-      { label: 'Район', value: 'Сокальський' },
-      { label: 'КОАТУУ', value: '4624884200', mono: true },
-      { label: 'Населення', value: '12 400 осіб' },
-      { label: 'Активний простір', value: 'Земельний реєстр / 3 модулі' },
-    ],
-    operationalNotes: [
-      { label: 'Підписка', value: 'Активна до 31.12.2026' },
-      { label: 'Остання синхронізація', value: '17.04.2026 · 18:42' },
-      { label: 'Кадастрове покриття', value: '96.4% валідованих ділянок' },
-    ],
-  },
-} as const;
+import type { TFunction } from 'i18next';
 
-export type ProfilePageContent = typeof profilePageContent;
-export type ProfileNavItem = (typeof profilePageContent.navigation)[number];
-export type ProfileField = (typeof profilePageContent.personalFields)[number];
-export type ProfileFieldId = ProfileField['id'];
+export type ProfileFieldId = 'name' | 'role' | 'email' | 'phone';
+
+export interface ProfileNavItem {
+  id: string;
+  label: string;
+  detail: string;
+}
+
+export interface ProfileField {
+  id: ProfileFieldId;
+  label: string;
+  value: string;
+  type: 'text' | 'email' | 'tel';
+}
+
+export function getProfilePageContent(t: TFunction) {
+  return {
+    hero: {
+      eyebrow: t('profile.hero.eyebrow'),
+      title: t('profile.hero.title'),
+      description: t('profile.hero.description'),
+      reviewStamp: t('profile.hero.reviewStamp'),
+    },
+    identity: {
+      initials: 'ОК',
+      name: t('profile.identity.name'),
+      role: t('profile.identity.role'),
+      organization: t('profile.identity.organization'),
+      accessLevel: t('profile.identity.accessLevel'),
+      status: t('profile.identity.status'),
+      summary: t('profile.identity.summary'),
+    },
+    navigation: [
+      { id: 'identity', label: t('profile.navigation.identity.label'), detail: t('profile.navigation.identity.detail') },
+      { id: 'personal', label: t('profile.navigation.personal.label'), detail: t('profile.navigation.personal.detail') },
+      { id: 'municipality', label: t('profile.navigation.municipality.label'), detail: t('profile.navigation.municipality.detail') },
+    ] satisfies ProfileNavItem[],
+    identityFacts: [
+      { label: t('profile.identityFacts.workstream.label'), value: t('profile.identityFacts.workstream.value') },
+      { label: t('profile.identityFacts.access.label'), value: t('profile.identityFacts.access.value') },
+      { label: t('profile.identityFacts.workspace.label'), value: t('profile.identityFacts.workspace.value') },
+      { label: t('profile.identityFacts.tenure.label'), value: t('profile.identityFacts.tenure.value') },
+    ],
+    personalFields: [
+      { id: 'name', label: t('profile.personalFields.name.label'), value: t('profile.personalFields.name.value'), type: 'text' },
+      { id: 'role', label: t('profile.personalFields.role.label'), value: t('profile.personalFields.role.value'), type: 'text' },
+      { id: 'email', label: t('profile.personalFields.email.label'), value: t('profile.personalFields.email.value'), type: 'email' },
+      { id: 'phone', label: t('profile.personalFields.phone.label'), value: t('profile.personalFields.phone.value'), type: 'tel' },
+    ] satisfies ProfileField[],
+    municipality: {
+      eyebrow: t('profile.municipality.eyebrow'),
+      title: t('profile.municipality.title'),
+      description: t('profile.municipality.description'),
+      records: [
+        { label: t('profile.municipality.records.name.label'), value: t('profile.municipality.records.name.value') },
+        { label: t('profile.municipality.records.region.label'), value: t('profile.municipality.records.region.value') },
+        { label: t('profile.municipality.records.district.label'), value: t('profile.municipality.records.district.value') },
+        { label: t('profile.municipality.records.koatuu.label'), value: t('profile.municipality.records.koatuu.value'), mono: true },
+        { label: t('profile.municipality.records.population.label'), value: t('profile.municipality.records.population.value') },
+        { label: t('profile.municipality.records.workspace.label'), value: t('profile.municipality.records.workspace.value') },
+      ],
+      operationalNotes: [
+        { label: t('profile.municipality.notes.subscription.label'), value: t('profile.municipality.notes.subscription.value') },
+        { label: t('profile.municipality.notes.sync.label'), value: t('profile.municipality.notes.sync.value') },
+        { label: t('profile.municipality.notes.coverage.label'), value: t('profile.municipality.notes.coverage.value') },
+      ],
+    },
+  } as const;
+}
+
+export type ProfilePageContent = ReturnType<typeof getProfilePageContent>;
