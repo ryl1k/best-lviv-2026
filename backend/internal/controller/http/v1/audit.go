@@ -315,6 +315,7 @@ func (c *AuditController) GetSummary(ctx *echo.Context) error {
 // @Summary      Get a single discrepancy detail
 // @Tags         tasks
 // @Produce      json
+// @Security     BearerAuth
 // @Param        id      path  string  true  "Task UUID"
 // @Param        disc_id path  int     true  "Discrepancy ID"
 // @Success      200  {object}  httpresponse.Response{data=httpresponse.DiscrepancyResponse}
@@ -343,6 +344,7 @@ func (c *AuditController) GetDiscrepancy(ctx *echo.Context) error {
 // @Tags         tasks
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
 // @Param        id      path  string  true  "Task UUID"
 // @Param        disc_id path  int     true  "Discrepancy ID"
 // @Param        body    body  object{resolution_status=string}  true  "New status"
@@ -382,6 +384,7 @@ func (c *AuditController) UpdateResolutionStatus(ctx *echo.Context) error {
 // @Summary      Get AI explanation for a discrepancy
 // @Tags         tasks
 // @Produce      json
+// @Security     BearerAuth
 // @Param        id      path  string  true  "Task UUID"
 // @Param        disc_id path  int     true  "Discrepancy ID"
 // @Success      200  {object}  httpresponse.Response{data=object{explanation=string}}
@@ -410,6 +413,7 @@ func (c *AuditController) ExplainDiscrepancy(ctx *echo.Context) error {
 // @Summary      Get persons ranked by cumulative risk score
 // @Tags         tasks
 // @Produce      json
+// @Security     BearerAuth
 // @Param        id        path   string  true   "Task UUID"
 // @Param        page      query  int     false  "Page number (default 1)"
 // @Param        page_size query  int     false  "Page size (default 50)"
