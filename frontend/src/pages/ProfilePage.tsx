@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BriefcaseBusiness, LogOut, Mail, MapPin, Phone, User } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api';
 
 import {
-  profilePageContent,
+  getProfilePageContent,
   type ProfileField,
   type ProfileFieldId,
   type ProfileNavItem,
@@ -13,14 +14,16 @@ import {
 
 type PersonalValues = Record<ProfileFieldId, string>;
 
-const initialPersonalValues = profilePageContent.personalFields.reduce((acc, field) => {
-  acc[field.id] = field.value;
-  return acc;
-}, {} as PersonalValues);
-
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [personalValues, setPersonalValues] = useState<PersonalValues>(initialPersonalValues);
+  const profilePageContent = useMemo(() => getProfilePageContent(t), [t]);
+  const [personalValues, setPersonalValues] = useState<PersonalValues>(() =>
+    profilePageContent.personalFields.reduce((acc, field) => {
+      acc[field.id] = field.value;
+      return acc;
+    }, {} as PersonalValues),
+  );
   const [activeSection, setActiveSection] = useState<string>(
     profilePageContent.navigation[0]?.id ?? 'identity',
   );
