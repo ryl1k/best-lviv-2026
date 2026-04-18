@@ -378,6 +378,34 @@ func (c *AuditController) UpdateResolutionStatus(ctx *echo.Context) error {
 	return httpresponse.NewSuccessResponse(ctx, nil, http.StatusOK)
 }
 
+// ExplainDiscrepancy godoc
+// @Summary      Get AI explanation for a discrepancy
+// @Tags         tasks
+// @Produce      json
+// @Param        id      path  string  true  "Task UUID"
+// @Param        disc_id path  int     true  "Discrepancy ID"
+// @Success      200  {object}  httpresponse.Response{data=object{explanation=string}}
+// @Failure      404  {object}  httpresponse.Response
+// @Failure      503  {object}  httpresponse.Response
+// @Router       /v1/tasks/{id}/discrepancies/{disc_id}/explain [get]
+func (c *AuditController) ExplainDiscrepancy(ctx *echo.Context) error {
+	taskID, err := parseUUIDParam(ctx, "id")
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid task id")
+	}
+	discID, err := strconv.ParseInt(ctx.Param("disc_id"), 10, 64)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, entity.ErrBadRequest, "invalid discrepancy id")
+	}
+
+	explanation, err := c.useCase.ExplainDiscrepancy(ctx.Request().Context(), taskID, discID)
+	if err != nil {
+		return httpresponse.NewErrorResponse(ctx, err)
+	}
+
+	return httpresponse.NewSuccessResponse(ctx, map[string]string{"explanation": explanation}, http.StatusOK)
+}
+
 // GetPersons godoc
 // @Summary      Get persons ranked by cumulative risk score
 // @Tags         tasks

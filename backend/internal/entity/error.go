@@ -24,4 +24,5 @@ var (
 	ErrInsufficientTier        = errors.New("subscription tier is insufficient for this operation")
 	ErrNoTriesRemaining        = errors.New("no tries remaining for this operation")
 	ErrNoActiveSubscription    = errors.New("no active subscription")
+	ErrNotConfigured           = errors.New("feature not configured")
 )

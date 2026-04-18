@@ -19,6 +19,7 @@ import (
 	"github.com/ryl1k/best-lviv-2026/internal/controller/http/v1/middleware"
 	"github.com/ryl1k/best-lviv-2026/internal/dto/httprequest"
 	"github.com/ryl1k/best-lviv-2026/internal/repo/persistent"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/ai"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/audit"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/auth"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/subscription"
@@ -82,7 +83,12 @@ func newApp(ctx context.Context) (*app, error) {
 
 	// Use cases
 	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
-	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, logger)
+
+	var explainer *ai.Explainer
+	if c.OpenAIAPIKey != "" {
+		explainer = ai.NewExplainer(c.OpenAIAPIKey)
+	}
+	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, explainer, logger)
 	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers

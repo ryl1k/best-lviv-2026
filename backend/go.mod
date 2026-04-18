@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.0
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/swaggo/echo-swagger/v2 v2.0.1
 	github.com/swaggo/swag/v2 v2.0.0-rc5
 	github.com/xuri/excelize/v2 v2.10.1

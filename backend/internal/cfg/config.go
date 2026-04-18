@@ -16,6 +16,8 @@ type Api struct {
 	JWTSecret   string        `env:"JWT_SECRET,required"`
 	JwtDuration time.Duration `env:"JWT_DURATION,required"`
 
+	OpenAIAPIKey string `env:"OPENAI_API_KEY"`
+
 	PostgresConnectionURI   string        `env:"POSTGRES_CONNECTION_URI,required"`
 	PostgresMaxConns        int           `env:"POSTGRES_MAX_CONNS,required"`
 	PostgresMinConns        int           `env:"POSTGRES_MIN_CONNS,required"`
