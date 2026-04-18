@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// LandRecord is a single row from the ДЗК (State Land Cadastre) registry.
 type LandRecord struct {
 	ID             int64             `json:"id"`
 	TaskID         uuid.UUID         `json:"task_id"`

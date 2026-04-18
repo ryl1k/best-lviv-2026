@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// EstateRecord is a single row from the ДРПП (State Real Estate Rights Registry).
+// TerminatedAt being non-nil means the ownership right has been revoked.
 type EstateRecord struct {
 	ID           int64             `json:"id"`
 	TaskID       uuid.UUID         `json:"task_id"`
