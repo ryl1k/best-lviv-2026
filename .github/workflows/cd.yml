@@ -29,7 +29,6 @@ jobs:
           script: |
             cd /app/backend
             git pull origin main
-            # install deps and restart — adjust commands for your stack
-            # e.g. for Node:   npm ci && pm2 restart backend
-            # e.g. for Python: pip install -r requirements.txt && sudo systemctl restart backend
+            cd backend
+            docker compose -f docker-compose.yaml up --build -d
             echo "Deployed successfully"
