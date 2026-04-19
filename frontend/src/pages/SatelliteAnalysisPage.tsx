@@ -59,13 +59,13 @@ interface TimelineEntry {
   type: 'normal' | 'warning' | 'danger';
 }
 
-const PARCEL_CENTER: LatLngTuple = [49.3485, 24.6532];
+const PARCEL_CENTER: LatLngTuple = [50.4956, 24.2783];
 
 const PARCEL_BOUNDARY: LatLngTuple[] = [
-  [49.34885, 24.6526],
-  [49.34885, 24.6538],
-  [49.34815, 24.6538],
-  [49.34815, 24.6526],
+  [50.4959, 24.2780],
+  [50.49587, 24.2784],
+  [50.49536, 24.27827],
+  [50.4954, 24.2779],
 ];
 
 const MOCK_PROPERTY: PropertyInfo = {
@@ -76,30 +76,29 @@ const MOCK_PROPERTY: PropertyInfo = {
   registeredAt: '18.01.2024',
   cadastralNumber: '4624884200:05:000:0009',
   address: 'вул. Коваліва, 45, с. Острів, Львівська обл.',
-  registeredStructures: ['Житловий будинок (124.5 м²)'],
+  registeredStructures: ['Житловий будинок (95.4 м²)', 'Господарська будівля (48.2 м²)'],
 };
 
 const MOCK_ANALYSIS: AnalysisResult = {
   status: 'unauthorized_found',
-  overallConfidence: 94,
+  overallConfidence: 91,
   detectedStructures: [
-    { id: 1, type: 'Житловий будинок', estimatedAreaM2: 124.5, registeredInRegistry: true, confidence: 98, bounds: [[49.34865, 24.6529], [49.34845, 24.6533]] },
-    { id: 2, type: 'Господарська будівля', estimatedAreaM2: 48.0, registeredInRegistry: false, confidence: 91, bounds: [[49.3484, 24.6534], [49.34828, 24.65365]] },
-    { id: 3, type: 'Гараж', estimatedAreaM2: 32.0, registeredInRegistry: false, confidence: 87, bounds: [[49.3487, 24.65345], [49.3486, 24.6537]] },
+    { id: 1, type: 'Житловий будинок', estimatedAreaM2: 95.4, registeredInRegistry: true, confidence: 98, bounds: [[50.49570, 24.27809], [50.49565, 24.27817]] },
+    { id: 2, type: 'Господарська будівля', estimatedAreaM2: 48.2, registeredInRegistry: true, confidence: 90, bounds: [[50.49571, 24.27802], [50.49566, 24.27810]] },
+    { id: 3, type: 'Господарська будівля', estimatedAreaM2: 32.6, registeredInRegistry: false, confidence: 85, bounds: [[50.49566, 24.2780], [50.49560, 24.27807]] },
   ],
   analysisDate: '18.04.2026',
   satelliteImageDate: '12.03.2026',
-  registeredStructuresCount: 1,
+  registeredStructuresCount: 2,
   detectedStructuresCount: 3,
-  unauthorizedCount: 2,
-  estimatedTaxImpact: '~18 400 ₴/рік',
+  unauthorizedCount: 1,
+  estimatedTaxImpact: '~14 800 ₴/рік',
 };
 
 const MOCK_TIMELINE: TimelineEntry[] = [
-  { date: '18.01.2024', event: 'Реєстрація земельної ділянки та житлового будинку', type: 'normal' },
-  { date: '~серпень 2024', event: 'Супутниковий знімок: поява нової будівлі на ділянці', type: 'warning' },
-  { date: '~березень 2025', event: 'Супутниковий знімок: поява гаражу на ділянці', type: 'danger' },
-  { date: '18.04.2026', event: 'AI-аналіз: виявлено 2 незареєстровані структури', type: 'danger' },
+  { date: '18.01.2024', event: 'Реєстрація земельної ділянки', type: 'normal' },
+  { date: '~жовтень 2024', event: 'Супутниковий знімок: поява будівлі на ділянці', type: 'warning' },
+  { date: '18.04.2026', event: 'AI-аналіз: виявлено 1 незареєстровану структуру', type: 'danger' },
 ];
 
 const SIGNAL_COLOR = 'oklch(0.62 0.16 45)';
@@ -116,7 +115,7 @@ function FitBounds({ bounds }: { bounds: LatLngTuple[] }) {
 
   useEffect(() => {
     if (bounds.length > 0) {
-      map.fitBounds(bounds as LatLngBoundsExpression, { padding: [40, 40], maxZoom: 18 });
+      map.fitBounds(bounds as LatLngBoundsExpression, { padding: [40, 40], maxZoom: 20 });
     }
   }, [bounds, map]);
 
@@ -379,7 +378,7 @@ export default function SatelliteAnalysisPage() {
     ...MOCK_PROPERTY,
     address: t('satellite.mock.address'),
     landPurpose: t('satellite.mock.landPurpose'),
-    registeredStructures: [t('satellite.mock.registeredStructure')],
+    registeredStructures: [t('satellite.mock.registeredStructure'), t('satellite.mock.registeredStructure2')],
   };
   const analysis = {
     ...MOCK_ANALYSIS,
@@ -393,7 +392,7 @@ export default function SatelliteAnalysisPage() {
     ...entry,
     event: t(`satellite.mock.timeline.${index}`),
   }));
-  const showQuerySection = phase !== 'results' || queryExpanded;
+  const showQuerySection = phase === 'idle' || (phase === 'results' && queryExpanded);
 
   return (
     <div className="satellite-workspace mx-auto max-w-[1400px] px-6 pb-16 pt-8 md:px-10 md:pb-20">
@@ -687,6 +686,7 @@ export default function SatelliteAnalysisPage() {
                         <MapContainer
                           center={PARCEL_CENTER}
                           zoom={18}
+                          maxZoom={20}
                           scrollWheelZoom
                           zoomControl
                           style={{ height: '100%', width: '100%' }}
@@ -694,6 +694,8 @@ export default function SatelliteAnalysisPage() {
                           <TileLayer
                             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                             attribution="Esri, Maxar"
+                            maxNativeZoom={18}
+                            maxZoom={20}
                           />
                           <FitBounds bounds={PARCEL_BOUNDARY} />
                           <Polygon
