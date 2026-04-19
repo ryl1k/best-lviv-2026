@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Map, FileText, X, ArrowRight, Upload, PlayCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { auditsApi, getApiErrorDetails } from '@/api';
 
 type DropZoneId = 'property' | 'land';
 
@@ -132,7 +133,8 @@ export default function UploadPage() {
   const [zones, setZones] = useState<DropZonesState>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const [msgIndex, setMsgIndex] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [requiresSubscription, setRequiresSubscription] = useState(false);
 
   const loadingMessages = [t('upload.loading1'), t('upload.loading2'), t('upload.loading3'), t('upload.loading4'), t('upload.loading5')];
 
@@ -151,25 +153,42 @@ export default function UploadPage() {
 
   const bothFilesSelected = zones.property.file !== null && zones.land.file !== null;
 
-  const handleAnalyze = useCallback(() => {
+  const handleAnalyze = useCallback(async () => {
     if (!bothFilesSelected) return;
+
+    const estateFile = zones.property.file?.file;
+    const landFile = zones.land.file?.file;
+    if (!estateFile || !landFile) return;
+
+    setSubmitError(null);
+    setRequiresSubscription(false);
     setIsLoading(true);
     setMsgIndex(0);
-    timerRef.current = setTimeout(() => navigate('/tasks/a4f2'), 2400);
-  }, [bothFilesSelected, navigate]);
-
-  const handleCancel = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-    setIsLoading(false);
-  }, []);
+    try {
+      const response = await auditsApi.uploadFiles(landFile, estateFile);
+      const taskId = response.data.task_id;
+      if (!taskId) {
+        throw new Error('Task id is missing in upload response');
+      }
+      navigate(`/tasks/${taskId}`);
+    } catch (error) {
+      const errorDetails = getApiErrorDetails(error, { context: 'upload' });
+      const message = errorDetails.message;
+      setSubmitError(message);
+      setRequiresSubscription(
+        errorDetails.backendCode === 'no active subscription' ||
+        errorDetails.backendCode === 'subscription tier is insufficient for this operation' ||
+        errorDetails.backendCode === 'no tries remaining for this operation',
+      );
+      setIsLoading(false);
+    }
+  }, [bothFilesSelected, navigate, zones.land.file, zones.property.file]);
 
   useEffect(() => {
     if (!isLoading) return;
     const interval = setInterval(() => setMsgIndex((i) => (i + 1) % loadingMessages.length), 3000);
     return () => clearInterval(interval);
   }, [isLoading, loadingMessages.length]);
-
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const steps = [
     { number: '01', icon: <Upload size={18} />, title: t('upload.step1Title'), desc: t('upload.step1Desc') },
@@ -184,12 +203,6 @@ export default function UploadPage() {
           <div className="flex min-w-[280px] flex-col items-center gap-5 rounded-2xl border border-landing-border bg-landing-paper p-10 shadow-xl">
             <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-landing-border" style={{ borderTopColor: SIGNAL_COLOR }} />
             <div className="min-h-6 text-center text-sm font-medium text-landing-ink">{loadingMessages[msgIndex]}</div>
-            <button
-              onClick={handleCancel}
-              className="rounded-lg border border-landing-border-strong px-4 py-1.5 text-sm text-landing-muted transition-colors hover:bg-landing-secondary hover:text-landing-ink"
-            >
-              {t('upload.cancel')}
-            </button>
           </div>
           <style>{`@keyframes revela-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -252,6 +265,22 @@ export default function UploadPage() {
           </button>
           {!bothFilesSelected && (
             <p className="text-sm text-landing-muted">{t('upload.bothFiles')}</p>
+          )}
+          {submitError && (
+            <>
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {submitError}
+              </p>
+              {requiresSubscription && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/pricing')}
+                  className="rounded-full border border-landing-ink bg-landing-ink px-4 py-2 text-sm font-medium text-landing-paper transition-colors hover:bg-landing-ink-soft"
+                >
+                  Перейти до тарифів
+                </button>
+              )}
+            </>
           )}
         </section>
 

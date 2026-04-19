@@ -3,8 +3,13 @@ import { ChevronDown, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = [
-  { code: 'uk', label: 'Українська', flag: '🇺🇦' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'uk', label: 'Українська' },
+  { code: 'en', label: 'English' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'fr', label: 'Français' },
+  { code: 'es', label: 'Español' },
+  { code: 'it', label: 'Italiano' },
 ] as const;
 
 export function AuthLanguageSwitcher() {
@@ -51,7 +56,6 @@ export function AuthLanguageSwitcher() {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-[var(--auth-surface-muted)]"
               >
-                <span className="text-base leading-none">{lang.flag}</span>
                 <span className={active ? 'font-semibold text-[var(--auth-accent)]' : 'text-[var(--auth-text-secondary)]'}>
                   {lang.label}
                 </span>

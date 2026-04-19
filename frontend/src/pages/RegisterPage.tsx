@@ -47,7 +47,7 @@ export default function RegisterPage() {
       });
       navigate('/login', { state: { registered: true } });
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, 'Не вдалося створити акаунт. Спробуйте ще раз.'));
+      setSubmitError(getApiErrorMessage(error, { context: 'register' }));
     } finally {
       setLoading(false);
     }

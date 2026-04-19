@@ -24,7 +24,12 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 async function parseJsonSafe(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.toLowerCase().includes('application/json')) {
-    return null;
+    try {
+      const text = await response.text();
+      return text.trim() || null;
+    } catch {
+      return null;
+    }
   }
 
   try {
@@ -86,8 +91,9 @@ async function request<TData>(path: string, options: RequestOptions = {}): Promi
 
   const parsed = await parseJsonSafe(response);
   const responseObject = (parsed && typeof parsed === 'object') ? (parsed as Record<string, unknown>) : null;
-  const metadata = normalizeMetadata(responseObject?.metadata, response.status);
-  const data = (responseObject?.data as TData) ?? (undefined as TData);
+  const metadataSource = (responseObject?.metadata ?? responseObject?.Metadata) as unknown;
+  const metadata = normalizeMetadata(metadataSource, response.status);
+  const data = ((responseObject?.data ?? responseObject?.Data) as TData) ?? (undefined as TData);
 
   if (!response.ok) {
     throw new ApiError({
