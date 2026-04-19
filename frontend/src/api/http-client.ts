@@ -24,7 +24,12 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 async function parseJsonSafe(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.toLowerCase().includes('application/json')) {
-    return null;
+    try {
+      const text = await response.text();
+      return text.trim() || null;
+    } catch {
+      return null;
+    }
   }
 
   try {

@@ -1,4 +1,5 @@
 export * from '@/api/contracts';
+export * from '@/api/error-handling';
 export * from '@/api/models';
 export * from '@/api/endpoints';
 export * from '@/api/token-storage';

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Map, FileText, X, ArrowRight, Upload, PlayCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { auditsApi, getApiErrorMessage } from '@/api';
+import { auditsApi, getApiErrorDetails } from '@/api';
 
 type DropZoneId = 'property' | 'land';
 
@@ -172,9 +172,14 @@ export default function UploadPage() {
       }
       navigate(`/tasks/${taskId}`);
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Не вдалося завантажити файли. Спробуйте ще раз.');
+      const errorDetails = getApiErrorDetails(error, { context: 'upload' });
+      const message = errorDetails.message;
       setSubmitError(message);
-      setRequiresSubscription(message.toLowerCase().includes('active subscription required'));
+      setRequiresSubscription(
+        errorDetails.backendCode === 'no active subscription' ||
+        errorDetails.backendCode === 'subscription tier is insufficient for this operation' ||
+        errorDetails.backendCode === 'no tries remaining for this operation',
+      );
       setIsLoading(false);
     }
   }, [bothFilesSelected, navigate, zones.land.file, zones.property.file]);

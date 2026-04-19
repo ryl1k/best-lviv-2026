@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { getApiErrorMessage, tasksApi, type DiscrepancyResponse } from '@/api';
+import { getRuleDisplay } from '@/lib/rule-codes';
 
 type ResolutionStatus = 'NEW' | 'IN_REVIEW' | 'CONFIRMED' | 'DISMISSED';
 
@@ -128,28 +129,6 @@ function ChipInfo({ children }: { children: React.ReactNode }) {
         color: T.info,
         background: T.infoSubtle,
         border: '1px solid rgba(2,132,199,0.25)',
-        borderRadius: 4,
-        padding: '2px 7px',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function ChipDangerMono({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        fontSize: 11,
-        fontWeight: 700,
-        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-        letterSpacing: '0.04em',
-        color: T.dangerDeep,
-        background: 'rgba(220,38,38,0.15)',
         borderRadius: 4,
         padding: '2px 7px',
         whiteSpace: 'nowrap',
@@ -367,7 +346,7 @@ export default function ObjectDetailsPage() {
       setDiscrepancy(discrepancyResult.value.data);
     } else {
       setDiscrepancy(null);
-      setError(getApiErrorMessage(discrepancyResult.reason, 'Не вдалося отримати дані кейсу.'));
+      setError(getApiErrorMessage(discrepancyResult.reason, { context: 'discrepancyLoad' }));
     }
 
     if (explanationResult.status === 'fulfilled') {
@@ -376,7 +355,7 @@ export default function ObjectDetailsPage() {
       setExplanationError(null);
     } else {
       setExplanation(null);
-      setExplanationError(getApiErrorMessage(explanationResult.reason, 'AI-пояснення тимчасово недоступне.'));
+      setExplanationError(getApiErrorMessage(explanationResult.reason, { context: 'discrepancyExplanation' }));
     }
 
     setLoading(false);
@@ -407,7 +386,7 @@ export default function ObjectDetailsPage() {
       await tasksApi.updateDiscrepancyResolution(taskId, discrepancyId, status);
       await loadDiscrepancy();
     } catch (updateError) {
-      setStatusError(getApiErrorMessage(updateError, 'Не вдалося оновити статус кейсу.'));
+      setStatusError(getApiErrorMessage(updateError, { context: 'discrepancyStatusUpdate' }));
     } finally {
       setStatusUpdating(null);
     }
@@ -464,6 +443,7 @@ export default function ObjectDetailsPage() {
   }
 
   const currentStatus = (discrepancy.resolution_status ?? 'NEW').toUpperCase() as ResolutionStatus;
+  const rule = getRuleDisplay(t, discrepancy.rule_code);
 
   return (
     <main style={{ minHeight: '100vh', background: T.bg, paddingBottom: 120 }}>
@@ -520,7 +500,7 @@ export default function ObjectDetailsPage() {
               {t('objectDetails.meta.taxId')}{' '}
               <strong style={{ color: T.textSecondary, fontWeight: 600 }}>{discrepancy.tax_id || '—'}</strong>
               {' · '}
-              Rule {discrepancy.rule_code || '—'}
+              {rule.label}
             </p>
           </div>
 
@@ -550,12 +530,7 @@ export default function ObjectDetailsPage() {
         >
           <AlertTriangle size={20} style={{ color: T.danger, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <ChipDangerMono>{discrepancy.rule_code || 'RULE'}</ChipDangerMono>
-              <span style={{ fontSize: 14, fontWeight: 600, color: T.dangerDeep }}>
-                {t('objectDetails.ruleBanner.title')}
-              </span>
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: T.dangerDeep, marginBottom: 6 }}>{rule.label}</div>
             <p style={{ margin: 0, fontSize: 13, color: T.dangerDeep, lineHeight: 1.55 }}>
               {discrepancy.description || explanation || t('objectDetails.ruleBanner.description')}
             </p>
@@ -587,7 +562,7 @@ export default function ObjectDetailsPage() {
               <div style={{ marginTop: 4 }}>
                 <FieldRow label="Owner" value={discrepancy.owner_name || '—'} />
                 <FieldRow label="Tax ID" value={discrepancy.tax_id || '—'} mono />
-                <FieldRow label="Rule" value={discrepancy.rule_code || '—'} mono />
+                <FieldRow label="Rule" value={rule.label} />
                 <FieldRow label="Severity" value={severityLabel(discrepancy.severity, t)} />
                 <FieldRow label="Status" value={statusLabel(discrepancy.resolution_status, t)} />
                 <FieldRow label="Risk score" value={String(discrepancy.risk_score ?? 0)} mono />

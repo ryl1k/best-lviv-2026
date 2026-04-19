@@ -47,7 +47,7 @@ export default function PricingPage() {
       setPlans(plansResult.value.data);
     } else {
       setPlans([]);
-      setLoadingError(getApiErrorMessage(plansResult.reason, 'Не вдалося завантажити список тарифів.'));
+      setLoadingError(getApiErrorMessage(plansResult.reason, { context: 'pricingLoad' }));
     }
 
     if (mineResult.status === 'fulfilled') {
@@ -84,7 +84,7 @@ export default function PricingPage() {
         setActiveSubscription(response.data);
         toast.success('Тариф успішно активовано.');
       } catch (error) {
-        toast.error(getApiErrorMessage(error, 'Не вдалося активувати тариф.'));
+        toast.error(getApiErrorMessage(error, { context: 'subscriptionPurchase' }));
       } finally {
         setPurchasingPlanId(null);
       }
