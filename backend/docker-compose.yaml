@@ -33,6 +33,11 @@ services:
     ports:
       - "8001:8000"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 400M
 
   backend:
     build: .
@@ -60,7 +65,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.5'     
-          memory: 800M
+          cpus: '0.7'
+          memory: 300M
+
 volumes:
   postgres_data:

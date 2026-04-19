@@ -98,7 +98,7 @@ func newApp(ctx context.Context) (*app, error) {
 	}
 
 	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, mlScoreRepo, explainer, mlClient, logger)
-	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
+	subscriptionUseCase = subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)
