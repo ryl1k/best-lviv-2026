@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect, type DragEvent, type ChangeEvent } from 'react';
+import { useRef, useState, useCallback, type DragEvent, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Map, FileText, X, ArrowRight, Upload, PlayCircle, Check } from 'lucide-react';
