@@ -43,6 +43,25 @@ func (r *SubscriptionRepo) List(ctx context.Context) ([]entity.Subscription, err
 	return subs, nil
 }
 
+func (r *SubscriptionRepo) GetByTier(ctx context.Context, tier entity.SubscriptionTier) (entity.Subscription, error) {
+	query := `
+		SELECT id, tier, name, price_uah, max_satellite_tries, max_csv_tries, created_at, updated_at
+		FROM subscriptions
+		WHERE tier = $1
+	`
+	var s entity.Subscription
+	err := r.pool.QueryRow(ctx, query, tier).Scan(
+		&s.ID, &s.Tier, &s.Name, &s.PriceUAH, &s.MaxSatelliteTries, &s.MaxCSVTries, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.Subscription{}, fmt.Errorf("subscription tier %s: %w", tier, entity.ErrSubscriptionNotFound)
+		}
+		return entity.Subscription{}, fmt.Errorf("get subscription by tier: %w", err)
+	}
+	return s, nil
+}
+
 func (r *SubscriptionRepo) GetByID(ctx context.Context, id int64) (entity.Subscription, error) {
 	query := `
 		SELECT id, tier, name, price_uah, max_satellite_tries, max_csv_tries, created_at, updated_at

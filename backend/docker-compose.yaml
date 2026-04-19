@@ -57,6 +57,10 @@ services:
         condition: service_completed_successfully
       ml:
         condition: service_started
-
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'     
+          memory: 800M
 volumes:
   postgres_data:

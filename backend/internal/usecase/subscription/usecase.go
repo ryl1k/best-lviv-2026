@@ -14,6 +14,7 @@ import (
 type subscriptionRepo interface {
 	List(ctx context.Context) ([]entity.Subscription, error)
 	GetByID(ctx context.Context, id int64) (entity.Subscription, error)
+	GetByTier(ctx context.Context, tier entity.SubscriptionTier) (entity.Subscription, error)
 }
 
 type userSubscriptionRepo interface {
@@ -57,11 +58,12 @@ func (uc *UseCase) List(ctx context.Context) ([]entity.Subscription, error) {
 }
 
 func (uc *UseCase) Purchase(ctx context.Context, userID int, subscriptionID int64) (entity.UserSubscription, error) {
-	_, err := uc.userSubRepo.GetActive(ctx, userID)
+	activeSub, err := uc.userSubRepo.GetActive(ctx, userID)
 	if err == nil {
-		return entity.UserSubscription{}, entity.ErrAlreadySubscribed
-	}
-	if !errors.Is(err, entity.ErrNoActiveSubscription) {
+		if activeSub.Subscription == nil || activeSub.Subscription.Tier != entity.TierFree {
+			return entity.UserSubscription{}, entity.ErrAlreadySubscribed
+		}
+	} else if !errors.Is(err, entity.ErrNoActiveSubscription) {
 		return entity.UserSubscription{}, fmt.Errorf("check active subscription: %w", err)
 	}
 
@@ -100,6 +102,25 @@ func (uc *UseCase) GetUserSubscription(ctx context.Context, userID int) (entity.
 		return entity.UserSubscription{}, fmt.Errorf("get user subscription: %w", err)
 	}
 	return userSub, nil
+}
+
+func (uc *UseCase) AssignFreeTier(ctx context.Context, userID int) error {
+	freeSub, err := uc.subRepo.GetByTier(ctx, entity.TierFree)
+	if err != nil {
+		return fmt.Errorf("get free subscription: %w", err)
+	}
+
+	now := time.Now().UTC()
+	_, err = uc.userSubRepo.Create(ctx, entity.UserSubscription{
+		UserID:         userID,
+		SubscriptionID: freeSub.ID,
+		StartsAt:       now,
+		ExpiresAt:      now.AddDate(100, 0, 0),
+	})
+	if err != nil {
+		return fmt.Errorf("assign free tier: %w", err)
+	}
+	return nil
 }
 
 func (uc *UseCase) IncrementCSVTries(ctx context.Context, userSubID int64) error {

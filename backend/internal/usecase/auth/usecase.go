@@ -20,17 +20,23 @@ type UserRepo interface {
 	Create(ctx context.Context, user entity.User) (int, error)
 }
 
+type FreeTierAssigner interface {
+	AssignFreeTier(ctx context.Context, userID int) error
+}
+
 type UseCase struct {
 	jwtSecret   []byte
 	jwtDuration time.Duration
 	userRepo    UserRepo
+	subAssigner FreeTierAssigner
 }
 
-func New(jwtSecret string, jwtDuration time.Duration, userRepo UserRepo) *UseCase {
+func New(jwtSecret string, jwtDuration time.Duration, userRepo UserRepo, subAssigner FreeTierAssigner) *UseCase {
 	return &UseCase{
 		jwtSecret:   []byte(jwtSecret),
 		jwtDuration: jwtDuration,
 		userRepo:    userRepo,
+		subAssigner: subAssigner,
 	}
 }
 
@@ -103,9 +109,13 @@ func (u *UseCase) Create(ctx context.Context, username, email, password string) 
 		PasswordHash: hashedPassword,
 	}
 
-	_, err = u.userRepo.Create(ctx, user)
+	userID, err := u.userRepo.Create(ctx, user)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	if err := u.subAssigner.AssignFreeTier(ctx, userID); err != nil {
+		return fmt.Errorf("failed to assign free tier: %w", err)
 	}
 
 	return nil

@@ -84,7 +84,8 @@ func newApp(ctx context.Context) (*app, error) {
 	mlScoreRepo := persistent.NewMLScoreRepo(pool)
 
 	// Use cases
-	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
+	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
+	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo, subscriptionUseCase)
 
 	var explainer *ai.Explainer
 	if c.OpenAIAPIKey != "" {
