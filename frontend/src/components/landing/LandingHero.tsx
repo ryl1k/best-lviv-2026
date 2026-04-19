@@ -1,11 +1,13 @@
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { getAccessToken } from '@/api';
 
 import { RegistryMergeScene } from './scenes/RegistryMergeScene';
 
 export function LandingHero() {
   const { t } = useTranslation();
+  const isAuthenticated = Boolean(getAccessToken());
 
   return (
     <section id="top" className="landing-bg-paper-grain relative overflow-hidden pt-32 md:pt-40">
@@ -75,12 +77,14 @@ export function LandingHero() {
               >
                 {t('hero.secondaryCta')}
               </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 rounded-full border border-landing-border-strong px-5 py-3 text-sm font-medium text-landing-ink transition-colors hover:bg-landing-surface no-underline"
-              >
-                {t('hero.signIn')}
-              </Link>
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 rounded-full border border-landing-border-strong px-5 py-3 text-sm font-medium text-landing-ink transition-colors hover:bg-landing-surface no-underline"
+                >
+                  {t('hero.signIn')}
+                </Link>
+              )}
             </motion.div>
           </div>
         </div>

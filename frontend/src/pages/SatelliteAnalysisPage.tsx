@@ -351,13 +351,19 @@ export default function SatelliteAnalysisPage() {
     t('satellite.loading5'),
   ];
 
+  const ALLOWED_CADASTRAL = '4624884200:05:000:0009';
   const canAnalyze = cadastralNumber.trim().length > 0;
+  const isAllowed = cadastralNumber.trim() === ALLOWED_CADASTRAL;
 
   const handleAnalyze = useCallback(() => {
     if (!canAnalyze) return;
+    if (!isAllowed) {
+      setCadastralNumber('');
+      return;
+    }
     setPhase('loading');
     setLoadingStep(0);
-  }, [canAnalyze]);
+  }, [canAnalyze, isAllowed]);
 
   useEffect(() => {
     if (phase !== 'loading') return;
@@ -498,6 +504,12 @@ export default function SatelliteAnalysisPage() {
                       </div>
                     </div>
                   </div>
+
+                  {canAnalyze && !isAllowed && (
+                    <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      Земельну ділянку не знайдено в базі даних.
+                    </p>
+                  )}
 
                   <div className="flex flex-col gap-3 border-t border-landing-border pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm leading-relaxed text-landing-ink-soft">
