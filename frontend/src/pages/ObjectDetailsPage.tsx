@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   FileJson,
+  Loader2,
 } from 'lucide-react';
 
 import { getApiErrorMessage, tasksApi, type DiscrepancyResponse } from '@/api';
@@ -301,8 +302,74 @@ export default function ObjectDetailsPage() {
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: T.bg }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px', color: T.textMuted, fontSize: 14 }}>
-          Завантажую деталі кейсу...
+        <style>{`@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}.sk{background:linear-gradient(90deg,${T.border} 25%,${T.surfaceMuted} 50%,${T.border} 75%);background-size:800px 100%;animation:shimmer 1.4s infinite linear;border-radius:4px;}`}</style>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
+          {/* back button placeholder */}
+          <div style={{ paddingTop: 24, marginBottom: 12 }}>
+            <div className="sk" style={{ width: 80, height: 22 }} />
+          </div>
+
+          {/* header */}
+          <div style={{ borderBottom: `1px solid ${T.border}`, paddingBottom: 24, marginBottom: 28 }}>
+            <div className="sk" style={{ width: 120, height: 12, marginBottom: 14 }} />
+            <div className="sk" style={{ width: 260, height: 30, marginBottom: 16 }} />
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <div className="sk" style={{ width: 72, height: 22, borderRadius: 999 }} />
+              <div className="sk" style={{ width: 72, height: 22, borderRadius: 999 }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 12 }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '14px 16px', background: T.surface }}>
+                  <div className="sk" style={{ width: 60, height: 10, marginBottom: 10 }} />
+                  <div className="sk" style={{ width: '80%', height: 16 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* rule banner */}
+          <div style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.10)', borderRadius: 12, padding: '18px 20px', marginBottom: 28 }}>
+            <div className="sk" style={{ width: 100, height: 10, marginBottom: 10 }} />
+            <div className="sk" style={{ width: 220, height: 18, marginBottom: 10 }} />
+            <div className="sk" style={{ width: '70%', height: 14 }} />
+          </div>
+
+          {/* cards row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px,1fr))', gap: 18, marginBottom: 28 }}>
+            {[1, 2].map((i) => (
+              <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: `1px solid ${T.border}` }}>
+                  <div className="sk" style={{ width: 120, height: 14 }} />
+                </div>
+                <div style={{ padding: '12px 20px 20px' }}>
+                  {[1, 2, 3, 4, 5, 6].map((j) => (
+                    <div key={j} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12, padding: '9px 0', borderBottom: `1px solid ${T.border}` }}>
+                      <div className="sk" style={{ width: '70%', height: 11 }} />
+                      <div className="sk" style={{ width: '60%', height: 13 }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* explanation card */}
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: '20px 20px 22px', marginBottom: 24 }}>
+            <div className="sk" style={{ width: 100, height: 10, marginBottom: 10 }} />
+            <div className="sk" style={{ width: 200, height: 20, marginBottom: 16 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="sk" style={{ width: '90%', height: 14 }} />
+              <div className="sk" style={{ width: '75%', height: 14 }} />
+              <div className="sk" style={{ width: '55%', height: 14 }} />
+            </div>
+          </div>
+
+          {/* spinner overlay hint */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 32px', color: T.textDisabled, gap: 8, alignItems: 'center', fontSize: 13 }}>
+            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+            Завантаження…
+          </div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       </main>
     );
