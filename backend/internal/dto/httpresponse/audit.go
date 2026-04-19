@@ -88,6 +88,7 @@ type PersonRiskResponse struct {
 	MaxSeverity      string   `json:"max_severity"`
 	DiscrepancyCount int      `json:"discrepancy_count"`
 	RuleCodes        []string `json:"rule_codes"`
+	MLRiskScore      *float64 `json:"ml_risk_score"`
 }
 
 type PaginatedPersonsResponse struct {

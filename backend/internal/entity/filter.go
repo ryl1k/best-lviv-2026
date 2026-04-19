@@ -28,4 +28,5 @@ type PersonRisk struct {
 	MaxSeverity      string
 	DiscrepancyCount int
 	RuleCodes        []string
+	MLRiskScore      *float64
 }

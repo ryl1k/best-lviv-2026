@@ -27,6 +27,18 @@ services:
       postgres:
         condition: service_healthy
 
+  ml:
+    build:
+      context: ../models/service
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 400M
+
   backend:
     build: .
     ports:
@@ -44,13 +56,17 @@ services:
       POSTGRES_MIN_CONNS: 5
       POSTGRES_MAX_CONN_LIFETIME: 30m
       POSTGRES_MAX_CONN_IDLE_TIME: 10m
+      ML_SERVICE_URL: http://ml:8000
     depends_on:
       migrate:
         condition: service_completed_successfully
+      ml:
+        condition: service_started
     deploy:
       resources:
         limits:
-          cpus: '1.5'     
-          memory: 800M
+          cpus: '0.7'
+          memory: 300M
+
 volumes:
   postgres_data:
