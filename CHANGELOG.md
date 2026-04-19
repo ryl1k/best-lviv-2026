@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.0...v1.6.1) (2026-04-19)
+
+
+### Bug Fixes
+
+* optimize memory usage on algorithm ([4dc80ff](https://github.com/ryl1k/best-lviv-2026/commit/4dc80fff4d403a0191fe94e1c14fa4320478f829))
+* optimize memory usage on algorithm ([5969bb6](https://github.com/ryl1k/best-lviv-2026/commit/5969bb62b7023575aa66eccb315b3eb21a78cbb0))
+
 ## [1.6.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.2...v1.6.0) (2026-04-19)
 
 
