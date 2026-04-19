@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, Map, FileText, X, ArrowRight, Upload, PlayCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { auditsApi, getApiErrorDetails } from '@/api';
+import { auditsApi, tasksApi, getApiErrorDetails } from '@/api';
 
 type DropZoneId = 'property' | 'land';
 
@@ -132,11 +132,17 @@ export default function UploadPage() {
   const { t } = useTranslation();
   const [zones, setZones] = useState<DropZonesState>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
-  const [msgIndex, setMsgIndex] = useState(0);
+  const [processingStep, setProcessingStep] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [requiresSubscription, setRequiresSubscription] = useState(false);
 
-  const loadingMessages = [t('upload.loading1'), t('upload.loading2'), t('upload.loading3'), t('upload.loading4'), t('upload.loading5')];
+  const STEPS = [
+    'Завантаження файлів',
+    'Аналіз реєстру нерухомості',
+    'Перевірка правил',
+    'Формування звіту',
+  ];
 
   const handleFile = useCallback((id: DropZoneId, file: File) => {
     setZones((prev) => ({ ...prev, [id]: { ...prev[id], file: toSelectedFile(file) } }));
@@ -163,32 +169,60 @@ export default function UploadPage() {
     setSubmitError(null);
     setRequiresSubscription(false);
     setIsLoading(true);
-    setMsgIndex(0);
+    setProcessingStep(0);
+    setProgress(0);
+
+    let taskId: string;
     try {
       const response = await auditsApi.uploadFiles(landFile, estateFile);
-      const taskId = response.data.task_id;
-      if (!taskId) {
-        throw new Error('Task id is missing in upload response');
-      }
-      navigate(`/tasks/${taskId}`);
+      taskId = response.data.task_id;
+      if (!taskId) throw new Error('Task id is missing in upload response');
     } catch (error) {
       const errorDetails = getApiErrorDetails(error, { context: 'upload' });
-      const message = errorDetails.message;
-      setSubmitError(message);
+      setSubmitError(errorDetails.message);
       setRequiresSubscription(
         errorDetails.backendCode === 'no active subscription' ||
         errorDetails.backendCode === 'subscription tier is insufficient for this operation' ||
         errorDetails.backendCode === 'no tries remaining for this operation',
       );
       setIsLoading(false);
+      return;
     }
-  }, [bothFilesSelected, navigate, zones.land.file, zones.property.file]);
 
-  useEffect(() => {
-    if (!isLoading) return;
-    const interval = setInterval(() => setMsgIndex((i) => (i + 1) % loadingMessages.length), 3000);
-    return () => clearInterval(interval);
-  }, [isLoading, loadingMessages.length]);
+    // Step 1 done — files uploaded
+    setProcessingStep(1);
+    setProgress(20);
+
+    // Poll task status
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: task } = await tasksApi.getTask(taskId);
+
+        if (task.status === 'PROCESSING') {
+          setProcessingStep(2);
+          setProgress((p) => Math.min(p + 5, 75));
+        }
+
+        if (task.status === 'COMPLETED') {
+          clearInterval(pollInterval);
+          setProcessingStep(3);
+          setProgress(95);
+          setTimeout(() => {
+            setProgress(100);
+            setTimeout(() => navigate(`/tasks/${taskId}`), 400);
+          }, 600);
+        }
+
+        if (task.status === 'FAILED') {
+          clearInterval(pollInterval);
+          setSubmitError(task.error_message ?? 'Помилка обробки файлів');
+          setIsLoading(false);
+        }
+      } catch {
+        // transient poll error — keep trying
+      }
+    }, 2000);
+  }, [bothFilesSelected, navigate, zones.land.file, zones.property.file]);
 
   const steps = [
     { number: '01', icon: <Upload size={18} />, title: t('upload.step1Title'), desc: t('upload.step1Desc') },
@@ -200,11 +234,47 @@ export default function UploadPage() {
     <>
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(10,10,10,0.72)', backdropFilter: 'blur(4px)' }}>
-          <div className="flex min-w-[280px] flex-col items-center gap-5 rounded-2xl border border-landing-border bg-landing-paper p-10 shadow-xl">
-            <div className="h-11 w-11 animate-spin rounded-full border-[3px] border-landing-border" style={{ borderTopColor: SIGNAL_COLOR }} />
-            <div className="min-h-6 text-center text-sm font-medium text-landing-ink">{loadingMessages[msgIndex]}</div>
+          <div className="flex w-[340px] flex-col gap-6 rounded-2xl border border-landing-border bg-landing-paper p-8 shadow-xl">
+            <div>
+              <div className="mb-1 text-sm font-semibold text-landing-ink">Обробка даних...</div>
+              <div className="text-xs text-landing-muted">{STEPS[Math.min(processingStep, STEPS.length - 1)]}</div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-landing-border">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${progress}%`, background: SIGNAL_COLOR }}
+              />
+            </div>
+
+            {/* Steps */}
+            <ul className="space-y-3">
+              {STEPS.map((label, i) => {
+                const done = i < processingStep;
+                const active = i === processingStep;
+                return (
+                  <li key={label} className="flex items-center gap-3 text-sm">
+                    <span className={cn(
+                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold transition-colors',
+                      done ? 'border-transparent text-white' : active ? 'border-transparent' : 'border-landing-border text-landing-muted',
+                    )}
+                      style={done ? { background: SIGNAL_COLOR } : active ? { background: SIGNAL_COLOR, color: '#fff' } : {}}
+                    >
+                      {done ? <Check size={10} /> : i + 1}
+                    </span>
+                    <span className={cn(
+                      'transition-colors',
+                      done ? 'text-landing-muted line-through' : active ? 'font-medium text-landing-ink' : 'text-landing-muted',
+                    )}>
+                      {label}
+                    </span>
+                    {active && <span className="ml-auto h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: SIGNAL_COLOR }} />}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-          <style>{`@keyframes revela-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
 
