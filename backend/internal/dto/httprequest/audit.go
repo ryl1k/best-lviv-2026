@@ -14,22 +14,20 @@ type LandRecord struct {
 	NormativeValue float64           `json:"normative_value,omitempty"`
 	TaxID          string            `json:"tax_id"`
 	OwnerName      string            `json:"owner_name"`
-	Share          float64           `json:"share"`
-	RegisteredAt   *time.Time        `json:"registered_at,omitempty"`
-	Raw            map[string]string `json:"raw,omitempty"`
+	Share        float64    `json:"share"`
+	RegisteredAt *time.Time `json:"registered_at,omitempty"`
 }
 
 type EstateRecord struct {
-	TaxID        string            `json:"tax_id"`
-	OwnerName    string            `json:"owner_name"`
-	ObjectType   string            `json:"object_type"`
-	Address      string            `json:"address"`
-	RegisteredAt *time.Time        `json:"registered_at,omitempty"`
-	TerminatedAt *time.Time        `json:"terminated_at,omitempty"`
-	AreaM2       float64           `json:"area_m2"`
-	CoOwnership  string            `json:"co_ownership,omitempty"`
-	Share        float64           `json:"share"`
-	Raw          map[string]string `json:"raw,omitempty"`
+	TaxID        string     `json:"tax_id"`
+	OwnerName    string     `json:"owner_name"`
+	ObjectType   string     `json:"object_type"`
+	Address      string     `json:"address"`
+	RegisteredAt *time.Time `json:"registered_at,omitempty"`
+	TerminatedAt *time.Time `json:"terminated_at,omitempty"`
+	AreaM2       float64    `json:"area_m2"`
+	CoOwnership  string     `json:"co_ownership,omitempty"`
+	Share        float64    `json:"share"`
 }
 
 type UploadJSON struct {

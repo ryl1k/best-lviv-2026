@@ -130,15 +130,12 @@ func ParseLandFile(data []byte, ext string, taskID uuid.UUID) ([]entity.LandReco
 		if isEmptyRow(row) {
 			continue
 		}
-		raw := make(map[string]string)
 		fields := make(map[string]string)
 
 		for i, val := range row {
 			if i >= len(rows[0]) {
 				break
 			}
-			header := rows[0][i]
-			raw[header] = val
 			if field, ok := colMap[i]; ok {
 				fields[field] = strings.TrimSpace(val)
 			}
@@ -155,7 +152,6 @@ func ParseLandFile(data []byte, ext string, taskID uuid.UUID) ([]entity.LandReco
 			LandUseType:   fields["land_use_type"],
 			TaxID:         normalizeTaxID(fields["tax_id"]),
 			OwnerName:     normalizeName(fields["owner_name"]),
-			Raw:           raw,
 		}
 
 		if v := fields["area_ha"]; v != "" {
@@ -195,15 +191,12 @@ func ParseEstateFile(data []byte, ext string, taskID uuid.UUID) ([]entity.Estate
 		if isEmptyRow(row) {
 			continue
 		}
-		raw := make(map[string]string)
 		fields := make(map[string]string)
 
 		for i, val := range row {
 			if i >= len(rows[0]) {
 				break
 			}
-			header := rows[0][i]
-			raw[header] = val
 			if field, ok := colMap[i]; ok {
 				fields[field] = strings.TrimSpace(val)
 			}
@@ -218,7 +211,6 @@ func ParseEstateFile(data []byte, ext string, taskID uuid.UUID) ([]entity.Estate
 			Address:     addr,
 			AddressNorm: normalizeAddress(addr),
 			CoOwnership: fields["co_ownership"],
-			Raw:         raw,
 		}
 
 		if v := fields["area_m2"]; v != "" {
@@ -267,9 +259,19 @@ func readXLSX(data []byte) ([][]string, error) {
 		return nil, fmt.Errorf("no sheets in xlsx file")
 	}
 
-	rows, err := f.GetRows(sheets[0])
+	iter, err := f.Rows(sheets[0])
 	if err != nil {
-		return nil, fmt.Errorf("get rows: %w", err)
+		return nil, fmt.Errorf("stream rows: %w", err)
+	}
+	defer iter.Close()
+
+	var rows [][]string
+	for iter.Next() {
+		row, err := iter.Columns()
+		if err != nil {
+			return nil, fmt.Errorf("read row: %w", err)
+		}
+		rows = append(rows, row)
 	}
 	return rows, nil
 }

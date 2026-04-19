@@ -157,7 +157,6 @@ func (c *AuditController) UploadJSON(ctx *echo.Context) error {
 			OwnerName:      r.OwnerName,
 			Share:          r.Share,
 			RegisteredAt:   r.RegisteredAt,
-			Raw:            r.Raw,
 		}
 	}
 
@@ -173,7 +172,6 @@ func (c *AuditController) UploadJSON(ctx *echo.Context) error {
 			AreaM2:       r.AreaM2,
 			CoOwnership:  r.CoOwnership,
 			Share:        r.Share,
-			Raw:          r.Raw,
 		}
 	}
 

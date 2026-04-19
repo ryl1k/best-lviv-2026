@@ -269,7 +269,7 @@ func ruleR04InvalidTaxID(taskID uuid.UUID, land []entity.LandRecord, estate []en
 				Details: map[string]any{
 					"source":        "land",
 					"cadastral_num": l.CadastralNum,
-					"raw_tax_id":    l.Raw["ІПН ЗЕМЛЕКОРИСТУВАЧА"],
+					"raw_tax_id":    l.TaxID,
 				},
 				ResolutionStatus: entity.ResolutionNew,
 			})
