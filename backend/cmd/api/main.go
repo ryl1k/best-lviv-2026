@@ -22,6 +22,7 @@ import (
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/ai"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/audit"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/auth"
+	"github.com/ryl1k/best-lviv-2026/internal/usecase/ml"
 	"github.com/ryl1k/best-lviv-2026/internal/usecase/subscription"
 )
 
@@ -80,6 +81,7 @@ func newApp(ctx context.Context) (*app, error) {
 	subscriptionRepo := persistent.NewSubscriptionRepo(pool)
 	userSubscriptionRepo := persistent.NewUserSubscriptionRepo(pool)
 	subscriptionTxRepo := persistent.NewSubscriptionTransactionRepo(pool)
+	mlScoreRepo := persistent.NewMLScoreRepo(pool)
 
 	// Use cases
 	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
@@ -89,7 +91,14 @@ func newApp(ctx context.Context) (*app, error) {
 	if c.OpenAIAPIKey != "" {
 		explainer = ai.NewExplainer(c.OpenAIAPIKey)
 	}
-	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, explainer, logger)
+
+	var mlClient *ml.Client
+	if c.MLServiceURL != "" {
+		mlClient = ml.NewClient(c.MLServiceURL)
+	}
+
+	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, mlScoreRepo, explainer, mlClient, logger)
+	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers
 	authController := v1.NewAuthController(logger, authUseCase)

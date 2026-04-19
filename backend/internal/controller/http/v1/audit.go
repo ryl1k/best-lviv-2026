@@ -463,6 +463,7 @@ func (c *AuditController) GetPersons(ctx *echo.Context) error {
 			MaxSeverity:      p.MaxSeverity,
 			DiscrepancyCount: p.DiscrepancyCount,
 			RuleCodes:        p.RuleCodes,
+			MLRiskScore:      p.MLRiskScore,
 		})
 	}
 

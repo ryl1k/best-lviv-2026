@@ -1,23 +1,52 @@
+## 0. Register (first time only)
+curl -X POST http://localhost:8080/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"password123","username":"testuser"}'
+
+## 0b. Login — copy the token from the response
+curl -X POST http://localhost:8080/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"password123"}'
+
+## Set token in shell (paste your token here)
+TOKEN="<paste_token_here>"
+
 ## 1. Upload files
-curl -X POST http://localhost:8080/v1/audits/upload -F "land_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП земля.xlsx" -F "estate_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП нерухомість.xlsx"
+curl -X POST http://localhost:8080/v1/audits/upload \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "land_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП земля.xlsx" \
+  -F "estate_file=@/Users/admin/dev/projects/best-lviv-2026/dataset/ДРРП нерухомість.xlsx"
 
 ## 2. Poll task status (replace TASK_ID)
-curl http://localhost:8080/v1/tasks/16e95ef6-6cb1-4a1d-946a-9a3bddd4cab3
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/v1/tasks/16e95ef6-6cb1-4a1d-946a-9a3bddd4cab3
 
 ## 3. Get results
-curl http://localhost:8080/v1/tasks/TASK_ID/results
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/v1/tasks/TASK_ID/results
 
 ## 4. Filter HIGH severity
-curl "http://localhost:8080/v1/tasks/TASK_ID/results?severity=HIGH&page=1&page_size=50"
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/v1/tasks/TASK_ID/results?severity=HIGH&page=1&page_size=50"
 
 ## 5. Get summary
-curl http://localhost:8080/v1/tasks/TASK_ID/results/summary
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/v1/tasks/TASK_ID/results/summary
 
 ## 6. Get single discrepancy
-curl http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1
 
 ## 7. Update resolution status
-curl -X PATCH http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1 -H "Content-Type: application/json" -d '{"resolution_status":"CONFIRMED"}'
+curl -X PATCH http://localhost:8080/v1/tasks/TASK_ID/discrepancies/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"resolution_status":"CONFIRMED"}'
 
 ## 8. Export CSV
-curl http://localhost:8080/v1/tasks/TASK_ID/export -o export.csv
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/v1/tasks/TASK_ID/export -o export.csv
+
+## 9. Get persons risk list
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/v1/tasks/TASK_ID/persons?page=1&page_size=20"
