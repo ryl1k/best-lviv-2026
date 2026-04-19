@@ -21,7 +21,6 @@ type LandRecord struct {
 	NormativeValue float64           `json:"normative_value,omitempty"`
 	TaxID          string            `json:"tax_id"`
 	OwnerName      string            `json:"owner_name"`
-	Share          float64           `json:"share"`
-	RegisteredAt   *time.Time        `json:"registered_at,omitempty"`
-	Raw            map[string]string `json:"raw,omitempty"`
+	Share        float64    `json:"share"`
+	RegisteredAt *time.Time `json:"registered_at,omitempty"`
 }
