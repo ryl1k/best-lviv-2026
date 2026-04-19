@@ -2,7 +2,6 @@ package persistent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -41,14 +40,13 @@ func (r *EstateRecordRepo) insertBatch(ctx context.Context, records []entity.Est
 	const q = `INSERT INTO estate_records
 		(task_id, tax_id, owner_name, object_type, address, address_norm,
 		 registered_at, terminated_at, area_m2, co_ownership, share, raw)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NULL)`
 
 	for _, rec := range records {
-		rawJSON, _ := json.Marshal(rec.Raw)
 		batch.Queue(q,
 			rec.TaskID, rec.TaxID, rec.OwnerName, rec.ObjectType,
 			rec.Address, rec.AddressNorm, rec.RegisteredAt, rec.TerminatedAt,
-			rec.AreaM2, rec.CoOwnership, rec.Share, rawJSON,
+			rec.AreaM2, rec.CoOwnership, rec.Share,
 		)
 	}
 

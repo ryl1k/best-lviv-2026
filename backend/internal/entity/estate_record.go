@@ -19,7 +19,6 @@ type EstateRecord struct {
 	RegisteredAt *time.Time        `json:"registered_at,omitempty"`
 	TerminatedAt *time.Time        `json:"terminated_at,omitempty"`
 	AreaM2       float64           `json:"area_m2"`
-	CoOwnership  string            `json:"co_ownership,omitempty"`
-	Share        float64           `json:"share"`
-	Raw          map[string]string `json:"raw,omitempty"`
+	CoOwnership string  `json:"co_ownership,omitempty"`
+	Share       float64 `json:"share"`
 }

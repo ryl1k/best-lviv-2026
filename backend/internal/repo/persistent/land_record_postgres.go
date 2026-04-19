@@ -2,7 +2,6 @@ package persistent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -41,15 +40,14 @@ func (r *LandRecordRepo) insertBatch(ctx context.Context, records []entity.LandR
 	const q = `INSERT INTO land_records
 		(task_id, cadastral_num, koatuu, ownership_form, purpose_code, purpose_text,
 		 location, land_use_type, area_ha, normative_value, tax_id, owner_name, share, registered_at, raw)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NULL)`
 
 	for _, rec := range records {
-		rawJSON, _ := json.Marshal(rec.Raw)
 		batch.Queue(q,
 			rec.TaskID, rec.CadastralNum, rec.Koatuu, rec.OwnershipForm,
 			rec.PurposeCode, rec.PurposeText, rec.Location, rec.LandUseType,
 			rec.AreaHa, rec.NormativeValue, rec.TaxID, rec.OwnerName,
-			rec.Share, rec.RegisteredAt, rawJSON,
+			rec.Share, rec.RegisteredAt,
 		)
 	}
 
