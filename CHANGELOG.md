@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.2...v1.6.0) (2026-04-19)
+
+
+### Features
+
+* implement subscription tier assignment and retrieval functionality ([2eeffd9](https://github.com/ryl1k/best-lviv-2026/commit/2eeffd99eb07f7f97073197dcbc1b0923f93fb82))
+* implement subscription tier assignment and retrieval functionality ([83a1332](https://github.com/ryl1k/best-lviv-2026/commit/83a1332aa47d32110029cd721a2ce472b0b2f370))
+
+
+### Bug Fixes
+
+* add resource limits for backend service in docker-compose ([f4c20cc](https://github.com/ryl1k/best-lviv-2026/commit/f4c20cca2f103cc582ac7c8410d4df878142c212))
+* add resource limits for backend service in docker-compose ([10be4f3](https://github.com/ryl1k/best-lviv-2026/commit/10be4f351001f0d23072be371150f5f4b03c7b6d))
+* jwt cors issues ([54d56d4](https://github.com/ryl1k/best-lviv-2026/commit/54d56d489a8662a822cd41dcff600b7255aa6d03))
+* remove unnecessary EXPOSE directive from Dockerfile ([614ad14](https://github.com/ryl1k/best-lviv-2026/commit/614ad144e7182c27ba61be3fbfb972a18d991829))
+* update Dockerfile to use caching for dependencies and improve build process ([8a953df](https://github.com/ryl1k/best-lviv-2026/commit/8a953dfb2dbc72f9450d36e5c64b80622e8310e5))
+
 ## [1.5.2](https://github.com/ryl1k/best-lviv-2026/compare/v1.5.1...v1.5.2) (2026-04-18)
 
 
