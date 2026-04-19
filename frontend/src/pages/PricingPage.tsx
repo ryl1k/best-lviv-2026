@@ -12,21 +12,21 @@ import {
 } from "@/api";
 
 function tierOrder(tier: Subscription["tier"]): number {
-  if (tier === "FREE") return 0;
+  if (tier === "ONESHOT") return 0;
   if (tier === "BASIC") return 1;
   return 2;
 }
 
 function formatPrice(priceUah: number): string {
-  if (priceUah <= 0) return "Безкоштовно";
-  return `₴${priceUah.toLocaleString("uk-UA")}`;
+  if (priceUah <= 0) return "Free";
+  return `₴${priceUah.toLocaleString("en-US")}`;
 }
 
 function formatDate(value: string | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("uk-UA");
+  return date.toLocaleDateString("en-US");
 }
 
 export default function PricingPage() {
@@ -82,7 +82,7 @@ export default function PricingPage() {
   );
 
   const handlePurchase = useCallback((_plan: Subscription) => {
-    toast.error("Підписки недоступні для презентації");
+    toast.error("Subscriptions are not available for the presentation");
   }, []);
 
   return (
@@ -102,19 +102,19 @@ export default function PricingPage() {
       {activeSubscription && (
         <div className="mx-auto mb-8 max-w-4xl rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-800">
           <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-emerald-700">
-            Активна підписка
+            Active subscription
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
             <span className="font-medium">
               {activeSubscription.subscription.name}
             </span>
-            <span>Діє до: {formatDate(activeSubscription.expires_at)}</span>
+            <span>Expires: {formatDate(activeSubscription.expires_at)}</span>
             <span>
-              Використано CSV: {activeSubscription.csv_tries_used}/
+              CSV used: {activeSubscription.csv_tries_used}/
               {activeSubscription.subscription.max_csv_tries}
             </span>
             <span>
-              Використано Супутник: {activeSubscription.satellite_tries_used}/
+              Satellite used: {activeSubscription.satellite_tries_used}/
               {activeSubscription.subscription.max_satellite_tries}
             </span>
           </div>
@@ -130,7 +130,7 @@ export default function PricingPage() {
       {isLoading ? (
         <div className="mx-auto flex max-w-4xl items-center justify-center gap-2 rounded-2xl border border-landing-border bg-landing-paper px-6 py-12 text-sm text-landing-ink-soft">
           <Loader2 size={16} className="animate-spin" />
-          Завантаження тарифів...
+          Loading plans...
         </div>
       ) : (
         <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
@@ -152,22 +152,24 @@ export default function PricingPage() {
                 <div className="mt-4 text-4xl font-semibold tracking-tight text-landing-ink">
                   {formatPrice(plan.price_uah)}
                   {plan.price_uah > 0 && (
-                    <span className="text-lg text-landing-muted">/міс</span>
+                    <span className="text-lg text-landing-muted">
+                      {plan.tier === "ONESHOT" ? " one-time" : "/mo"}
+                    </span>
                   )}
                 </div>
                 <p className="mt-2 text-sm text-landing-ink-soft">
-                  {plan.tier === "FREE"
-                    ? "Старт для пілотного тестування."
-                    : "Підписка для регулярного аудиту та масштабування."}
+                  {plan.tier === "ONESHOT"
+                    ? "Single analysis, no subscription needed."
+                    : "Subscription for regular auditing and scaling."}
                 </p>
                 <ul className="mt-8 space-y-3 text-sm text-landing-ink-soft">
                   <li className="flex items-start gap-2">
                     <Check size={14} className="mt-0.5 text-landing-signal" />
-                    CSV аналізів: {plan.max_csv_tries}
+                    CSV analyses: {plan.max_csv_tries}
                   </li>
                   <li className="flex items-start gap-2">
                     <Check size={14} className="mt-0.5 text-landing-signal" />
-                    Супутникових аналізів: {plan.max_satellite_tries}
+                    Satellite analyses: {plan.max_satellite_tries}
                   </li>
                 </ul>
 
@@ -181,7 +183,7 @@ export default function PricingPage() {
                       : "border border-landing-ink bg-landing-ink text-landing-paper hover:bg-landing-ink-soft"
                   }`}
                 >
-                  {isActive ? "Поточний тариф" : "Активувати тариф"}
+                  {isActive ? "Current plan" : "Get started"}
                 </button>
               </div>
             );

@@ -20,7 +20,7 @@ export interface SignupRequest {
 export interface Subscription {
   id: number;
   name: string;
-  tier: 'FREE' | 'BASIC' | 'PRO';
+  tier: 'ONESHOT' | 'BASIC' | 'PRO';
   price_uah: number;
   max_csv_tries: number;
   max_satellite_tries: number;
