@@ -5,14 +5,14 @@ import "time"
 type SubscriptionTier string
 
 const (
-	TierFree  SubscriptionTier = "FREE"
-	TierBasic SubscriptionTier = "BASIC"
-	TierPro   SubscriptionTier = "PRO"
+	TierOneShot SubscriptionTier = "ONESHOT"
+	TierBasic   SubscriptionTier = "BASIC"
+	TierPro     SubscriptionTier = "PRO"
 )
 
 func (t SubscriptionTier) Level() int {
 	switch t {
-	case TierFree:
+	case TierOneShot:
 		return 0
 	case TierBasic:
 		return 1
