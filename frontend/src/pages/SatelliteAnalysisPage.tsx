@@ -505,12 +505,12 @@ export default function SatelliteAnalysisPage() {
                     </p>
                     <button
                       onClick={handleAnalyze}
-                      disabled={!canAnalyze || phase === 'loading'}
+                      disabled={!canAnalyze}
                       className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-landing-ink px-5 py-3 text-sm font-medium text-landing-paper transition-colors hover:bg-landing-ink-soft disabled:cursor-not-allowed disabled:bg-[var(--text-disabled)]"
                     >
-                      {phase === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                      <Search size={16} />
                       {t('satellite.analyze')}
-                      {phase !== 'loading' ? <ArrowRight size={15} /> : null}
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 </div>
