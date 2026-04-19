@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.6.2](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.1...v1.6.2) (2026-04-19)
+
+
+### Bug Fixes
+
+* added loaders and fixed small bugs ([12a6926](https://github.com/ryl1k/best-lviv-2026/commit/12a69261e379fc22f30713fa275880f7a15d33b5))
+* added loaders and fixed small bugs ([750ca1a](https://github.com/ryl1k/best-lviv-2026/commit/750ca1a4e6ede9f81ae4edc47f10833cdbca6027))
+* build issues ([65124ef](https://github.com/ryl1k/best-lviv-2026/commit/65124ef60355cfb6949a112f089e47f82b28d5e1))
+* tsconfig ([bb9c084](https://github.com/ryl1k/best-lviv-2026/commit/bb9c0849e314476f04f384cc1dc354e7c26a9211))
+* tsconfig ([b44c2ce](https://github.com/ryl1k/best-lviv-2026/commit/b44c2ce58cb6b6b4c6e5c73a388dc4549b7264e0))
+
 ## [1.6.1](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.0...v1.6.1) (2026-04-19)
 
 
