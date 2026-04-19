@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.2...v1.7.0) (2026-04-19)
+
+
+### Features
+
+* added loader for discripancies ([d8b59d1](https://github.com/ryl1k/best-lviv-2026/commit/d8b59d1fd06538de0f333ee8b3ed1bc25af1a8d1))
+
+
+### Bug Fixes
+
+* cadastr ([ca69fd9](https://github.com/ryl1k/best-lviv-2026/commit/ca69fd9bdac74bb638838427c9776f5fc08c58e2))
+
 ## [1.6.2](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.1...v1.6.2) (2026-04-19)
 
 
