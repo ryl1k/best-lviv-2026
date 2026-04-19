@@ -34,7 +34,7 @@ export default function LoginPage() {
       });
       navigate('/upload');
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, 'Не вдалося виконати вхід. Перевірте дані та спробуйте ще раз.'));
+      setSubmitError(getApiErrorMessage(error, { context: 'login' }));
     } finally {
       setLoading(false);
     }

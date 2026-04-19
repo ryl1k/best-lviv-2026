@@ -3,17 +3,17 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LEFT_RECORDS = [
-  { id: 'ID-4429', label: 'Land · Кадастр 32:01:2200', ok: true },
-  { id: 'ID-4431', label: 'Land · Кадастр 32:01:2201', ok: true },
-  { id: 'ID-4434', label: 'Land · Кадастр 32:01:2204', ok: false },
-  { id: 'ID-4438', label: 'Land · Кадастр 32:01:2207', ok: true },
+  { id: 'ID-4429', labelKey: 'landingVisuals.registryScene.left.0', ok: true },
+  { id: 'ID-4431', labelKey: 'landingVisuals.registryScene.left.1', ok: true },
+  { id: 'ID-4434', labelKey: 'landingVisuals.registryScene.left.2', ok: false },
+  { id: 'ID-4438', labelKey: 'landingVisuals.registryScene.left.3', ok: true },
 ];
 
 const RIGHT_RECORDS = [
-  { id: 'RE-9120', label: 'RE · ЄДРПОУ 38291', ok: true },
-  { id: 'RE-9121', label: 'RE · ЄДРПОУ 38291', ok: false },
-  { id: 'RE-9123', label: 'RE · ЄДРПОУ 38294', ok: true },
-  { id: 'RE-9128', label: 'RE · ЄДРПОУ 38299', ok: true },
+  { id: 'RE-9120', labelKey: 'landingVisuals.registryScene.right.0', ok: true },
+  { id: 'RE-9121', labelKey: 'landingVisuals.registryScene.right.1', ok: false },
+  { id: 'RE-9123', labelKey: 'landingVisuals.registryScene.right.2', ok: true },
+  { id: 'RE-9128', labelKey: 'landingVisuals.registryScene.right.3', ok: true },
 ];
 
 const FLAGGED_CASES = [
@@ -62,7 +62,7 @@ export function RegistryMergeScene() {
                 className="flex items-center justify-between rounded border border-landing-border bg-landing-paper px-3 py-2 font-mono text-[11px] text-landing-ink"
               >
                 <span>{record.id}</span>
-                <span className="hidden truncate text-landing-ink-soft md:inline">{record.label}</span>
+                <span className="hidden truncate text-landing-ink-soft md:inline">{t(record.labelKey)}</span>
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${record.ok ? 'bg-landing-success' : 'bg-landing-signal'}`}
                 />
@@ -145,7 +145,7 @@ export function RegistryMergeScene() {
                 className="flex items-center justify-between rounded border border-landing-border bg-landing-paper px-3 py-2 font-mono text-[11px] text-landing-ink"
               >
                 <span>{record.id}</span>
-                <span className="hidden truncate text-landing-ink-soft md:inline">{record.label}</span>
+                <span className="hidden truncate text-landing-ink-soft md:inline">{t(record.labelKey)}</span>
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${record.ok ? 'bg-landing-success' : 'bg-landing-signal'}`}
                 />

@@ -1,18 +1,39 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-
-import { landingHowSection, landingHowSteps } from '@/data/landing';
+import { useTranslation } from 'react-i18next';
 
 import { SectionHeader } from './SectionHeader';
 
+interface LandingHowStep {
+  n: string;
+  title: string;
+  body: string;
+  visual: 'ingest' | 'normalize' | 'match' | 'detect' | 'prioritize';
+}
+
 export function LandingHowItWorks() {
+  const { t } = useTranslation();
+  const section = {
+    eyebrow: t('landingHow.section.eyebrow'),
+    titleStart: t('landingHow.section.titleStart'),
+    titleEmphasis: t('landingHow.section.titleEmphasis'),
+    titleEnd: t('landingHow.section.titleEnd'),
+  };
+  const steps: LandingHowStep[] = [
+    { n: '01', title: t('landingHow.steps.0.title'), body: t('landingHow.steps.0.body'), visual: 'ingest' },
+    { n: '02', title: t('landingHow.steps.1.title'), body: t('landingHow.steps.1.body'), visual: 'normalize' },
+    { n: '03', title: t('landingHow.steps.2.title'), body: t('landingHow.steps.2.body'), visual: 'match' },
+    { n: '04', title: t('landingHow.steps.3.title'), body: t('landingHow.steps.3.body'), visual: 'detect' },
+    { n: '05', title: t('landingHow.steps.4.title'), body: t('landingHow.steps.4.body'), visual: 'prioritize' },
+  ];
+
   return (
     <section id="how" className="relative bg-landing-paper py-32 md:py-44">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-        <SectionHeader {...landingHowSection} />
+        <SectionHeader {...section} />
 
         <div className="mt-20 space-y-32 md:space-y-44">
-          {landingHowSteps.map((step, index) => (
+          {steps.map((step, index) => (
             <Step key={step.n} index={index} step={step} />
           ))}
         </div>
@@ -25,9 +46,10 @@ function Step({
   step,
   index,
 }: {
-  step: (typeof landingHowSteps)[number];
+  step: LandingHowStep;
   index: number;
 }) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -45,7 +67,7 @@ function Step({
       >
         <div className="sticky top-32">
           <div className="mb-6 flex items-baseline gap-4">
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-landing-muted">Step</span>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-landing-muted">{t('landingVisuals.step')}</span>
             <span className="font-landing-display text-6xl leading-none text-landing-signal md:text-7xl">
               {step.n}
             </span>
@@ -84,6 +106,8 @@ function StepVisual({
 }
 
 function IngestVisual() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex h-full items-center justify-center gap-6">
       {['land_registry.xlsx', 'real_estate.xlsx'].map((file, index) => (
@@ -97,14 +121,14 @@ function IngestVisual() {
         >
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-landing-muted">
-              Source {String.fromCharCode(65 + index)}
+              {t('landingVisuals.sourceLabel', { letter: String.fromCharCode(65 + index) })}
             </span>
             <span className="h-2 w-2 rounded-full bg-landing-success" />
           </div>
           <div>
             <div className="font-mono text-xs text-landing-ink">{file}</div>
             <div className="mt-1 font-mono text-[10px] text-landing-muted">
-              {(['10,824 rows', '10,832 rows'] as const)[index]}
+              {index === 0 ? t('landingVisuals.ingest.landRows') : t('landingVisuals.ingest.estateRows')}
             </div>
           </div>
         </motion.div>
@@ -114,7 +138,14 @@ function IngestVisual() {
 }
 
 function NormalizeVisual() {
-  const columns = ['ІПН', 'Cadastral', 'Owner', 'Status', 'Date'];
+  const { t } = useTranslation();
+  const columns = [
+    t('landingVisuals.columns.taxId'),
+    t('landingVisuals.columns.cadastral'),
+    t('landingVisuals.columns.owner'),
+    t('landingVisuals.columns.status'),
+    t('landingVisuals.columns.date'),
+  ];
 
   return (
     <div className="flex h-full flex-col justify-center gap-2">
@@ -139,6 +170,8 @@ function NormalizeVisual() {
 }
 
 function MatchVisual() {
+  const { t } = useTranslation();
+
   return (
     <svg viewBox="0 0 400 280" className="h-full w-full">
       {[0, 1, 2, 3].map((index) => {
@@ -183,10 +216,10 @@ function MatchVisual() {
               transition={{ delay: 0.4 + index * 0.15, duration: 0.8 }}
             />
             <text x="60" y={y + 4} textAnchor="middle" fontFamily="JetBrains Mono" fontSize="9" fill="var(--landing-ink)">
-              ІПН·{1000 + index * 17}
+              {t('landingVisuals.taxIdToken', { value: 1000 + index * 17 })}
             </text>
             <text x="340" y={y + 4} textAnchor="middle" fontFamily="JetBrains Mono" fontSize="9" fill="var(--landing-ink)">
-              {index === 2 ? '≠ value' : `ІПН·${1000 + index * 17}`}
+              {index === 2 ? t('landingVisuals.mismatchValue') : t('landingVisuals.taxIdToken', { value: 1000 + index * 17 })}
             </text>
           </g>
         );
@@ -196,12 +229,13 @@ function MatchVisual() {
 }
 
 function DetectVisual() {
+  const { t } = useTranslation();
   const rows = [
-    { code: 'R01', label: 'terminated rights · active land', risk: 92, flag: true },
-    { code: 'R02', label: 'agricultural · commercial building', risk: 78, flag: true },
-    { code: 'R03', label: 'owner present in both registries', risk: 22, flag: false },
-    { code: 'R04', label: 'address mismatch ≥ 2 fields', risk: 56, flag: true },
-    { code: 'R05', label: 'tax ID gap across sources', risk: 64, flag: true },
+    { code: 'R01', label: t('landingVisuals.detect.R01'), risk: 92, flag: true },
+    { code: 'R02', label: t('landingVisuals.detect.R02'), risk: 78, flag: true },
+    { code: 'R03', label: t('landingVisuals.detect.R03'), risk: 22, flag: false },
+    { code: 'R04', label: t('landingVisuals.detect.R04'), risk: 56, flag: true },
+    { code: 'R05', label: t('landingVisuals.detect.R05'), risk: 64, flag: true },
   ];
 
   return (
@@ -229,12 +263,13 @@ function DetectVisual() {
 }
 
 function PrioritizeVisual() {
+  const { t } = useTranslation();
   const cases = [
-    { id: 'C-2841', risk: 94, status: 'NEW' },
-    { id: 'C-2702', risk: 88, status: 'NEW' },
-    { id: 'C-2655', risk: 81, status: 'IN REVIEW' },
-    { id: 'C-2604', risk: 73, status: 'NEW' },
-    { id: 'C-2541', risk: 66, status: 'IN REVIEW' },
+    { id: 'C-2841', risk: 94, status: t('landingVisuals.status.new') },
+    { id: 'C-2702', risk: 88, status: t('landingVisuals.status.new') },
+    { id: 'C-2655', risk: 81, status: t('landingVisuals.status.inReview') },
+    { id: 'C-2604', risk: 73, status: t('landingVisuals.status.new') },
+    { id: 'C-2541', risk: 66, status: t('landingVisuals.status.inReview') },
   ];
 
   return (
