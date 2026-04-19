@@ -28,8 +28,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            docker system prune -af --volumes || true
             cd /app/backend
             git pull origin main
             cd backend
             docker compose -f docker-compose.yaml up --build -d
+            docker image prune -f || true
             echo "Deployed successfully"
