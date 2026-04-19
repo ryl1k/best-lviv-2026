@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/ryl1k/best-lviv-2026/compare/v1.7.0...v1.7.1) (2026-04-19)
+
+
+### Bug Fixes
+
+* migrations ([10a4dad](https://github.com/ryl1k/best-lviv-2026/commit/10a4dad0f56d2d4cbf8d65cdde71389ec1d262f1))
+
 ## [1.7.0](https://github.com/ryl1k/best-lviv-2026/compare/v1.6.2...v1.7.0) (2026-04-19)
 
 
