@@ -249,6 +249,11 @@
 
   "languages.uk": "Українська",
   "languages.en": "English",
+  "languages.pl": "Polski",
+  "languages.de": "Deutsch",
+  "languages.fr": "Français",
+  "languages.es": "Español",
+  "languages.it": "Italiano",
   "common.close": "Закрити",
   "errors.generic.unknown": "Сталася помилка. Спробуйте ще раз",
   "errors.backend.badRequest": "Некоректний запит",

@@ -37,8 +37,13 @@ export function Navbar() {
     { label: t('nav.pricing'), path: '/pricing' },
   ];
   const languages = [
-    { code: 'uk', label: t('languages.uk'), flag: '🇺🇦' },
-    { code: 'en', label: t('languages.en'), flag: '🇬🇧' },
+    { code: 'uk', label: t('languages.uk') },
+    { code: 'en', label: t('languages.en') },
+    { code: 'pl', label: t('languages.pl') },
+    { code: 'de', label: t('languages.de') },
+    { code: 'fr', label: t('languages.fr') },
+    { code: 'es', label: t('languages.es') },
+    { code: 'it', label: t('languages.it') },
   ] as const;
 
   // Close mobile menu on route change
@@ -177,7 +182,6 @@ export function Navbar() {
                     onMouseEnter={(e) => { if (lang.code !== i18n.language) e.currentTarget.style.background = 'oklch(0 0 0 / 4%)'; }}
                     onMouseLeave={(e) => { if (lang.code !== i18n.language) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <span className="text-base" aria-hidden="true">{lang.flag}</span>
                     {lang.label}
                   </button>
                 ))}

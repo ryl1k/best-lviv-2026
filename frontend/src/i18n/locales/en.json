@@ -249,6 +249,11 @@
 
   "languages.uk": "Українська",
   "languages.en": "English",
+  "languages.pl": "Polski",
+  "languages.de": "Deutsch",
+  "languages.fr": "Français",
+  "languages.es": "Español",
+  "languages.it": "Italiano",
   "common.close": "Close",
   "errors.generic.unknown": "Something went wrong. Please try again",
   "errors.backend.badRequest": "Invalid request",
