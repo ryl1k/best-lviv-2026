@@ -60,7 +60,7 @@ func (uc *UseCase) List(ctx context.Context) ([]entity.Subscription, error) {
 func (uc *UseCase) Purchase(ctx context.Context, userID int, subscriptionID int64) (entity.UserSubscription, error) {
 	activeSub, err := uc.userSubRepo.GetActive(ctx, userID)
 	if err == nil {
-		if activeSub.Subscription == nil || activeSub.Subscription.Tier != entity.TierFree {
+		if activeSub.Subscription == nil || activeSub.Subscription.Tier != entity.TierOneShot {
 			return entity.UserSubscription{}, entity.ErrAlreadySubscribed
 		}
 	} else if !errors.Is(err, entity.ErrNoActiveSubscription) {
@@ -105,21 +105,7 @@ func (uc *UseCase) GetUserSubscription(ctx context.Context, userID int) (entity.
 }
 
 func (uc *UseCase) AssignFreeTier(ctx context.Context, userID int) error {
-	freeSub, err := uc.subRepo.GetByTier(ctx, entity.TierFree)
-	if err != nil {
-		return fmt.Errorf("get free subscription: %w", err)
-	}
-
-	now := time.Now().UTC()
-	_, err = uc.userSubRepo.Create(ctx, entity.UserSubscription{
-		UserID:         userID,
-		SubscriptionID: freeSub.ID,
-		StartsAt:       now,
-		ExpiresAt:      now.AddDate(100, 0, 0),
-	})
-	if err != nil {
-		return fmt.Errorf("assign free tier: %w", err)
-	}
+	// No free tier exists — new users start without a subscription.
 	return nil
 }
 
