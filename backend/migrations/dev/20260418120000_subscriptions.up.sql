@@ -36,6 +36,6 @@ CREATE TABLE subscription_transactions (
 CREATE INDEX idx_sub_tx_user_id ON subscription_transactions(user_id);
 
 INSERT INTO subscriptions (tier, name, price_uah, max_satellite_tries, max_csv_tries) VALUES
-    ('FREE',  'Безкоштовний', 0,    3,  5),
-    ('BASIC', 'Базовий',      299,  20, 50),
-    ('PRO',   'Професійний',  799,  -1, -1);
+    ('FREE',  'Безкоштовний', 0,    0,  1),
+    ('BASIC', 'Базовий',      299,  0,  1),
+    ('PRO',   'Професійний',  9999, -1, -1);
