@@ -4,14 +4,19 @@
 
 > *Revela — робить приховане видимим*
 
+**Live:** https://chillin-revela.vercel.app  
+**API:** `http://ec2-13-48-249-248.eu-north-1.compute.amazonaws.com:8080`  
+**Swagger:** `http://ec2-13-48-249-248.eu-north-1.compute.amazonaws.com:8080/swagger/index.html`
+
 ---
 
-## What it does
+## How it works
 
-1. Municipal official uploads two Excel/CSV registry exports
-2. Revela normalizes records by tax ID (ЄДРПОУ/ІПН), runs a 7-rule engine, and detects anomalies
-3. A prioritized list of suspicious cases is ready in seconds — ranked by risk score
+1. A municipal official uploads two Excel/CSV registry exports (land + real estate)
+2. Revela normalizes records by tax ID (ЄДРПОУ/ІПН), runs 7 detection rules, and optionally re-ranks results with an XGBoost ML model
+3. A prioritized list of suspicious cases is ready in seconds — ranked by cumulative risk score
 4. Officials review, confirm, or dismiss each case; export to CSV for further action
+5. AI generates a Ukrainian-language explanation for each discrepancy, citing the applicable law
 
 ---
 
@@ -19,15 +24,17 @@
 
 | Code | Severity | Score | Trigger |
 |---|---|---|---|
-| R01 | HIGH | +40 | Estate ownership terminated, person still active in land registry |
-| R02 | HIGH | +40 | Agricultural land + commercial building on same individual |
-| R03 | MEDIUM | +25 | Tax ID in land registry with no estate records |
-| R04 | LOW | +10 | Missing or wrong-length tax ID |
-| R05 | MEDIUM | +30 | Duplicate cadastral number or duplicate estate record |
-| R06 | MEDIUM | +25 | Same tax ID has different owner name spellings (Levenshtein > 3) |
-| R07 | LOW | +5 | Record missing owner name, area, or address |
+| R01_TERMINATED_STILL_HAS_LAND | HIGH | +40 | Estate ownership terminated, person still active in land registry |
+| R02_PURPOSE_MISMATCH | HIGH | +40 | Agricultural land + commercial building on same individual |
+| R03_LAND_WITHOUT_ESTATE | MEDIUM | +25 | Tax ID in land registry with no estate records |
+| R04_INVALID_TAX_ID | LOW | +10 | Missing or wrong-length tax ID |
+| R05_DUPLICATE | MEDIUM | +30 | Duplicate cadastral number or duplicate estate record |
+| R06_NAME_MISMATCH | MEDIUM | +25 | Same tax ID has different owner name spellings (Levenshtein > 3) |
+| R07_INCOMPLETE | LOW | +5 | Record missing owner name, area, or address |
 
 Risk bands: 0–30 LOW · 31–60 MEDIUM · 61+ HIGH
+
+After rule scoring an XGBoost model (14 features per tax ID) produces a multiplier [0.8×–1.2×] applied to each owner's cumulative score.
 
 ---
 
@@ -35,20 +42,26 @@ Risk bands: 0–30 LOW · 31–60 MEDIUM · 61+ HIGH
 
 | Layer | Technology |
 |---|---|
-| Backend | Go 1.25, Echo v5, pgxpool |
+| Backend | Go 1.23, Echo v5, pgxpool |
 | Database | PostgreSQL 16 |
-| Frontend | React 18, TypeScript, Vite, Tailwind, shadcn/ui |
-| AI | OpenAI gpt-4o-mini (Ukrainian-language explanations) |
-| Infra | Docker Compose, EC2 (eu-north-1), Nginx, Certbot |
+| ML | Python 3.11, XGBoost, FastAPI |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| AI | OpenAI GPT-4o-mini (Ukrainian-language legal explanations) |
+| Infra | Docker Compose, EC2 t3.small (eu-north-1), Vercel |
 
 ---
 
-## Project structure
+## Repository structure
 
 ```
-backend/     Go API (hexagonal layout)
-frontend/    React SPA
-migrations/  SQL migrations
+backend/          Go REST API
+frontend/         React SPA
+models/
+  risk_classifier.ipynb   XGBoost training notebook
+  service/                FastAPI scoring microservice
+.github/workflows/
+  ci.yml          Lint check on every push
+  cd.yml          SSH deploy to EC2 on push to main (backend/** or models/**)
 ```
 
 ---
@@ -58,9 +71,9 @@ migrations/  SQL migrations
 ### Backend
 
 ```bash
-cp backend/.env.example backend/.env   # fill in POSTGRES_CONNECTION_URI, JWT_SECRET
+cp backend/.env.example backend/.env   # fill POSTGRES_CONNECTION_URI, JWT_SECRET
 cd backend
-make start-deps   # start Postgres + run migrations
+make start-deps   # start Postgres 16 + run migrations
 make start        # run API on :8080
 ```
 
@@ -75,39 +88,57 @@ npm run dev       # dev server on :5173
 ### Full stack (Docker)
 
 ```bash
+cd backend
 docker compose up --build
 ```
 
+This starts Postgres, runs migrations, builds + starts the ML service and the Go API.
+
 ---
 
-## API
+## API overview
 
-Swagger UI: `http://localhost:8080/swagger/index.html`
+All endpoints are prefixed `/v1`. Protected endpoints require `Authorization: Bearer <token>`.
 
-Base URL: `https://api.logisync.systems`
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/v1/auth/signup` | — | Register |
+| POST | `/v1/auth/login` | — | Login → JWT |
+| GET | `/v1/auth/me` | JWT | Current user |
+| GET | `/v1/subscriptions` | — | List available plans |
+| GET | `/v1/subscriptions/me` | JWT | Active subscription |
+| POST | `/v1/subscriptions/:id/purchase` | JWT | Purchase a plan |
+| POST | `/v1/audits/upload` | JWT+sub | Upload land + estate files → `task_id` |
+| GET | `/v1/tasks` | JWT | List tasks |
+| GET | `/v1/tasks/:id` | JWT | Task status + stats |
+| GET | `/v1/tasks/:id/results` | JWT | Paginated discrepancies (filters: severity, rule_code, status, tax_id, search) |
+| GET | `/v1/tasks/:id/results/summary` | JWT | Counts by rule / severity |
+| GET | `/v1/tasks/:id/persons` | JWT | Owners ranked by ML-reranked risk score |
+| GET | `/v1/tasks/:id/discrepancies/:id` | JWT | Single discrepancy detail |
+| PATCH | `/v1/tasks/:id/discrepancies/:id` | JWT | Update resolution status |
+| GET | `/v1/tasks/:id/discrepancies/:id/explain` | JWT | AI explanation (Ukrainian + legal basis) |
+| GET | `/v1/tasks/:id/export` | JWT | CSV download |
 
-Key endpoints:
+---
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/v1/auth/signup` | Register |
-| POST | `/v1/auth/login` | Login → JWT |
-| POST | `/v1/audits/upload` | Upload land + estate files → task ID |
-| GET | `/v1/tasks/{id}` | Task status + stats |
-| GET | `/v1/tasks/{id}/results` | Paginated discrepancies (filterable) |
-| GET | `/v1/tasks/{id}/results/summary` | Counts by rule / severity |
-| PATCH | `/v1/tasks/{id}/discrepancies/{disc_id}` | Update resolution status |
-| GET | `/v1/tasks/{id}/discrepancies/{disc_id}/explain` | AI explanation (Ukrainian) |
-| GET | `/v1/tasks/{id}/persons` | Owners ranked by cumulative risk score |
-| GET | `/v1/tasks/{id}/export` | Download CSV of all discrepancies |
+## Subscription tiers
+
+| Tier | Price | CSV analyses | Satellite analyses |
+|---|---|---|---|
+| One-Shot | ₴500 one-time | 1 | 0 |
+| Basic | ₴1,700/mo | 5 | 5 |
+| Professional | ₴9,999/mo | 100 | 30 |
 
 ---
 
 ## Environment variables
 
+See `backend/.env.example` for the full list. Minimum required:
+
 | Variable | Description |
 |---|---|
 | `POSTGRES_CONNECTION_URI` | PostgreSQL DSN |
 | `JWT_SECRET` | Secret for signing JWT tokens |
-| `HTTP_SERVER_PORT` | API port (default `8080`) |
-| `OPENAI_API_KEY` | Optional — enables AI explanations |
+| `HTTP_SERVER_PORT` | API port (default `:8080`) |
+| `OPENAI_API_KEY` | Optional — enables `/explain` endpoint |
+| `ML_SERVICE_URL` | Optional — enables ML score reranking (default `http://ml:8000`) |
