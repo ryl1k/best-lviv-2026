@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/ryl1k/best-lviv-2026/internal/entity"
@@ -34,12 +33,8 @@ type taxIDFeatures struct {
 	LandMeanAreaHa         float64 `json:"land_mean_area_ha"`
 	LandMaxAreaHa          float64 `json:"land_max_area_ha"`
 	LandUniquePurposes     float64 `json:"land_unique_purposes"`
-	LandHasAgri            float64 `json:"land_has_agri"`
 	LandMeanNormativeValue float64 `json:"land_mean_normative_value"`
 	EstateRecordCount      float64 `json:"estate_record_count"`
-	EstateTerminatedCount  float64 `json:"estate_terminated_count"`
-	EstateAllTerminated    float64 `json:"estate_all_terminated"`
-	EstateHasCommercial    float64 `json:"estate_has_commercial"`
 	EstateUniqueObjTypes   float64 `json:"estate_unique_object_types"`
 	EstateTotalAreaM2      float64 `json:"estate_total_area_m2"`
 	InLand                 float64 `json:"in_land"`
@@ -54,8 +49,8 @@ type scoreRequest struct {
 }
 
 type scoreResult struct {
-	TaxID        string  `json:"tax_id"`
-	MLRiskScore  float64 `json:"ml_risk_score"`
+	TaxID       string  `json:"tax_id"`
+	MLRiskScore float64 `json:"ml_risk_score"`
 }
 
 type scoreResponse struct {
@@ -104,21 +99,17 @@ func (c *Client) ScoreRecords(ctx context.Context, land []entity.LandRecord, est
 
 func buildFeatures(land []entity.LandRecord, estate []entity.EstateRecord) []taxIDFeatures {
 	type landAgg struct {
-		parcelCount        float64
-		totalAreaHa        float64
-		maxAreaHa          float64
-		normativeValueSum  float64
-		normativeValueCnt  float64
-		purposeSet         map[string]struct{}
-		hasAgri            float64
+		parcelCount       float64
+		totalAreaHa       float64
+		maxAreaHa         float64
+		normativeValueSum float64
+		normativeValueCnt float64
+		purposeSet        map[string]struct{}
 	}
 	type estateAgg struct {
-		recordCount      float64
-		terminatedCount  float64
-		allTerminated    bool
-		hasCommercial    float64
-		objTypeSet       map[string]struct{}
-		totalAreaM2      float64
+		recordCount float64
+		objTypeSet  map[string]struct{}
+		totalAreaM2 float64
 	}
 
 	landByTax := make(map[string]*landAgg)
@@ -143,14 +134,6 @@ func buildFeatures(land []entity.LandRecord, estate []entity.EstateRecord) []tax
 		if l.PurposeText != "" {
 			a.purposeSet[l.PurposeText] = struct{}{}
 		}
-		if len(l.PurposeCode) >= 3 && l.PurposeCode[:3] == "01." {
-			a.hasAgri = 1
-		}
-	}
-
-	commercialTypes := map[string]bool{
-		"нежитлова будiвля": true, "будiвлi торговельнi": true,
-		"будiвлi офiснi": true, "будiвлi промисловостi та склади": true,
 	}
 
 	estateByTax := make(map[string]*estateAgg)
@@ -160,20 +143,10 @@ func buildFeatures(land []entity.LandRecord, estate []entity.EstateRecord) []tax
 		}
 		a, ok := estateByTax[e.TaxID]
 		if !ok {
-			a = &estateAgg{allTerminated: true, objTypeSet: make(map[string]struct{})}
+			a = &estateAgg{objTypeSet: make(map[string]struct{})}
 			estateByTax[e.TaxID] = a
 		}
 		a.recordCount++
-		if e.TerminatedAt != nil {
-			a.terminatedCount++
-		} else {
-			a.allTerminated = false
-		}
-		normType := strings.ToLower(strings.TrimSpace(e.ObjectType))
-		normType = strings.ReplaceAll(normType, "\u0456", "i")
-		if commercialTypes[normType] {
-			a.hasCommercial = 1
-		}
 		if e.ObjectType != "" {
 			a.objTypeSet[e.ObjectType] = struct{}{}
 		}
@@ -202,7 +175,6 @@ func buildFeatures(land []entity.LandRecord, estate []entity.EstateRecord) []tax
 			f.LandTotalAreaHa = la.totalAreaHa
 			f.LandMaxAreaHa = la.maxAreaHa
 			f.LandUniquePurposes = float64(len(la.purposeSet))
-			f.LandHasAgri = la.hasAgri
 			if la.normativeValueCnt > 0 {
 				f.LandMeanAreaHa = la.totalAreaHa / la.parcelCount
 				f.LandMeanNormativeValue = la.normativeValueSum / la.normativeValueCnt
@@ -212,9 +184,6 @@ func buildFeatures(land []entity.LandRecord, estate []entity.EstateRecord) []tax
 		if ea, ok := estateByTax[taxID]; ok {
 			f.InEstate = 1
 			f.EstateRecordCount = ea.recordCount
-			f.EstateTerminatedCount = ea.terminatedCount
-			f.EstateAllTerminated = boolToFloat(ea.allTerminated && ea.recordCount > 0)
-			f.EstateHasCommercial = ea.hasCommercial
 			f.EstateUniqueObjTypes = float64(len(ea.objTypeSet))
 			f.EstateTotalAreaM2 = ea.totalAreaM2
 		}

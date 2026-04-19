@@ -81,6 +81,7 @@ func newApp(ctx context.Context) (*app, error) {
 	subscriptionRepo := persistent.NewSubscriptionRepo(pool)
 	userSubscriptionRepo := persistent.NewUserSubscriptionRepo(pool)
 	subscriptionTxRepo := persistent.NewSubscriptionTransactionRepo(pool)
+	mlScoreRepo := persistent.NewMLScoreRepo(pool)
 
 	// Use cases
 	authUseCase := auth.New(c.JWTSecret, c.JwtDuration, userRepo)
@@ -95,7 +96,7 @@ func newApp(ctx context.Context) (*app, error) {
 		mlClient = ml.NewClient(c.MLServiceURL)
 	}
 
-	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, explainer, mlClient, logger)
+	auditUseCase := audit.New(taskRepo, landRecordRepo, estateRecordRepo, discrepancyRepo, mlScoreRepo, explainer, mlClient, logger)
 	subscriptionUseCase := subscription.New(logger, subscriptionRepo, userSubscriptionRepo, subscriptionTxRepo)
 
 	// Controllers

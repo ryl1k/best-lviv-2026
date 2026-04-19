@@ -8,7 +8,7 @@ app = FastAPI(title="Revela ML Service")
 
 MODEL_PATH = os.getenv("MODEL_PATH", "revela_risk_model.json")
 
-model = xgb.XGBClassifier()
+model = xgb.Booster()
 model.load_model(MODEL_PATH)
 
 FEATURE_COLS = [
@@ -17,12 +17,8 @@ FEATURE_COLS = [
     "land_mean_area_ha",
     "land_max_area_ha",
     "land_unique_purposes",
-    "land_has_agri",
     "land_mean_normative_value",
     "estate_record_count",
-    "estate_terminated_count",
-    "estate_all_terminated",
-    "estate_has_commercial",
     "estate_unique_object_types",
     "estate_total_area_m2",
     "in_land",
@@ -40,12 +36,8 @@ class TaxIDFeatures(BaseModel):
     land_mean_area_ha: float = 0
     land_max_area_ha: float = 0
     land_unique_purposes: float = 0
-    land_has_agri: float = 0
     land_mean_normative_value: float = 0
     estate_record_count: float = 0
-    estate_terminated_count: float = 0
-    estate_all_terminated: float = 0
-    estate_has_commercial: float = 0
     estate_unique_object_types: float = 0
     estate_total_area_m2: float = 0
     in_land: float = 0
@@ -83,7 +75,8 @@ def score(req: ScoreRequest):
         for r in req.records
     ], dtype=np.float32)
 
-    probs = model.predict_proba(X)[:, 1]
+    dmat = xgb.DMatrix(X, feature_names=FEATURE_COLS)
+    probs = model.predict(dmat)
 
     return ScoreResponse(scores=[
         ScoreResult(tax_id=r.tax_id, ml_risk_score=float(p))

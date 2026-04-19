@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,11 +43,17 @@ type discrepancyExplainer interface {
 	ExplainDiscrepancy(ctx context.Context, d entity.Discrepancy) (string, error)
 }
 
+type mlScoreRepo interface {
+	BatchUpsert(ctx context.Context, taskID uuid.UUID, scores map[string]float64) error
+	GetByTaskID(ctx context.Context, taskID uuid.UUID) (map[string]float64, error)
+}
+
 type UseCase struct {
 	taskRepo        taskRepo
 	landRepo        landRecordRepo
 	estateRepo      estateRecordRepo
 	discrepancyRepo discrepancyRepo
+	mlScoreRepo     mlScoreRepo
 	explainer       discrepancyExplainer
 	mlClient        *ml.Client
 	logger          *slog.Logger
@@ -57,6 +64,7 @@ func New(
 	landRepo landRecordRepo,
 	estateRepo estateRecordRepo,
 	discrepancyRepo discrepancyRepo,
+	mlScoreRepo mlScoreRepo,
 	explainer discrepancyExplainer,
 	mlClient *ml.Client,
 	logger *slog.Logger,
@@ -66,6 +74,7 @@ func New(
 		landRepo:        landRepo,
 		estateRepo:      estateRepo,
 		discrepancyRepo: discrepancyRepo,
+		mlScoreRepo:     mlScoreRepo,
 		explainer:       explainer,
 		mlClient:        mlClient,
 		logger:          logger,
@@ -280,7 +289,19 @@ func (u *UseCase) GetResults(ctx context.Context, taskID uuid.UUID, filter entit
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
 		return nil, 0, err
 	}
-	return u.discrepancyRepo.ListByTaskID(ctx, taskID, filter)
+	items, total, err := u.discrepancyRepo.ListByTaskID(ctx, taskID, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	mlScores, err := u.mlScoreRepo.GetByTaskID(ctx, taskID)
+	if err == nil && len(mlScores) > 0 {
+		for i, d := range items {
+			if score, ok := mlScores[d.TaxID]; ok {
+				items[i].RiskScore = applyMLMultiplier(d.RiskScore, score)
+			}
+		}
+	}
+	return items, total, nil
 }
 
 func (u *UseCase) GetSummary(ctx context.Context, taskID uuid.UUID) (entity.DiscrepancySummary, error) {
@@ -320,7 +341,46 @@ func (u *UseCase) GetPersons(ctx context.Context, taskID uuid.UUID, page, pageSi
 	if _, err := u.taskRepo.GetByID(ctx, taskID); err != nil {
 		return nil, 0, err
 	}
-	return u.discrepancyRepo.ListPersonsByTaskID(ctx, taskID, page, pageSize)
+	persons, total, err := u.discrepancyRepo.ListPersonsByTaskID(ctx, taskID, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	mlScores, err := u.mlScoreRepo.GetByTaskID(ctx, taskID)
+	if err == nil && len(mlScores) > 0 {
+		for i, p := range persons {
+			score, ok := mlScores[p.TaxID]
+			if !ok {
+				continue
+			}
+			persons[i].MLRiskScore = &score
+			persons[i].TotalRiskScore = applyMLMultiplier(p.TotalRiskScore, score)
+		}
+	}
+	return persons, total, nil
+}
+
+// applyMLMultiplier scales a rule-based risk score by a multiplier derived from the ML
+// confidence. The observed model output range [0.75, 0.82] is linearly mapped to [0.8×, 1.2×],
+// clamped so scores outside that range don't blow up.
+func applyMLMultiplier(ruleScore int, mlScore float64) int {
+	const (
+		mlLow  = 0.75
+		mlHigh = 0.82
+		mxLow  = 0.8
+		mxHigh = 1.2
+	)
+	t := (mlScore - mlLow) / (mlHigh - mlLow)
+	if t < 0 {
+		t = 0
+	} else if t > 1 {
+		t = 1
+	}
+	multiplier := mxLow + t*(mxHigh-mxLow)
+	result := int(math.Round(float64(ruleScore) * multiplier))
+	if result < 0 {
+		result = 0
+	}
+	return result
 }
 
 func (u *UseCase) UpdateResolutionStatus(ctx context.Context, taskID uuid.UUID, discID int64, status entity.ResolutionStatus) error {
@@ -339,6 +399,10 @@ func (u *UseCase) scoreWithML(ctx context.Context, log *slog.Logger, taskID uuid
 	scores, err := u.mlClient.ScoreRecords(ctx, land, estate)
 	if err != nil {
 		log.Warn("ml scoring failed", "error", err)
+		return
+	}
+	if err := u.mlScoreRepo.BatchUpsert(ctx, taskID, scores); err != nil {
+		log.Warn("ml score persist failed", "error", err)
 		return
 	}
 	log.Info("ml scoring complete", "scored_tax_ids", len(scores))
